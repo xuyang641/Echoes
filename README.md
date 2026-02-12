@@ -3,7 +3,7 @@
 > **Capture Your Life Moments**  
 > A private, beautiful, and intelligent space to document your life's journey.
 
-![Banner](https://github.com/xuyanghou640-maker/Photo-Diary/raw/main/public/PWA/icon.svg)
+![Banner](https://github.com/xuyanghou640-maker/Photo-Diary/raw/main/public/banner.svg)
 
 ## ✨ About
 
