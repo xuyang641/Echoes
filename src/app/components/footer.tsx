@@ -33,7 +33,7 @@ export function Footer() {
             <button onClick={() => navigate('/terms')} className="hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.terms')}
             </button>
-            <a href="mailto:support@photodiary.com" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+            <a href="mailto:2311752562@qq.com" className="hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.contact')}
             </a>
           </nav>
