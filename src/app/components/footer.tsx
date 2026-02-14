@@ -34,6 +34,7 @@ export function Footer() {
               {t('footer.terms')}
             </button>
             <a href="mailto:2311752562@qq.com" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+              {/* Contact Email Link */}
               {t('footer.contact')}
             </a>
           </nav>
