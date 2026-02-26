@@ -6,8 +6,9 @@ import L from 'leaflet';
 import 'leaflet.heat'; // Import heatmap plugin
 import { useNavigate } from 'react-router-dom';
 import { format, isSameDay, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
-import { Filter, Search, User, Play, Pause, Flame, Map as MapIcon } from 'lucide-react';
+import { Filter, Search, User, Play, Pause, Flame, Map as MapIcon, Heart, MessageCircle, Send, X } from 'lucide-react';
 import { useGroup } from '../context/GroupContext';
+import { useAuth } from '../context/AuthContext';
 import { GroupManager } from './group-manager';
 import { useTranslation } from 'react-i18next';
 import { MOODS } from '../utils/mood-constants';
@@ -213,9 +214,168 @@ const createCustomIcon = (color: string, avatar?: string) => {
 
 interface MapViewProps {
   entries: DiaryEntry[];
+  onUpdateEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
 }
 
-export function MapView({ entries }: MapViewProps) {
+function MapEntryPopup({ entry, onUpdateEntry }: { entry: DiaryEntry, onUpdateEntry?: (entry: DiaryEntry, targetGroups: string[]) => void }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [commentText, setCommentText] = useState('');
+  const [showComments, setShowComments] = useState(false);
+
+  const isLiked = entry.likes?.includes(user?.id || '');
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user || !onUpdateEntry) return;
+
+    const currentLikes = entry.likes || [];
+    const newLikes = isLiked 
+      ? currentLikes.filter(id => id !== user.id)
+      : [...currentLikes, user.id];
+
+    const updatedEntry = { ...entry, likes: newLikes };
+    onUpdateEntry(updatedEntry, entry.groupIds || ['private']);
+  };
+
+  const handleComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || !commentText.trim() || !onUpdateEntry) return;
+
+    const newComment = {
+      id: Date.now().toString(),
+      userId: user.id,
+      userName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+      userAvatar: user.user_metadata?.avatar_url,
+      text: commentText.trim(),
+      date: new Date().toISOString()
+    };
+
+    const updatedEntry = { 
+      ...entry, 
+      comments: [...(entry.comments || []), newComment] 
+    };
+    
+    onUpdateEntry(updatedEntry, entry.groupIds || ['private']);
+    setCommentText('');
+  };
+
+  return (
+    <div className="w-64">
+      {/* User Header */}
+      {entry.userName && (
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+          {entry.userAvatar ? (
+            <div className="w-6 h-6 rounded-full overflow-hidden">
+                <LazyImage src={entry.userAvatar} alt={entry.userName} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <User className="w-3 h-3 text-gray-400" />
+            </div>
+          )}
+          <span className="text-xs font-bold text-gray-700">{entry.userName}</span>
+        </div>
+      )}
+      
+      {/* Photo & Caption (Click to edit) */}
+      <div className="cursor-pointer group" onClick={() => navigate(`/edit/${entry.id}`)}>
+        <div className="w-full h-32 mb-2 rounded-lg overflow-hidden relative">
+            <LazyImage 
+            src={entry.photo} 
+            alt={entry.caption} 
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+        </div>
+        <p className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">{entry.caption}</p>
+      </div>
+
+      {/* Tags & Meta */}
+      <div className="flex flex-wrap gap-1 mb-2">
+        {entry.tags?.slice(0, 3).map(tag => (
+        <span key={tag} className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px]">
+            #{tag}
+        </span>
+        ))}
+      </div>
+      
+      {/* Social Actions */}
+      <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
+        <div className="flex items-center gap-3">
+            <button 
+                onClick={handleLike}
+                className={`flex items-center gap-1 text-xs transition-colors ${isLiked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-500'}`}
+            >
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                <span>{entry.likes?.length || 0}</span>
+            </button>
+            <button 
+                onClick={(e) => { e.stopPropagation(); setShowComments(!showComments); }}
+                className={`flex items-center gap-1 text-xs transition-colors ${showComments ? 'text-blue-500' : 'text-gray-500 hover:text-blue-500'}`}
+            >
+                <MessageCircle className="w-4 h-4" />
+                <span>{entry.comments?.length || 0}</span>
+            </button>
+        </div>
+        <span className="text-[10px] text-gray-400">{format(new Date(entry.date), 'MM/dd')}</span>
+      </div>
+
+      {/* Comments Section */}
+      {showComments && (
+        <div className="mt-3 pt-3 border-t border-gray-100 animate-in slide-in-from-top-2">
+            <div className="max-h-32 overflow-y-auto space-y-2 mb-2 pr-1 custom-scrollbar">
+                {entry.comments?.length ? (
+                    entry.comments.map(comment => (
+                        <div key={comment.id} className="flex gap-2 items-start text-xs">
+                            <div className="w-5 h-5 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden mt-0.5">
+                                {comment.userAvatar ? (
+                                    <img src={comment.userAvatar} className="w-full h-full object-cover" />
+                                ) : (
+                                    <User className="w-3 h-3 text-gray-400 m-1" />
+                                )}
+                            </div>
+                            <div className="flex-1 bg-gray-50 rounded-lg p-2">
+                                <div className="flex justify-between items-baseline mb-0.5">
+                                    <span className="font-bold text-gray-700">{comment.userName}</span>
+                                    <span className="text-[9px] text-gray-400">{format(new Date(comment.date), 'MM/dd HH:mm')}</span>
+                                </div>
+                                <p className="text-gray-600 break-words">{comment.text}</p>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-xs text-gray-400 text-center py-2">No comments yet</p>
+                )}
+            </div>
+            
+            {/* Add Comment Input */}
+            <form onSubmit={handleComment} className="flex gap-2">
+                <input
+                    type="text"
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Write a comment..."
+                    className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500"
+                    onClick={(e) => e.stopPropagation()}
+                />
+                <button 
+                    type="submit"
+                    disabled={!commentText.trim()}
+                    className="p-1.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <Send className="w-3 h-3" />
+                </button>
+            </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function MapView({ entries, onUpdateEntry }: MapViewProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { groups, currentGroupId, getGroupEntries } = useGroup();
@@ -504,41 +664,7 @@ export function MapView({ entries }: MapViewProps) {
                 icon={createCustomIcon(markerColor, entry.userAvatar)}
               >
                 <Popup>
-                  <div className="w-56 cursor-pointer" onClick={() => navigate(`/edit/${entry.id}`)}>
-                    {/* User Header in Popup */}
-                    {entry.userName && (
-                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
-                        {entry.userAvatar ? (
-                          <div className="w-5 h-5 rounded-full overflow-hidden">
-                             <LazyImage src={entry.userAvatar} alt={entry.userName} className="w-full h-full object-cover" />
-                          </div>
-                        ) : (
-                          <User className="w-4 h-4 text-gray-400" />
-                        )}
-                        <span className="text-xs font-bold text-gray-700">{entry.userName}</span>
-                      </div>
-                    )}
-                    
-                    <div className="w-full h-32 mb-2 rounded-lg overflow-hidden">
-                      <LazyImage 
-                        src={entry.photo} 
-                        alt={entry.caption} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p className="font-medium text-sm text-gray-900 line-clamp-2">{entry.caption}</p>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {entry.tags?.map(tag => (
-                        <span key={tag} className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px]">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                       <span>{format(new Date(entry.date), 'MMM d, yyyy')}</span>
-                       {entry.location?.name && <span className="text-blue-600 truncate max-w-[80px]">{entry.location.name}</span>}
-                    </div>
-                  </div>
+                  <MapEntryPopup entry={entry} onUpdateEntry={onUpdateEntry} />
                 </Popup>
               </Marker>
             );

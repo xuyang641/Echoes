@@ -224,7 +224,11 @@ const resources = {
         topMood: 'Top Mood',
         topLocation: 'Top Location',
         moodDistribution: 'Mood Distribution',
-        activity: 'Activity Heatmap'
+        activity: 'Activity Heatmap',
+        activeDays: 'Active Days',
+        bestStreak: 'Best Streak',
+        moodSpectrum: 'Mood Spectrum',
+        writingRhythm: 'Writing Rhythm'
       },
       form: {
         titleAdd: 'New Memory',
@@ -552,7 +556,10 @@ const resources = {
           visuals: '视觉升级：新增页面平滑过渡与细腻的交互动画',
           printShopV2: '冲印店 2.0：全新矢量 PDF 生成引擎，画质无损',
           printEditor: '相册编辑器：支持自定义选图、拖拽排序及设置封面',
-          shareOnline: '在线分享：生成 3D 电子书链接，与好友分享你的年度回忆'
+          shareOnline: '在线分享：生成 3D 电子书链接，与好友分享你的年度回忆',
+          insightsRedesign: '回忆盘点重构：Bento 风格布局，新增“闪回”幻灯片，优化数据展示',
+          mapLocation: '精准定位：集成高德地图 POI 搜索，支持记录具体小区/地标名称',
+          mapSocial: '地图社交：组群地图支持点赞与评论互动，让足迹更有温度'
         }
       },
       profile: {
@@ -613,7 +620,11 @@ const resources = {
         topMood: '年度心情',
         topLocation: '常去地点',
         moodDistribution: '心情分布',
-        activity: '活跃热力图'
+        activity: '活跃热力图',
+        activeDays: '活跃天数',
+        bestStreak: '最佳连更',
+        moodSpectrum: '心情光谱',
+        writingRhythm: '写作节奏'
       },
       form: {
         titleAdd: '记录美好',

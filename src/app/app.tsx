@@ -158,6 +158,8 @@ function AppContent() {
         tags: entry.tags || [],
         aiTags: entry.aiTags || [],
         palette: entry.palette,
+        likes: entry.likes || [],
+        comments: entry.comments || [],
       };
 
       // 1. Optimistic UI Update & Offline Save
@@ -318,6 +320,8 @@ function AppContent() {
             tags: entry.tags || [],
             aiTags: entry.aiTags || [],
             palette: entry.palette,
+            likes: entry.likes || [],
+            comments: entry.comments || [],
           }, targetGroups },
           targetGroups,
           timestamp: Date.now()
@@ -387,7 +391,9 @@ function AppContent() {
                         caption: entry.caption,
                         mood: entry.mood,
                         location: entry.location,
-                        date: entry.date
+                        date: entry.date,
+                        likes: entry.likes || [],
+                        comments: entry.comments || []
                     })
                 ));
             }
@@ -584,7 +590,7 @@ function AppContent() {
             } />
             <Route path="/map" element={
               <PageTransition>
-                <MapView entries={entries} />
+                <MapView entries={entries} onUpdateEntry={handleUpdateEntry} />
               </PageTransition>
             } />
             <Route path="/insights" element={

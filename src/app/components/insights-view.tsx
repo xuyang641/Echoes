@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { DiaryEntry } from './diary-entry-form';
-import { format, startOfToday, subDays, getDay } from 'date-fns';
+import { format, startOfToday, subDays, getDay, isSameDay, subYears } from 'date-fns';
 import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, AreaChart, Area 
+  BarChart, Bar, XAxis, Tooltip as RechartsTooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell
 } from 'recharts';
 import { 
-  Music, Calendar, Map as MapIcon, Smile, Hash, 
-  TrendingUp, Activity, Award, Disc, Play, X, Quote, ArrowRight, Star
+  Calendar, Map as MapIcon, Smile, 
+  TrendingUp, Activity, Award, Disc, Play, X, Quote, 
+  Star, Camera, BookOpen, ChevronRight, RefreshCw, Zap, Hash
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,6 +70,11 @@ function calculateStats(entries: DiaryEntry[]) {
   // Top Location
   const locCounts: Record<string, number> = {};
   entries.forEach(e => {
+    // If location is an object, prefer name. If string, use as is.
+    // If the string is "Current Location", try to filter it out or count it (depending on requirement).
+    // The user wants specific places. If the data is "Current Location", it's likely a default/fallback.
+    // However, if that's all we have, we display it.
+    // Ideally, we'd have a localized "Current Location" string if that's what it is.
     const locName = typeof e.location === 'object' ? e.location.name : e.location;
     if (locName) {
       locCounts[locName] = (locCounts[locName] || 0) + 1;
@@ -101,56 +107,111 @@ function getChartData(entries: DiaryEntry[]) {
 
 // --- Components ---
 
-function BentoCard({ children, className = "", delay = 0 }: { children: React.ReactNode, className?: string, delay?: number }) {
+function BentoCard({ children, className = "", delay = 0, title, icon: Icon }: { children: React.ReactNode, className?: string, delay?: number, title?: string, icon?: any }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      className={`bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 ${className}`}
+      className={`bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col ${className}`}
     >
-      {children}
+      {title && (
+        <div className="flex items-center gap-2 mb-4 text-zinc-500 dark:text-zinc-400">
+          {Icon && <Icon className="w-4 h-4" />}
+          <h3 className="text-xs font-bold uppercase tracking-wider">{title}</h3>
+        </div>
+      )}
+      <div className="flex-1 min-h-0 relative">
+        {children}
+      </div>
     </motion.div>
   );
 }
 
 function StatItem({ icon: Icon, label, value, color }: any) {
   return (
-    <div className="flex items-center gap-4 group">
-      <div className={`p-3 rounded-2xl ${color} bg-opacity-10 dark:bg-opacity-20 group-hover:scale-110 transition-transform duration-300`}>
-        <Icon className={`w-5 h-5 ${color.replace('bg-', 'text-')}`} />
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+        <Icon className="w-4 h-4" />
+        <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
       </div>
-      <div>
-        <div className="text-2xl font-bold text-gray-900 dark:text-white font-serif tracking-tight">{value}</div>
-        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</div>
+      <div className={`text-3xl font-bold ${color.replace('bg-', 'text-')} font-serif tracking-tight`}>
+        {value}
       </div>
     </div>
   );
 }
 
-function MiniPlayer({ entry, onClick }: { entry: DiaryEntry, onClick: () => void }) {
-  if (!entry) return null;
+function FlashbackCard({ entries, onPlay }: { entries: DiaryEntry[], onPlay: (entry: DiaryEntry) => void }) {
+  const { t } = useTranslation();
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Filter entries with photos
+  const photoEntries = useMemo(() => entries.filter(e => e.photo).slice(0, 5), [entries]);
+  const currentEntry = photoEntries[currentIndex];
+
+  useEffect(() => {
+    if (photoEntries.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % photoEntries.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [photoEntries]);
+
+  if (!currentEntry) return (
+    <div className="h-full flex flex-col items-center justify-center text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+      <Camera className="w-8 h-8 mb-2 opacity-50" />
+      <span className="text-sm">暂无照片回忆</span>
+    </div>
+  );
+
   return (
     <div 
-      onClick={onClick}
-      className="relative h-full w-full overflow-hidden cursor-pointer group"
+      onClick={() => onPlay(currentEntry)}
+      className="relative h-full w-full overflow-hidden cursor-pointer group rounded-xl"
     >
-      <div className="absolute inset-0">
-        <LazyImage src={entry.photo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-      
-      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-        <div className="flex items-center gap-2 text-xs font-mono text-white/70 mb-3 uppercase tracking-widest">
-          <Disc className="w-3 h-3 animate-spin-slow" />
-          <span>On Repeat</span>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentEntry.id}
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.7 }}
+          className="absolute inset-0"
+        >
+          <LazyImage src={currentEntry.photo} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" />
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10">
+        <div className="flex items-center gap-2 text-xs font-mono text-white/70 mb-2 uppercase tracking-widest">
+          <RefreshCw className="w-3 h-3 animate-spin-slow" />
+          <span>{t('insights.flashback')}</span>
         </div>
-        <h3 className="text-2xl font-serif font-bold truncate leading-tight mb-1 group-hover:text-yellow-300 transition-colors">"{entry.caption}"</h3>
-        <p className="text-sm text-white/60 truncate">{format(new Date(entry.date), 'MMMM do, yyyy')}</p>
+        <h3 className="text-xl font-serif font-bold truncate leading-tight mb-1 group-hover:text-yellow-300 transition-colors">
+          "{currentEntry.caption || t('entry.noCaption')}"
+        </h3>
+        <p className="text-sm text-white/60 truncate">
+          {format(new Date(currentEntry.date), 'yyyy年MM月dd日')}
+        </p>
       </div>
 
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 scale-50 group-hover:scale-100 border border-white/30">
-        <Play className="w-6 h-6 fill-white text-white ml-1" />
+      <div className="absolute top-4 right-4 z-10">
+        <div className="flex gap-1">
+          {photoEntries.map((_, idx) => (
+            <div 
+              key={idx} 
+              className={`h-1 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-4 bg-white' : 'w-1 bg-white/30'}`} 
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 hover:scale-110 transition-transform">
+          <Play className="w-6 h-6 fill-white text-white ml-1" />
+        </div>
       </div>
     </div>
   );
@@ -161,38 +222,51 @@ function StoryOverlay({ entry, onClose }: { entry: DiaryEntry, onClose: () => vo
   return (
     <motion.div 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div 
         initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-        className="max-w-md w-full bg-zinc-900 rounded-[2rem] overflow-hidden shadow-2xl relative border border-white/10"
+        className="max-w-4xl w-full bg-zinc-900 rounded-[2rem] overflow-hidden shadow-2xl relative border border-white/10 flex flex-col md:flex-row"
         onClick={e => e.stopPropagation()}
       >
-        <div className="aspect-square relative group">
-          <LazyImage src={entry.photo} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <button onClick={onClose} className="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/20 transition-colors border border-white/10">
+        {/* Photo Side */}
+        <div className="md:w-3/5 aspect-square md:aspect-auto relative bg-black">
+          <LazyImage src={entry.photo} className="w-full h-full object-contain" />
+          <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/20 transition-colors border border-white/10 md:hidden">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-8 relative">
-          <div className="absolute -top-6 right-8 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg transform rotate-12">
-            <Quote className="w-5 h-5 text-black fill-current" />
-          </div>
-          
-          <div className="flex items-center gap-2 mb-6">
+
+        {/* Content Side */}
+        <div className="md:w-2/5 p-8 flex flex-col relative bg-zinc-900">
+          <button onClick={onClose} className="hidden md:block absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+
+          <div className="flex items-center gap-2 mb-6 mt-2">
              <span className={`px-3 py-1 rounded-full text-xs font-bold bg-white/5 border border-white/10 ${MOOD_COLORS[entry.mood] ? 'text-white' : ''}`} style={{ color: MOOD_COLORS[entry.mood] }}>
                {entry.mood}
              </span>
-             <span className="text-xs text-gray-500 font-mono">{format(new Date(entry.date), 'yyyy.MM.dd')}</span>
+             <span className="text-xs text-zinc-500 font-mono">{format(new Date(entry.date), 'yyyy.MM.dd')}</span>
           </div>
           
-          <p className="text-2xl font-serif leading-relaxed text-gray-200 italic mb-6">
-            "{entry.caption}"
-          </p>
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="relative">
+              <Quote className="w-8 h-8 text-zinc-700 absolute -top-4 -left-2 opacity-50" />
+              <p className="text-xl font-serif leading-relaxed text-zinc-200 italic relative z-10 pl-6">
+                {entry.caption}
+              </p>
+            </div>
+            
+            {entry.content && (
+              <div className="mt-6 text-zinc-400 text-sm leading-relaxed whitespace-pre-wrap">
+                {entry.content}
+              </div>
+            )}
+          </div>
           
-          <div className="pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-gray-500">
+          <div className="pt-6 mt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500">
             <MapIcon className="w-4 h-4" />
             <span>{typeof entry.location === 'object' ? entry.location.name : (entry.location || 'Unknown Location')}</span>
           </div>
@@ -209,150 +283,152 @@ export function InsightsView({ entries }: InsightsViewProps) {
   const stats = useMemo(() => calculateStats(entries), [entries]);
   const { moodData, dayData } = useMemo(() => getChartData(entries), [entries]);
   
-  const highlightEntry = useMemo(() => {
-    return entries.find(e => e.mood === 'Happy' || e.mood === 'Excited') || entries[0];
-  }, [entries]);
-
   if (!entries.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-        <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 animate-pulse">
-          <Activity className="w-10 h-10 text-gray-400" />
+        <div className="w-24 h-24 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6 animate-pulse">
+          <Activity className="w-10 h-10 text-zinc-400" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('insights.noData')}</h2>
-        <p className="text-gray-500 max-w-md">{t('insights.startWriting')}</p>
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">{t('insights.noData')}</h2>
+        <p className="text-zinc-500 max-w-md">{t('insights.startWriting')}</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-20 space-y-6">
+    <div className="max-w-7xl mx-auto pb-20 space-y-8">
       
-      {/* Title Section */}
+      {/* Header Section */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2"
       >
-        <h1 className="text-4xl font-serif font-bold text-gray-900 dark:text-white mb-2">
-          {t('insights.title')}
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-lg">
-          {t('insights.subtitle')}
-        </p>
+        <div>
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white mb-2 tracking-tight">
+            {t('insights.title')}
+          </h1>
+          <p className="text-zinc-500 dark:text-zinc-400 text-lg">
+            {t('insights.subtitle')}
+          </p>
+        </div>
+        <div className="flex gap-4">
+          <div className="text-right">
+            <div className="text-3xl font-bold text-zinc-900 dark:text-white font-mono">{stats.total}</div>
+            <div className="text-xs text-zinc-500 uppercase tracking-wider">{t('insights.totalMemories')}</div>
+          </div>
+          <div className="w-px bg-zinc-200 dark:bg-zinc-800 h-12" />
+          <div className="text-right">
+            <div className="text-3xl font-bold text-green-500 font-mono">{stats.streak}</div>
+            <div className="text-xs text-zinc-500 uppercase tracking-wider">{t('insights.currentStreak')}</div>
+          </div>
+        </div>
       </motion.div>
 
-      {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-[minmax(180px,auto)]">
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
-        {/* 1. Highlight Card (Large, 2x2) */}
-        <BentoCard className="md:col-span-2 md:row-span-2 !p-0 overflow-hidden relative" delay={0.1}>
-          <MiniPlayer entry={highlightEntry} onClick={() => setSelectedEntry(highlightEntry)} />
-        </BentoCard>
+        {/* Left Column: Flashback & Stats (8 cols) */}
+        <div className="md:col-span-8 space-y-6">
+          {/* Flashback Card */}
+          <BentoCard className="h-[400px] !p-0 overflow-hidden relative border-none ring-1 ring-black/5" delay={0.1}>
+            <FlashbackCard entries={entries} onPlay={setSelectedEntry} />
+          </BentoCard>
 
-        {/* 2. Stats Grid (2x1) */}
-        <BentoCard className="md:col-span-2 flex flex-col justify-center" delay={0.2}>
-          <div className="grid grid-cols-2 gap-y-8 gap-x-4">
-            <StatItem 
-              icon={Calendar} 
-              label={t('insights.totalMemories')} 
-              value={stats.total} 
-              color="bg-blue-500" 
-            />
-            <StatItem 
-              icon={TrendingUp} 
-              label={t('insights.currentStreak')} 
-              value={stats.streak} 
-              color="bg-green-500" 
-            />
-            <StatItem 
-              icon={Smile} 
-              label={t('insights.topMood')} 
-              value={t(`moods.${stats.topMood.toLowerCase()}`, stats.topMood)} 
-              color="bg-yellow-500" 
-            />
-            <StatItem 
-              icon={MapIcon} 
-              label={t('insights.topLocation')} 
-              value={stats.topLocation} 
-              color="bg-purple-500" 
-            />
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <BentoCard className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800" delay={0.2}>
+              <StatItem icon={Calendar} label={t('insights.activeDays')} value={stats.total} color="text-blue-600" />
+            </BentoCard>
+            <BentoCard className="bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-800" delay={0.25}>
+              <StatItem icon={TrendingUp} label={t('insights.bestStreak')} value={stats.streak} color="text-green-600" />
+            </BentoCard>
+            <BentoCard className="bg-yellow-50/50 dark:bg-yellow-900/10 border-yellow-100 dark:border-yellow-800" delay={0.3}>
+              <StatItem icon={Smile} label={t('insights.topMood')} value={stats.topMood === 'N/A' ? stats.topMood : t(`moods.${stats.topMood.toLowerCase()}`)} color="text-yellow-600" />
+            </BentoCard>
+            <BentoCard className="bg-purple-50/50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-800" delay={0.35}>
+              <StatItem icon={MapIcon} label={t('insights.topLocation')} value={stats.topLocation} color="text-purple-600" />
+            </BentoCard>
           </div>
-        </BentoCard>
 
-        {/* 3. Mood Distribution (1x1) */}
-        <BentoCard className="md:col-span-1" delay={0.3}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
-              <Smile className="w-4 h-4 text-gray-400" />
-              {t('insights.moodDistribution')}
-            </h3>
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Mood Distribution */}
+            <BentoCard title={t('insights.moodSpectrum')} icon={Disc} delay={0.4}>
+              <div className="h-[200px] w-full relative flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={moodData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {moodData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={MOOD_COLORS[entry.name] || '#9CA3AF'} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#18181b', borderRadius: '12px', border: 'none', color: 'white', fontSize: '12px', padding: '8px 12px' }}
+                      itemStyle={{ color: 'white' }}
+                      formatter={(value, name) => [value, t(`moods.${String(name).toLowerCase()}`)]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Center Stats */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-3xl font-bold text-zinc-800 dark:text-zinc-200">{stats.total}</span>
+                  <span className="text-xs text-zinc-400 uppercase tracking-widest">{t('milestones.memories')}</span>
+                </div>
+              </div>
+            </BentoCard>
+
+            {/* Weekly Activity */}
+            <BentoCard title={t('insights.writingRhythm')} icon={Activity} delay={0.45}>
+              <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dayData}>
+                    <Bar 
+                      dataKey="value" 
+                      fill="#3B82F6" 
+                      radius={[6, 6, 6, 6]} 
+                      barSize={12}
+                      fillOpacity={0.8}
+                    />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: '#71717a', fontSize: 11 }} 
+                      dy={10}
+                      interval={0}
+                    />
+                    <RechartsTooltip
+                      cursor={{ fill: 'transparent' }}
+                      contentStyle={{ backgroundColor: '#18181b', borderRadius: '12px', border: 'none', color: 'white', fontSize: '12px' }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </BentoCard>
           </div>
-          <div className="h-[120px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={moodData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={35}
-                  outerRadius={50}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {moodData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={MOOD_COLORS[entry.name] || '#9CA3AF'} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', borderRadius: '8px', border: 'none', color: 'white', fontSize: '12px' }}
-                  itemStyle={{ color: 'white' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            {/* Center Text */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-2xl font-bold text-gray-300 opacity-20">{stats.total}</span>
+        </div>
+
+        {/* Right Column: Pixel Grid (4 cols) */}
+        <div className="md:col-span-4 space-y-6">
+          
+          {/* Pixel Grid */}
+          <BentoCard title={t('insights.yearInPixels')} icon={Hash} delay={0.6}>
+            <div className="overflow-hidden">
+               <MoodPixelGrid entries={entries} />
             </div>
-          </div>
-        </BentoCard>
+          </BentoCard>
 
-        {/* 4. Activity Chart (1x1) */}
-        <BentoCard className="md:col-span-1" delay={0.4}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-sm">
-              <Activity className="w-4 h-4 text-gray-400" />
-              {t('insights.activity')}
-            </h3>
-          </div>
-          <div className="h-[120px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dayData}>
-                <Bar 
-                  dataKey="value" 
-                  fill="#3B82F6" 
-                  radius={[4, 4, 4, 4]} 
-                  barSize={6}
-                  fillOpacity={0.8}
-                />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#9CA3AF', fontSize: 10 }} 
-                  dy={5}
-                  interval={0}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </BentoCard>
-
-        {/* 5. Mood Pixel Grid (Full Width) */}
-        <BentoCard className="md:col-span-4" delay={0.5}>
-          <MoodPixelGrid entries={entries} />
-        </BentoCard>
+        </div>
 
       </div>
 

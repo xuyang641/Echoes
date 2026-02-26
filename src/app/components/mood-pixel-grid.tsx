@@ -7,9 +7,10 @@ import { useTranslation } from 'react-i18next';
 
 interface MoodPixelGridProps {
   entries: DiaryEntry[];
+  className?: string;
 }
 
-export function MoodPixelGrid({ entries }: MoodPixelGridProps) {
+export function MoodPixelGrid({ entries, className = "" }: MoodPixelGridProps) {
   const { t } = useTranslation();
   const { weeks, monthLabels } = useMemo(() => {
     const today = new Date();
@@ -77,22 +78,18 @@ export function MoodPixelGrid({ entries }: MoodPixelGridProps) {
   }, [entries]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('insights.yearInPixels')}</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('insights.pixelDesc')}</p>
-        </div>
-        <div className="flex gap-2 text-xs text-gray-400">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-gray-200 dark:bg-gray-700 rounded-sm"></span> {t('insights.noData')}</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-yellow-400 rounded-sm"></span> {t('insights.mood')}</span>
+    <div className={`w-full ${className}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex gap-4 text-xs text-zinc-400">
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-sm"></span> {t('insights.noData')}</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-yellow-400 rounded-sm"></span> {t('insights.mood')}</span>
         </div>
       </div>
 
-      <div className="w-full overflow-x-auto pb-2">
+      <div className="w-full overflow-x-auto pb-2 custom-scrollbar">
         <div className="min-w-max">
           {/* Month Labels */}
-          <div className="flex mb-2 text-xs text-gray-400 relative h-4">
+          <div className="flex mb-2 text-[10px] font-medium text-zinc-400 relative h-4">
             {monthLabels.map((m, i) => (
               <div 
                 key={m.label} 
@@ -104,18 +101,18 @@ export function MoodPixelGrid({ entries }: MoodPixelGridProps) {
             ))}
           </div>
 
-          <div className="flex gap-[3px]">
+          <div className="flex gap-[4px]">
             {/* Weekday Labels */}
-            <div className="flex flex-col gap-[3px] text-[10px] text-gray-400 pt-[14px] pr-2">
+            <div className="flex flex-col gap-[4px] text-[9px] text-zinc-400 pt-[14px] pr-2 font-medium">
               <div className="h-[10px]">Mon</div>
               <div className="h-[10px]">Wed</div>
               <div className="h-[10px]">Fri</div>
             </div>
 
             {/* The Grid - Rendered Column by Column (Weeks) */}
-            <div className="flex gap-[3px]">
+            <div className="flex gap-[4px]">
               {weeks.map((week, wIndex) => (
-                <div key={wIndex} className="flex flex-col gap-[3px]">
+                <div key={wIndex} className="flex flex-col gap-[4px]">
                   {week.map((day, dIndex) => {
                     // Only show label for Mon(0), Wed(2), Fri(4) rows to match labels
                     return (
@@ -123,9 +120,9 @@ export function MoodPixelGrid({ entries }: MoodPixelGridProps) {
                         key={dIndex}
                         data-tooltip-id="pixel-tooltip"
                         data-tooltip-content={day ? `${format(day.date, 'MMM do, yyyy')}: ${day.entry?.mood ? t(`moods.${day.entry.mood.toLowerCase()}`, day.entry.mood) : t('insights.noData')}` : ''}
-                        className={`w-[10px] h-[10px] rounded-[2px] transition-all ${day ? 'hover:ring-2 ring-offset-1 ring-blue-200 cursor-pointer' : 'opacity-0'}`}
+                        className={`w-[10px] h-[10px] rounded-[2px] transition-all duration-300 ${day ? 'hover:scale-125 hover:z-10 cursor-pointer' : 'opacity-0'}`}
                         style={{ 
-                          backgroundColor: day?.entry ? getMoodColor(day.entry.mood) : (day ? '#e5e7eb' : 'transparent') 
+                          backgroundColor: day?.entry ? getMoodColor(day.entry.mood) : (day ? 'var(--color-zinc-100)' : 'transparent') 
                         }}
                       />
                     );
@@ -136,7 +133,14 @@ export function MoodPixelGrid({ entries }: MoodPixelGridProps) {
           </div>
         </div>
       </div>
-      <Tooltip id="pixel-tooltip" className="z-50 rounded-lg text-xs py-1 px-2 shadow-lg" />
+      <Tooltip id="pixel-tooltip" className="z-50 !bg-zinc-900 !text-white !rounded-lg !text-xs !py-1 !px-3 !shadow-xl !opacity-100" />
+      
+      {/* Fallback style for light mode empty cells since we can't easily use tailwind vars in style prop without defining them */}
+      <style>{`
+        .dark [data-tooltip-id] {
+          background-color: #27272a !important; /* zinc-800 */
+        }
+      `}</style>
     </div>
   );
 }

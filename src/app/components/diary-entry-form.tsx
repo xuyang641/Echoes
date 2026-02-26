@@ -12,6 +12,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { wgs84ToGcj02, gcj02ToWgs84 } from '../utils/coord-transform';
+import { AmapLocationPicker } from './amap-location-picker';
 
 // Fix for default Leaflet icon not finding images
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -52,6 +53,17 @@ export interface DiaryEntry {
   userName?: string;
   userAvatar?: string;
   groupIds?: string[]; // New: Track which groups this entry belongs to
+  likes?: string[]; // Array of userIds who liked this entry
+  comments?: Comment[];
+}
+
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+  date: string;
 }
 
 function LocationMarker({ position, setPosition }: { position: { lat: number, lng: number } | null, setPosition: (pos: { lat: number, lng: number }) => void }) {
@@ -221,19 +233,6 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         );
     }
     setIsMapPickerOpen(true);
-  };
-
-  const confirmMapLocation = () => {
-    if (pickerLocation) {
-        // pickerLocation is GCJ-02 (from map click). Convert back to WGS-84 for storage.
-        const [lat, lng] = gcj02ToWgs84(pickerLocation.lat, pickerLocation.lng);
-        setLocation({
-            lat,
-            lng,
-            name: 'Selected on Map'
-        });
-    }
-    setIsMapPickerOpen(false);
   };
 
   const handleAddTag = (e: React.KeyboardEvent) => {
@@ -647,46 +646,20 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     {isMapPickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="bg-white rounded-2xl w-full max-w-2xl h-[500px] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                <div className="p-4 border-b flex justify-between items-center bg-white z-10">
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                        <MapIcon className="w-5 h-5 text-blue-600" />
-                        Select Location
-                    </h3>
-                    <button onClick={() => setIsMapPickerOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-                <div className="flex-1 relative">
-                    {pickerLocation ? (
-                        <MapContainer 
-                            center={[pickerLocation.lat, pickerLocation.lng]} 
-                            zoom={13} 
-                            style={{ height: '100%', width: '100%' }}
-                        >
-                            <TileLayer
-                                attribution='Map data &copy; <a href="https://www.amap.com/">Gaode</a> contributors'
-                                url="https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"
-                            />
-                            <LocationMarker 
-                                position={pickerLocation} 
-                                setPosition={setPickerLocation} 
-                            />
-                        </MapContainer>
-                    ) : (
-                        <div className="flex items-center justify-center h-full">
-                            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                        </div>
-                    )}
-                    
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000]">
-                        <button 
-                            onClick={confirmMapLocation}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-full shadow-lg hover:bg-blue-700 transition-transform active:scale-95 font-medium"
-                        >
-                            Confirm Location
-                        </button>
-                    </div>
-                </div>
+                <AmapLocationPicker
+                    initialLocation={pickerLocation ? { lat: pickerLocation.lat, lng: pickerLocation.lng } : undefined}
+                    onConfirm={(loc) => {
+                        // loc is GCJ-02 from Amap
+                        const [lat, lng] = gcj02ToWgs84(loc.lat, loc.lng);
+                        setLocation({
+                            lat,
+                            lng,
+                            name: loc.name
+                        });
+                        setIsMapPickerOpen(false);
+                    }}
+                    onCancel={() => setIsMapPickerOpen(false)}
+                />
             </div>
         </div>
     )}
