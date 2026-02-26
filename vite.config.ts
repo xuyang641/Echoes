@@ -15,8 +15,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg', 'robots.txt', 'pwa/*.svg'],
       manifest: {
-        name: 'Photo Diary',
-        short_name: 'PhotoDiary',
+        name: 'Echoes',
+        short_name: 'Echoes',
         description: 'A private, beautiful, and intelligent space to capture life moments.',
         theme_color: '#ffffff',
         background_color: '#ffffff',

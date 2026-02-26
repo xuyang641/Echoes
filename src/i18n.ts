@@ -62,16 +62,16 @@ const resources = {
       legal: {
         back: 'Back',
         about: {
-          title: 'About Photo Diary',
-          intro1: 'Photo Diary was born from a simple belief: <strong>every moment matters.</strong>',
-          intro2: 'In this fast-paced world, days blend into weeks, and weeks into years. We often forget the small joys—a perfect cup of coffee, a beautiful sunset, a laugh shared with a friend. Photo Diary is designed to help you pause, capture, and cherish these fleeting moments.',
+          title: 'About Echoes',
+          intro1: 'Echoes was born from a simple belief: <strong>every moment matters.</strong>',
+          intro2: 'In this fast-paced world, days blend into weeks, and weeks into years. We often forget the small joys—a perfect cup of coffee, a beautiful sunset, a laugh shared with a friend. Echoes is designed to help you pause, capture, and cherish these fleeting moments.',
           missionTitle: 'Our Mission',
           missionText: 'To provide a private, beautiful, and intelligent space for you to document your life\'s journey. We believe that by reflecting on our past, we can live more fully in the present.'
         },
         privacy: {
           title: 'Privacy Policy',
           lastUpdated: 'Last updated: January 2026',
-          intro: 'At Photo Diary, we take your privacy seriously. Your memories are personal, and they should stay that way.',
+          intro: 'At Echoes, we take your privacy seriously. Your memories are personal, and they should stay that way.',
           collectionTitle: '1. Data Collection',
           collectionText: 'We only collect the information necessary to provide our service: your photos, diary entries, and basic account information. We do not sell your personal data to third parties.',
           aiTitle: '2. AI Features',
@@ -81,13 +81,13 @@ const resources = {
           title: 'Terms of Service',
           lastUpdated: 'Last updated: January 2026',
           acceptanceTitle: '1. Acceptance of Terms',
-          acceptanceText: 'By accessing and using Photo Diary, you accept and agree to be bound by the terms and provision of this agreement.',
+          acceptanceText: 'By accessing and using Echoes, you accept and agree to be bound by the terms and provision of this agreement.',
           conductTitle: '2. User Conduct',
           conductText: 'You agree to use the service only for lawful purposes. You are responsible for all content you post and activity that occurs under your account.'
         }
       },
       welcome: {
-        title: 'Welcome to Photo Diary',
+        title: 'Welcome to Echoes',
         quote: '"Life is not measured by the number of breaths we take, but by the moments that take our breath away."',
         subtitle: 'Record your life, cherish your memories, and love every moment.',
         start: 'Start My Journey'
@@ -119,7 +119,7 @@ const resources = {
       },
       changelog: {
         title: 'Changelog',
-        subtitle: 'Tracking the evolution of Photo Diary',
+        subtitle: 'Tracking the evolution of Echoes',
         share: 'Share Your Moments',
         milestones: 'Life Milestones',
         garden3d: 'Memory Garden 3D',
@@ -187,7 +187,7 @@ const resources = {
         contact: 'Contact',
         madeWith: 'Made with',
         forLovers: 'for life lovers',
-        rights: 'Photo Diary',
+        rights: 'Echoes',
         pricing: 'Pricing'
       },
       timeline: {
@@ -215,13 +215,16 @@ const resources = {
         yearInPixels: 'Year in Pixels',
         pixelDesc: 'Every pixel represents a day of your life.',
         noData: 'No Data',
+        startWriting: 'Start writing your first diary entry to unlock insights.',
         mood: 'Mood',
         stats: 'Statistics',
-        totalEntries: 'Total Entries',
+        totalMemories: 'Total Memories',
         totalTags: 'Unique Tags',
         currentStreak: 'Current Streak',
         topMood: 'Top Mood',
-        placesVisited: 'Places Visited'
+        topLocation: 'Top Location',
+        moodDistribution: 'Mood Distribution',
+        activity: 'Activity Heatmap'
       },
       form: {
         titleAdd: 'New Memory',
@@ -281,7 +284,7 @@ const resources = {
         introText: 'This year was filled with unforgettable moments, laughter, and growth. Here are the highlights of my journey in {{year}}.',
         toBeContinued: 'To be continued...',
         yearBook: 'Year Book',
-        myPhotoDiary: 'My Photo Diary',
+        myPhotoDiary: 'My Echoes',
         clickToPreview: 'Click to Preview',
         editorTitle: 'Customize Book Content',
         content: 'Content',
@@ -445,16 +448,16 @@ const resources = {
       legal: {
         back: '返回',
         about: {
-          title: '关于 Photo Diary',
-          intro1: 'Photo Diary 诞生于一个简单的信念：<strong>每一个瞬间都值得铭记。</strong>',
-          intro2: '在这个快节奏的世界里，日子一天天过去，我们也常常忘记那些微小的确幸——一杯完美的咖啡、一场壮丽的日落、与好友的一次开怀大笑。Photo Diary 旨在帮助你停下脚步，定格并珍藏这些稍纵即逝的美好。',
+          title: '关于 Echoes',
+          intro1: 'Echoes 诞生于一个简单的信念：<strong>每一个瞬间都值得铭记。</strong>',
+          intro2: '在这个快节奏的世界里，日子一天天过去，我们也常常忘记那些微小的确幸——一杯完美的咖啡、一场壮丽的日落、与好友的一次开怀大笑。Echoes 旨在帮助你停下脚步，定格并珍藏这些稍纵即逝的美好。',
           missionTitle: '我们的使命',
           missionText: '为你提供一个私密、精美且智能的空间，记录你的人生旅程。我们相信，通过回望过去，我们可以更充实地活在当下。'
         },
         privacy: {
           title: '隐私政策',
           lastUpdated: '最后更新：2026年1月',
-          intro: '在 Photo Diary，我们非常重视您的隐私。您的回忆是私密的，理应如此。',
+          intro: '在 Echoes，我们非常重视您的隐私。您的回忆是私密的，理应如此。',
           collectionTitle: '1. 数据收集',
           collectionText: '我们只收集提供服务所必需的信息：您的照片、日记内容和基本账户信息。我们绝不会将您的个人数据出售给第三方。',
           aiTitle: '2. AI 功能',
@@ -464,13 +467,13 @@ const resources = {
           title: '服务条款',
           lastUpdated: '最后更新：2026年1月',
           acceptanceTitle: '1. 条款接受',
-          acceptanceText: '访问并使用 Photo Diary，即表示您接受并同意遵守本协议的条款和规定。',
+          acceptanceText: '访问并使用 Echoes，即表示您接受并同意遵守本协议的条款和规定。',
           conductTitle: '2. 用户行为',
           conductText: '您同意仅将本服务用于合法目的。您对在您的账户下发布的所有内容和发生的活动负责。'
         }
       },
       welcome: {
-        title: '欢迎来到 Photo Diary',
+        title: '欢迎来到 Echoes',
         quote: '“生命的广度不在于我们呼吸了多少次，而在于那些令我们屏息的瞬间。”',
         subtitle: '记录生活，珍藏回忆，热爱每一个当下。',
         start: '开启我的旅程'
@@ -502,7 +505,7 @@ const resources = {
       },
       changelog: {
         title: '更新日志',
-        subtitle: '见证 Photo Diary 的每一次进步',
+        subtitle: '见证 Echoes 的每一次进步',
         share: '分享你的美好',
         milestones: '人生清单',
         garden3d: '心灵花园 3D',
@@ -573,7 +576,7 @@ const resources = {
         contact: '联系我们',
         madeWith: 'Made with',
         forLovers: 'for life lovers',
-        rights: 'Photo Diary',
+        rights: 'Echoes',
         pricing: '订阅方案'
       },
       timeline: {
@@ -601,13 +604,16 @@ const resources = {
         yearInPixels: '心情格子',
         pixelDesc: '每一个像素点，都是你生命中的一天。',
         noData: '无数据',
+        startWriting: '开始记录你的第一篇日记，解锁回忆盘点。',
         mood: '心情',
         stats: '数据统计',
-        totalEntries: '累计记录',
+        totalMemories: '累计回忆',
         totalTags: '标签总数',
         currentStreak: '连续打卡',
         topMood: '年度心情',
-        placesVisited: '打卡地点'
+        topLocation: '常去地点',
+        moodDistribution: '心情分布',
+        activity: '活跃热力图'
       },
       form: {
         titleAdd: '记录美好',
@@ -667,7 +673,7 @@ const resources = {
         introText: '这一年充满了难忘的时刻、欢笑与成长。以下是我在 {{year}} 年的旅程高光时刻。',
         toBeContinued: '未完待续...',
         yearBook: '年度相册',
-        myPhotoDiary: '我的摄影日记',
+        myPhotoDiary: '我的 Echoes',
         clickToPreview: '点击预览',
         editorTitle: '自定义相册内容',
         content: '内容管理',
@@ -831,16 +837,16 @@ const resources = {
       legal: {
         back: '戻る',
         about: {
-          title: 'Photo Diaryについて',
-          intro1: 'Photo Diaryはシンプルな信念から生まれました：<strong>すべての瞬間に意味がある。</strong>',
-          intro2: '忙しい日々の中で、私たちは小さな喜びを忘れがちです。完璧なコーヒー、美しい夕日、友達との笑い声。Photo Diaryは、そんな儚い瞬間を一時停止し、捉え、大切にするためのお手伝いをします。',
+          title: 'Echoesについて',
+          intro1: 'Echoesはシンプルな信念から生まれました：<strong>すべての瞬間に意味がある。</strong>',
+          intro2: '忙しい日々の中で、私たちは小さな喜びを忘れがちです。完璧なコーヒー、美しい夕日、友達との笑い声。Echoesは、そんな儚い瞬間を一時停止し、捉え、大切にするためのお手伝いをします。',
           missionTitle: '私たちのミッション',
           missionText: 'あなたの人生の旅を記録するための、プライベートで美しく、インテリジェントな空間を提供すること。過去を振り返ることで、現在をより豊かに生きることができると信じています。'
         },
         privacy: {
           title: 'プライバシーポリシー',
           lastUpdated: '最終更新：2026年1月',
-          intro: 'Photo Diaryでは、お客様のプライバシーを真剣に受け止めています。あなたの思い出は個人的なものであり、そうあるべきです。',
+          intro: 'Echoesでは、お客様のプライバシーを真剣に受け止めています。あなたの思い出は個人的なものであり、そうあるべきです。',
           collectionTitle: '1. データ収集',
           collectionText: 'サービスの提供に必要な情報（写真、日記、基本的なアカウント情報）のみを収集します。個人データを第三者に販売することはありません。',
           aiTitle: '2. AI機能',
@@ -850,13 +856,13 @@ const resources = {
           title: '利用規約',
           lastUpdated: '最終更新：2026年1月',
           acceptanceTitle: '1. 規約への同意',
-          acceptanceText: 'Photo Diaryにアクセスして使用することにより、本契約の条件に拘束されることに同意したものとみなされます。',
+          acceptanceText: 'Echoesにアクセスして使用することにより、本契約の条件に拘束されることに同意したものとみなされます。',
           conductTitle: '2. ユーザーの行動',
           conductText: '合法的な目的でのみサービスを使用することに同意します。あなたのアカウントで投稿されたすべてのコンテンツと発生した活動について、あなたが責任を負います。'
         }
       },
       welcome: {
-        title: 'Photo Diaryへようこそ',
+        title: 'Echoesへようこそ',
         quote: '「人生の長さは呼吸の数ではなく、息をのむような瞬間の数で測られる。」',
         subtitle: '人生を記録し、思い出を大切にし、すべての瞬間を愛そう。',
         start: '旅を始める'
@@ -888,7 +894,7 @@ const resources = {
       },
       changelog: {
         title: '更新履歴',
-        subtitle: 'Photo Diaryの進化の記録',
+        subtitle: 'Echoesの進化の記録',
         share: '思い出を共有',
         milestones: '人生の節目',
         garden3d: '心の庭 3D',
@@ -956,7 +962,7 @@ const resources = {
         contact: 'お問い合わせ',
         madeWith: 'Made with',
         forLovers: 'for life lovers',
-        rights: 'Photo Diary',
+        rights: 'Echoes',
         pricing: '요금제'
       },
       timeline: {
@@ -984,13 +990,16 @@ const resources = {
         yearInPixels: 'ムードピクセル',
         pixelDesc: '1つのピクセルが、あなたの人生の1日を表します。',
         noData: 'データなし',
+        startWriting: '最初の日記を書いて、インサイトを解除しましょう。',
         mood: '気分',
         stats: '統計',
-        totalEntries: '総投稿数',
+        totalMemories: '思い出の数',
         totalTags: 'タグ数',
         currentStreak: '連続投稿',
         topMood: '最多ムード',
-        placesVisited: '訪れた場所'
+        topLocation: 'よく行く場所',
+        moodDistribution: '気分の分布',
+        activity: '活動ヒートマップ'
       },
       form: {
         titleAdd: '思い出を記録',
@@ -1050,7 +1059,7 @@ const resources = {
         introText: '今年は忘れられない瞬間、笑い、そして成長に満ちていました。これが {{year}} 年のハイライトです。',
         toBeContinued: 'つづく...',
         yearBook: 'イヤーブック',
-        myPhotoDiary: '私のフォトダイアリー',
+        myPhotoDiary: '私のEchoes',
         clickToPreview: 'クリックしてプレビュー',
         editorTitle: 'ブックの内容を編集',
         content: 'コンテンツ',
@@ -1173,16 +1182,16 @@ const resources = {
       legal: {
         back: '뒤로',
         about: {
-          title: 'Photo Diary 소개',
-          intro1: 'Photo Diary는 단순한 믿음에서 시작되었습니다: <strong>모든 순간은 소중합니다.</strong>',
-          intro2: '빠르게 흘러가는 세상 속에서 하루는 일주일이 되고, 일주일은 일 년이 됩니다. 우리는 종종 완벽한 커피 한 잔, 아름다운 노을, 친구와의 웃음 같은 작은 기쁨들을 잊고 삽니다. Photo Diary는 당신이 잠시 멈춰 서서 이 찰나의 순간들을 기록하고 간직할 수 있도록 돕습니다.',
+          title: 'Echoes 소개',
+          intro1: 'Echoes는 단순한 믿음에서 시작되었습니다: <strong>모든 순간은 소중합니다.</strong>',
+          intro2: '빠르게 흘러가는 세상 속에서 하루는 일주일이 되고, 일주일은 일 년이 됩니다. 우리는 종종 완벽한 커피 한 잔, 아름다운 노을, 친구와의 웃음 같은 작은 기쁨들을 잊고 삽니다. Echoes는 당신이 잠시 멈춰 서서 이 찰나의 순간들을 기록하고 간직할 수 있도록 돕습니다.',
           missionTitle: '우리의 미션',
           missionText: '당신의 인생 여정을 기록할 수 있는 사적이고 아름답고 지능적인 공간을 제공하는 것입니다. 우리는 과거를 되돌아봄으로써 현재를 더 충실하게 살 수 있다고 믿습니다.'
         },
         privacy: {
           title: '개인정보처리방침',
           lastUpdated: '최종 업데이트: 2026년 1월',
-          intro: 'Photo Diary는 당신의 개인정보를 매우 중요하게 생각합니다. 당신의 추억은 지극히 개인적인 것이며, 그렇게 유지되어야 합니다.',
+          intro: 'Echoes는 당신의 개인정보를 매우 중요하게 생각합니다. 당신의 추억은 지극히 개인적인 것이며, 그렇게 유지되어야 합니다.',
           collectionTitle: '1. 데이터 수집',
           collectionText: '우리는 서비스 제공에 필요한 최소한의 정보(사진, 일기 내용, 기본 계정 정보)만을 수집합니다. 당신의 개인 데이터를 제3자에게 판매하지 않습니다.',
           aiTitle: '2. AI 기능',
@@ -1192,13 +1201,13 @@ const resources = {
           title: '이용약관',
           lastUpdated: '최종 업데이트: 2026년 1월',
           acceptanceTitle: '1. 약관 동의',
-          acceptanceText: 'Photo Diary를 이용함으로써 당신은 본 계약의 약관 및 규정을 준수하는 데 동의하게 됩니다.',
+          acceptanceText: 'Echoes를 이용함으로써 당신은 본 계약의 약관 및 규정을 준수하는 데 동의하게 됩니다.',
           conductTitle: '2. 사용자 행동',
           conductText: '당신은 합법적인 목적으로만 서비스를 이용하는 데 동의합니다. 당신의 계정에서 게시된 모든 콘텐츠와 발생한 활동에 대한 책임은 당신에게 있습니다.'
         }
       },
       welcome: {
-        title: 'Photo Diary에 오신 것을 환영합니다',
+        title: 'Echoes에 오신 것을 환영합니다',
         quote: '"인생은 우리가 쉰 숨의 횟수가 아니라, 숨 막힐 듯 아름다웠던 순간들로 측정된다."',
         subtitle: '당신의 삶을 기록하고, 추억을 소중히 여기며, 모든 순간을 사랑하세요.',
         start: '여정 시작하기'
@@ -1230,7 +1239,7 @@ const resources = {
       },
       changelog: {
         title: '업데이트 내역',
-        subtitle: 'Photo Diary의 성장 기록',
+        subtitle: 'Echoes의 성장 기록',
         share: '추억 공유하기',
         milestones: '인생 마일스톤',
         garden3d: '마음의 정원 3D',
@@ -1298,7 +1307,7 @@ const resources = {
         contact: '문의하기',
         madeWith: 'Made with',
         forLovers: 'for life lovers',
-        rights: 'Photo Diary'
+        rights: 'Echoes'
       },
       timeline: {
         title: '타임라인',
@@ -1325,13 +1334,16 @@ const resources = {
         yearInPixels: '무드 픽셀',
         pixelDesc: '픽셀 하나하나가 당신의 하루입니다.',
         noData: '데이터 없음',
+        startWriting: '첫 번째 일기를 작성하여 통계를 확인하세요.',
         mood: '기분',
         stats: '통계',
-        totalEntries: '총 기록',
+        totalMemories: '총 추억',
         totalTags: '태그 수',
         currentStreak: '연속 기록',
         topMood: '주요 기분',
-        placesVisited: '방문한 장소'
+        topLocation: '자주 간 장소',
+        moodDistribution: '기분 분포',
+        activity: '활동 히트맵'
       },
       form: {
         titleAdd: '새로운 기록',
@@ -1391,7 +1403,7 @@ const resources = {
         introText: '올해는 잊지 못할 순간과 웃음, 성장으로 가득했습니다. {{year}}년의 여정 하이라이트입니다.',
         toBeContinued: '계속...',
         yearBook: '이어북',
-        myPhotoDiary: '나의 포토 다이어리',
+        myPhotoDiary: '나의 Echoes',
         clickToPreview: '클릭하여 미리보기',
         editorTitle: '포토북 내용 편집',
         content: '콘텐츠',

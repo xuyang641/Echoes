@@ -430,7 +430,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30 transition-colors duration-300">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 sticky top-0 z-30 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
@@ -438,20 +438,20 @@ function AppContent() {
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">Photo Diary</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Capture your daily moments</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">Echoes</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block" style={{ fontFamily: '"Dancing Script", cursive' }}>Capture your daily moments</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1 justify-end">
+              <div className="hidden md:flex items-center gap-3 shrink-0">
                  <InstallButton />
                  <ThemeSelector />
-                 {!isAddOrEdit && <ExportMenu entries={entries} />}
+                 {!isAddOrEdit && <div className="shrink-0"><ExportMenu entries={entries} /></div>}
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl transition-colors">
+              <nav className="hidden md:flex gap-2 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm p-1 rounded-xl transition-colors overflow-x-auto max-w-full no-scrollbar">
                 {[
                   { path: '/', icon: BookOpen, label: 'nav.timeline' },
                   { path: '/calendar', icon: Calendar, label: 'nav.calendar' },
@@ -465,9 +465,9 @@ function AppContent() {
                   <button
                     key={item.path}
                     onClick={() => navigate(item.path)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all whitespace-nowrap ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all whitespace-nowrap shrink-0 ${
                       location.pathname === item.path
-                        ? `bg-white dark:bg-gray-700 shadow-sm ${item.color || 'text-gray-900 dark:text-white'}`
+                        ? `bg-white/80 dark:bg-gray-700/80 shadow-sm backdrop-blur-sm ${item.color || 'text-gray-900 dark:text-white'}`
                         : `${item.color ? 'text-gray-500 dark:text-gray-400 hover:' + item.color.split(' ')[0] : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`
                     }`}
                   >
@@ -479,7 +479,7 @@ function AppContent() {
 
               <button
                 onClick={() => navigate('/add')}
-                className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors"
+                className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0"
               >
                 <PlusCircle className="w-4 h-4" />
                 <span>{t('nav.add')}</span>
@@ -496,7 +496,7 @@ function AppContent() {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                className="md:hidden p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg shrink-0"
               >
                 {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>

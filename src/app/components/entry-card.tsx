@@ -52,13 +52,13 @@ export function EntryCard({ entry, onDelete }: EntryCardProps) {
 
   return (
     <>
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out border border-gray-100 dark:border-gray-700">
       {/* Photo */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <LazyImage 
           src={entry.photo} 
           alt={entry.caption}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
         {/* Action buttons - appear on hover */}
         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
@@ -124,7 +124,7 @@ export function EntryCard({ entry, onDelete }: EntryCardProps) {
         </div>
 
         {/* Caption */}
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-serif tracking-wide" style={{ fontFamily: '"Noto Serif", "Noto Serif SC", serif' }}>
           {entry.caption}
         </p>
 
@@ -132,12 +132,26 @@ export function EntryCard({ entry, onDelete }: EntryCardProps) {
         {((entry.tags && entry.tags.length > 0) || (entry.aiTags && entry.aiTags.length > 0)) && (
           <div className="flex flex-wrap gap-1.5 pt-2">
             {entry.tags?.map(tag => (
-              <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
+              <span 
+                key={tag} 
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300"
+                style={entry.palette ? { 
+                  backgroundColor: `${entry.palette.dominant}20`, 
+                  color: entry.palette.darkVibrant || entry.palette.dominant 
+                } : undefined}
+              >
                 #{tag}
               </span>
             ))}
             {entry.aiTags?.map(tag => (
-              <span key={`ai-${tag}`} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300">
+              <span 
+                key={`ai-${tag}`} 
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300"
+                style={entry.palette ? { 
+                  backgroundColor: `${entry.palette.vibrant}20`, 
+                  color: entry.palette.darkVibrant || entry.palette.vibrant 
+                } : undefined}
+              >
                 <Sparkles className="w-2 h-2 mr-1" />
                 {tag}
               </span>

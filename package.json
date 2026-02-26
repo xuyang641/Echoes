@@ -1,14 +1,21 @@
 {
-  "name": "photo-diary-app",
+  "name": "echoes",
   "description": "A private, beautiful, and intelligent space to capture life moments. Features AI insights, smart tagging, and map visualization.",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "android": "npx cap run android",
+    "ios": "npx cap run ios",
+    "sync": "npm run build && npx cap sync"
   },
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/ios": "^8.1.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@google/generative-ai": "^0.24.1",
