@@ -17,7 +17,21 @@ A private, beautiful, and intelligent space to document your life's journey, now
 
 ---
 
-## 🇬🇧 English Introduction
+## 📸 Screenshots / 项目截图
+
+<div align="center">
+  <img src="public/screenshots/screenshot1.png" width="45%" alt="Print Shop" />
+  <img src="public/screenshots/screenshot2.png" width="45%" alt="Map View" />
+</div>
+<div align="center">
+  <img src="public/screenshots/screenshot3.png" width="45%" alt="New Entry" />
+  <img src="public/screenshots/screenshot4.png" width="45%" alt="Editor" />
+</div>
+
+---
+
+<details>
+<summary><strong>🇬🇧 English Introduction (Click to Expand)</strong></summary>
 
 ### ✨ About
 
@@ -48,9 +62,12 @@ With powerful **AI Insights**, **Smart Tagging**, and a beautiful **Timeline**, 
 - **Backend**: Supabase (Edge Functions, Storage, Database)
 - **Internationalization**: i18next (English, Chinese, Japanese, Korean)
 
+</details>
+
 ---
 
-## 🇨🇳 中文介绍
+<details open>
+<summary><strong>🇨🇳 中文介绍 (点击收起)</strong></summary>
 
 ### ✨ 关于 Echoes
 
@@ -80,6 +97,8 @@ With powerful **AI Insights**, **Smart Tagging**, and a beautiful **Timeline**, 
 - **地图**: Leaflet / React-Leaflet (集成高德地图源)
 - **后端**: Supabase (Edge Functions, Storage, Database)
 - **国际化**: i18next (支持中、英、日、韩四语言)
+
+</details>
 
 ---
 
