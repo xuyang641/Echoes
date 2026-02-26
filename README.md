@@ -13,7 +13,7 @@ A private, beautiful, and intelligent space to document your life's journey, now
 [![Vite](https://img.shields.io/badge/Vite-6-purple?logo=vite)](https://vitejs.dev/)
 [![Capacitor](https://img.shields.io/badge/Capacitor-Mobile-blue?logo=capacitor)](https://capacitorjs.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Backend-green?logo=supabase)](https://supabase.com/)
-[![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ---
 
@@ -166,8 +166,8 @@ We welcome contributions! Please follow these steps:
 
 ## 📄 License / 许可协议
 
-This project is proprietary software. All rights reserved.
-本项目为专有软件，保留所有权利。
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+本项目基于 MIT 协议开源 - 详见 [LICENSE](LICENSE) 文件。
 
 ## 📞 Contact / 联系方式
 
