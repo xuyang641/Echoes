@@ -20,11 +20,11 @@ A private, beautiful, and intelligent space to document your life's journey, now
 ## 📸 Screenshots / 项目截图
 
 <div align="center">
-  <img src="public/screenshots/screenshot1.png" width="45%" alt="Print Shop" />
+  <img src="public/screenshots/screenshot3.png" width="45%" alt="New Entry" />
   <img src="public/screenshots/screenshot2.png" width="45%" alt="Map View" />
 </div>
 <div align="center">
-  <img src="public/screenshots/screenshot3.png" width="45%" alt="New Entry" />
+  <img src="public/screenshots/screenshot1.png" width="45%" alt="Print Shop" />
   <img src="public/screenshots/screenshot4.png" width="45%" alt="Editor" />
 </div>
 
