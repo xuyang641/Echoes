@@ -90,7 +90,7 @@ export function MoodPixelGrid({ entries, className = "" }: MoodPixelGridProps) {
         <div className="min-w-max">
           {/* Month Labels */}
           <div className="flex mb-2 text-[10px] font-medium text-zinc-400 relative h-4">
-            {monthLabels.map((m, i) => (
+            {monthLabels.map((m) => (
               <div 
                 key={m.label} 
                 className="absolute"
@@ -120,9 +120,9 @@ export function MoodPixelGrid({ entries, className = "" }: MoodPixelGridProps) {
                         key={dIndex}
                         data-tooltip-id="pixel-tooltip"
                         data-tooltip-content={day ? `${format(day.date, 'MMM do, yyyy')}: ${day.entry?.mood ? t(`moods.${day.entry.mood.toLowerCase()}`, day.entry.mood) : t('insights.noData')}` : ''}
-                        className={`w-[10px] h-[10px] rounded-[2px] transition-all duration-300 ${day ? 'hover:scale-125 hover:z-10 cursor-pointer' : 'opacity-0'}`}
+                        className={`w-[10px] h-[10px] rounded-[2px] transition-all duration-300 ${day ? 'bg-zinc-100 dark:bg-zinc-800 hover:scale-125 hover:z-10 cursor-pointer' : 'opacity-0'}`}
                         style={{ 
-                          backgroundColor: day?.entry ? getMoodColor(day.entry.mood) : (day ? 'var(--color-zinc-100)' : 'transparent') 
+                          backgroundColor: day?.entry ? getMoodColor(day.entry.mood) : undefined 
                         }}
                       />
                     );
@@ -134,13 +134,6 @@ export function MoodPixelGrid({ entries, className = "" }: MoodPixelGridProps) {
         </div>
       </div>
       <Tooltip id="pixel-tooltip" className="z-50 !bg-zinc-900 !text-white !rounded-lg !text-xs !py-1 !px-3 !shadow-xl !opacity-100" />
-      
-      {/* Fallback style for light mode empty cells since we can't easily use tailwind vars in style prop without defining them */}
-      <style>{`
-        .dark [data-tooltip-id] {
-          background-color: #27272a !important; /* zinc-800 */
-        }
-      `}</style>
     </div>
   );
 }

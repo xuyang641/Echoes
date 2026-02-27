@@ -1,12 +1,12 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DiaryEntry } from './diary-entry-form';
 import L from 'leaflet';
 import 'leaflet.heat'; // Import heatmap plugin
 import { useNavigate } from 'react-router-dom';
-import { format, isSameDay, isWithinInterval, startOfDay, endOfDay, parseISO } from 'date-fns';
-import { Filter, Search, User, Play, Pause, Flame, Map as MapIcon, Heart, MessageCircle, Send, X } from 'lucide-react';
+import { format, isSameDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { Filter, User, Play, Pause, Flame, Heart, MessageCircle, Send } from 'lucide-react';
 import { useGroup } from '../context/GroupContext';
 import { useAuth } from '../context/AuthContext';
 import { GroupManager } from './group-manager';
@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { MOODS } from '../utils/mood-constants';
 import { LazyImage } from './ui/lazy-image';
 import { wgs84ToGcj02 } from '../utils/coord-transform';
+import { motion } from 'framer-motion';
 
 // Fix for default Leaflet icon not finding images
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -212,6 +213,41 @@ const createCustomIcon = (color: string, avatar?: string) => {
   });
 };
 
+// Viewport Manager Component to handle visible markers
+function MapViewportManager({ entries, onBoundsChange }: { entries: DiaryEntry[], onBoundsChange: (visible: DiaryEntry[]) => void }) {
+  const map = useMap();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateVisibleEntries = useCallback(() => {
+    if (!map) return;
+    const bounds = map.getBounds();
+    const visible = entries.filter(entry => {
+        if (!entry.location) return false;
+        const [lat, lng] = wgs84ToGcj02(entry.location.lat, entry.location.lng);
+        return bounds.contains([lat, lng]);
+    });
+    onBoundsChange(visible);
+  }, [map, entries, onBoundsChange]);
+
+  useMapEvents({
+    moveend: () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(updateVisibleEntries, 300); // Debounce
+    },
+    zoomend: () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(updateVisibleEntries, 300);
+    }
+  });
+
+  // Initial update
+  useEffect(() => {
+    updateVisibleEntries();
+  }, [entries]); // Update when entries change (e.g. filter)
+
+  return null;
+}
+
 interface MapViewProps {
   entries: DiaryEntry[];
   onUpdateEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
@@ -346,7 +382,7 @@ function MapEntryPopup({ entry, onUpdateEntry }: { entry: DiaryEntry, onUpdateEn
                         </div>
                     ))
                 ) : (
-                    <p className="text-xs text-gray-400 text-center py-2">No comments yet</p>
+                    <p className="text-xs text-gray-400 text-center py-2">暂无评论</p>
                 )}
             </div>
             
@@ -356,7 +392,7 @@ function MapEntryPopup({ entry, onUpdateEntry }: { entry: DiaryEntry, onUpdateEn
                     type="text"
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Write a comment..."
+                    placeholder="写下评论..."
                     className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500"
                     onClick={(e) => e.stopPropagation()}
                 />
@@ -375,17 +411,230 @@ function MapEntryPopup({ entry, onUpdateEntry }: { entry: DiaryEntry, onUpdateEn
   );
 }
 
+interface MapControlsContentProps {
+  t: any;
+  dateFilter: 'all' | 'today' | 'range';
+  setDateFilter: (val: 'all' | 'today' | 'range') => void;
+  startDate: string;
+  setStartDate: (val: string) => void;
+  endDate: string;
+  setEndDate: (val: string) => void;
+  selectedMood: string;
+  setSelectedMood: (val: string) => void;
+  tagInput: string;
+  setTagInput: (val: string) => void;
+  selectedTag: string;
+  setSelectedTag: (val: string) => void;
+  isTagDropdownOpen: boolean;
+  setIsTagDropdownOpen: (val: boolean) => void;
+  allTags: string[];
+  filteredEntriesCount: number;
+  showHeatmap: boolean;
+  setShowHeatmap: (val: boolean) => void;
+  isPlayingRoute: boolean;
+  setIsPlayingRoute: (val: boolean) => void;
+  canPlayRoute: boolean;
+}
+
+function MapControlsContent({
+  t,
+  dateFilter, setDateFilter,
+  startDate, setStartDate,
+  endDate, setEndDate,
+  selectedMood, setSelectedMood,
+  tagInput, setTagInput,
+  selectedTag, setSelectedTag,
+  isTagDropdownOpen, setIsTagDropdownOpen,
+  allTags,
+  filteredEntriesCount,
+  showHeatmap, setShowHeatmap,
+  isPlayingRoute, setIsPlayingRoute,
+  canPlayRoute
+}: MapControlsContentProps) {
+  return (
+    <div className="flex flex-col gap-4">
+      <GroupManager />
+      
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <Filter className="w-4 h-4 text-blue-500" />
+        {t('filters.title')}
+      </h3>
+      
+      {/* Date Filter */}
+      <div className="space-y-2">
+        <label className="text-xs text-gray-500 font-medium">{t('filters.dateRange')}</label>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => setDateFilter('all')}
+            className={`px-3 py-2 text-xs rounded-lg transition-all text-left ${
+              dateFilter === 'all' 
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
+                : 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            {t('filters.allTime')}
+          </button>
+          <button
+            onClick={() => setDateFilter('today')}
+            className={`px-3 py-2 text-xs rounded-lg transition-all text-left ${
+              dateFilter === 'today' 
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
+                : 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            {t('filters.today')}
+          </button>
+          <button
+            onClick={() => setDateFilter('range')}
+            className={`px-3 py-2 text-xs rounded-lg transition-all text-left ${
+              dateFilter === 'range' 
+                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
+                : 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            {t('filters.custom')}
+          </button>
+        </div>
+
+        {dateFilter === 'range' && (
+          <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 pt-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 w-8">From</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="flex-1 px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 w-8">至</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="flex-1 px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mood Filter */}
+      <div className="space-y-2">
+        <label className="text-xs text-gray-500 font-medium">{t('filters.mood')}</label>
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button
+                onClick={() => setSelectedMood('All')}
+                className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
+                    selectedMood === 'All'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+            >
+                {t('timeline.all')}
+            </button>
+            {MOODS.map(mood => (
+                <button
+                    key={mood.name}
+                    onClick={() => setSelectedMood(mood.name)}
+                    className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors border ${
+                        selectedMood === mood.name
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                >
+                    <mood.icon className="w-4 h-4" />
+                    <span>{t(`moods.${mood.name.toLowerCase()}`, mood.name)}</span>
+                </button>
+            ))}
+        </div>
+      </div>
+
+      {/* Tag Filter */}
+      <div className="space-y-2">
+        <label className="text-xs text-gray-500 font-medium">{t('filters.tag')}</label>
+        <div className="relative">
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => {
+              setTagInput(e.target.value);
+              setSelectedTag(e.target.value);
+              setIsTagDropdownOpen(true);
+            }}
+            onFocus={() => setIsTagDropdownOpen(true)}
+            onBlur={() => setTimeout(() => setIsTagDropdownOpen(false), 200)}
+            placeholder={t('filters.searchTags')}
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+          />
+          {selectedTag && (
+            <button 
+              onClick={() => { setSelectedTag(''); setTagInput(''); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              ×
+            </button>
+          )}
+          {isTagDropdownOpen && allTags.length > 0 && (
+            <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto z-20">
+              {allTags.filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase())).map(tag => (
+                <div
+                  key={tag}
+                  className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer"
+                  onClick={() => { setSelectedTag(tag); setTagInput(tag); setIsTagDropdownOpen(false); }}
+                >
+                  #{tag}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className="pt-2 border-t border-gray-100 dark:border-gray-700 text-xs text-center text-gray-500 dark:text-gray-400">
+        {t('filters.found', { count: filteredEntriesCount })}
+      </div>
+
+      {/* New Map Features Control */}
+      <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-2">
+        <h4 className="text-xs font-medium text-gray-500">{t('map.features')}</h4>
+        <button
+            onClick={() => setShowHeatmap(!showHeatmap)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                showHeatmap 
+                ? 'bg-orange-100 text-orange-700 border border-orange-200' 
+                : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
+        >
+            <Flame className={`w-4 h-4 ${showHeatmap ? 'fill-orange-500' : ''}`} />
+            {showHeatmap ? t('map.hideHeatmap') : t('map.showHeatmap')}
+        </button>
+        <button
+            onClick={() => setIsPlayingRoute(!isPlayingRoute)}
+            disabled={!canPlayRoute}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                isPlayingRoute 
+                ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+            } ${!canPlayRoute ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+            {isPlayingRoute ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+            {isPlayingRoute ? t('map.stopPlayback') : t('map.playRoute')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function MapView({ entries, onUpdateEntry }: MapViewProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { groups, currentGroupId, getGroupEntries } = useGroup();
+  const { currentGroupId, getGroupEntries } = useGroup();
   const [selectedMood, setSelectedMood] = useState('All');
   const [selectedTag, setSelectedTag] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
   
-  // Shared Mode State
-  const [isSharedMode, setIsSharedMode] = useState(false);
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'range'>('all');
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -393,6 +642,12 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
   // New Features State
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [isPlayingRoute, setIsPlayingRoute] = useState(false);
+  
+  // Mobile UI State
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+
+  // Visible entries in viewport
+  const [visibleMarkers, setVisibleMarkers] = useState<DiaryEntry[]>([]);
 
   // Combine entries based on group selection
   const allEntries = useMemo(() => {
@@ -449,170 +704,32 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
       })()
     : [20, 0];
 
+  const controlsProps = {
+    t,
+    dateFilter, setDateFilter,
+    startDate, setStartDate,
+    endDate, setEndDate,
+    selectedMood, setSelectedMood,
+    tagInput, setTagInput,
+    selectedTag, setSelectedTag,
+    isTagDropdownOpen, setIsTagDropdownOpen,
+    allTags,
+    filteredEntriesCount: filteredEntries.length,
+    showHeatmap, setShowHeatmap,
+    isPlayingRoute, setIsPlayingRoute,
+    canPlayRoute: filteredEntries.length >= 2
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-140px)]">
-      {/* Sidebar Controls */}
-      <div className="lg:col-span-1 space-y-4 h-full overflow-y-auto pr-2">
-        <GroupManager />
-        
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm flex flex-col gap-4 border border-gray-100 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Filter className="w-4 h-4 text-blue-500" />
-            {t('filters.title')}
-          </h3>
-          
-          {/* Date Filter */}
-          <div className="space-y-2">
-            <label className="text-xs text-gray-500 font-medium">{t('filters.dateRange')}</label>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => setDateFilter('all')}
-                className={`px-3 py-2 text-xs rounded-lg transition-all text-left ${
-                  dateFilter === 'all' 
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
-                    : 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100'
-                }`}
-              >
-                {t('filters.allTime')}
-              </button>
-              <button
-                onClick={() => setDateFilter('today')}
-                className={`px-3 py-2 text-xs rounded-lg transition-all text-left ${
-                  dateFilter === 'today' 
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
-                    : 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100'
-                }`}
-              >
-                {t('filters.today')}
-              </button>
-              <button
-                onClick={() => setDateFilter('range')}
-                className={`px-3 py-2 text-xs rounded-lg transition-all text-left ${
-                  dateFilter === 'range' 
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
-                    : 'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100'
-                }`}
-              >
-                {t('filters.custom')}
-              </button>
-            </div>
-
-            {dateFilter === 'range' && (
-              <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 pt-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400 w-8">From</span>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400 w-8">To</span>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Mood Filter */}
-          <div className="space-y-2">
-            <label className="text-xs text-gray-500 font-medium">{t('filters.mood')}</label>
-            <select
-              value={selectedMood}
-              onChange={(e) => setSelectedMood(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-            >
-              <option value="All">{t('timeline.all')}</option>
-              {MOODS.map(mood => (
-                <option key={mood.name} value={mood.name}>{t(`moods.${mood.name.toLowerCase()}`, mood.name)}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tag Filter */}
-          <div className="space-y-2">
-            <label className="text-xs text-gray-500 font-medium">{t('filters.tag')}</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => {
-                  setTagInput(e.target.value);
-                  setSelectedTag(e.target.value);
-                  setIsTagDropdownOpen(true);
-                }}
-                onFocus={() => setIsTagDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setIsTagDropdownOpen(false), 200)}
-                placeholder={t('filters.searchTags')}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-              />
-              {selectedTag && (
-                <button 
-                  onClick={() => { setSelectedTag(''); setTagInput(''); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  ×
-                </button>
-              )}
-              {isTagDropdownOpen && allTags.length > 0 && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto z-20">
-                  {allTags.filter(tag => tag.toLowerCase().includes(tagInput.toLowerCase())).map(tag => (
-                    <div
-                      key={tag}
-                      className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer"
-                      onClick={() => { setSelectedTag(tag); setTagInput(tag); setIsTagDropdownOpen(false); }}
-                    >
-                      #{tag}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="pt-2 border-t border-gray-100 dark:border-gray-700 text-xs text-center text-gray-500 dark:text-gray-400">
-            {t('filters.found', { count: filteredEntries.length })}
-          </div>
-
-          {/* New Map Features Control */}
-          <div className="pt-2 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-2">
-            <h4 className="text-xs font-medium text-gray-500">{t('map.features')}</h4>
-            <button
-                onClick={() => setShowHeatmap(!showHeatmap)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    showHeatmap 
-                    ? 'bg-orange-100 text-orange-700 border border-orange-200' 
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                }`}
-            >
-                <Flame className={`w-4 h-4 ${showHeatmap ? 'fill-orange-500' : ''}`} />
-                {showHeatmap ? t('map.hideHeatmap') : t('map.showHeatmap')}
-            </button>
-            <button
-                onClick={() => setIsPlayingRoute(!isPlayingRoute)}
-                disabled={filteredEntries.length < 2}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    isPlayingRoute 
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200' 
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                } ${filteredEntries.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-                {isPlayingRoute ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
-                {isPlayingRoute ? t('map.stopPlayback') : t('map.playRoute')}
-            </button>
-          </div>
-        </div>
+    <div className="relative h-[calc(100vh-140px)] md:h-[calc(100vh-140px)] lg:grid lg:grid-cols-4 lg:gap-6 overflow-hidden">
+      
+      {/* Sidebar Controls - Desktop Only */}
+      <div className="hidden lg:block lg:col-span-1 lg:h-full lg:overflow-y-auto lg:pr-2 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <MapControlsContent {...controlsProps} />
       </div>
 
-      {/* Map Area */}
-      <div className="lg:col-span-3 h-full rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 relative z-0">
+      {/* Map Area - Mobile: Full Screen Absolute; Desktop: Col-span-3 */}
+      <div className="absolute inset-0 lg:static lg:col-span-3 lg:h-full rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 z-0">
         <MapContainer 
           key={`${defaultCenter[0]}-${defaultCenter[1]}`} 
           center={defaultCenter} 
@@ -636,6 +753,14 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
               />
           )}
 
+          {/* Viewport Manager */}
+          {!showHeatmap && !isPlayingRoute && (
+            <MapViewportManager 
+                entries={filteredEntries} 
+                onBoundsChange={setVisibleMarkers} 
+            />
+          )}
+
           {/* Route Playback */}
           <RoutePlayback 
               entries={filteredEntries} 
@@ -643,14 +768,9 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
               onStop={() => setIsPlayingRoute(false)} 
           />
 
-          {/* Normal Markers (Hidden when playing route for cleaner view? Or kept? Let's keep them but maybe dim them? For now keep them) */}
-          {!showHeatmap && !isPlayingRoute && filteredEntries.map(entry => {
-            // Determine marker color based on user
-            // Default user (me) = Blue, Partner = Pink, Others = Orange
+          {/* Normal Markers - Render ONLY visible ones */}
+          {!showHeatmap && !isPlayingRoute && visibleMarkers.map(entry => {
             let markerColor = '#3b82f6'; // blue-500
-            
-            // If viewing a group, try to use group color for members? Or user specific?
-            // Let's stick to user differentiation for now
             if (entry.userId === 'user-2') markerColor = '#ec4899'; // pink-500
             if (entry.userId === 'user-3') markerColor = '#f97316'; // orange-500
             if (entry.userId === 'user-4') markerColor = '#10b981'; // green-500
@@ -671,6 +791,46 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
           })}
         </MapContainer>
       </div>
+
+      {/* Mobile Bottom Sheet Controls */}
+      <motion.div
+        className="lg:hidden absolute bottom-0 left-0 right-0 z-[1000] bg-white dark:bg-gray-800 rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] flex flex-col h-[85%]"
+        initial="collapsed"
+        animate={isSheetExpanded ? "expanded" : "collapsed"}
+        variants={{
+            collapsed: { y: "calc(100% - 70px)" }, // Show 70px header
+            expanded: { y: 0 }
+        }}
+        transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.05}
+        dragMomentum={false}
+        onDragEnd={(_, { offset, velocity }) => {
+            if (offset.y > 100 || velocity.y > 500) {
+                setIsSheetExpanded(false);
+            } else if (offset.y < -100 || velocity.y < -500) {
+                setIsSheetExpanded(true);
+            }
+        }}
+      >
+        {/* Drag Handle / Header */}
+        <div 
+            className="h-[70px] shrink-0 flex flex-col items-center justify-center border-b border-gray-100 dark:border-gray-700 relative cursor-grab active:cursor-grabbing bg-white dark:bg-gray-800 rounded-t-3xl"
+            onClick={() => setIsSheetExpanded(!isSheetExpanded)}
+        >
+            <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mb-3" />
+            <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-white">
+                <Filter className="w-4 h-4 text-blue-500" />
+                <span>{t('filters.title')} & 地图设置</span>
+            </div>
+        </div>
+
+        {/* Content (Scrollable) */}
+        <div className="flex-1 overflow-y-auto p-4 pb-24 bg-gray-50/50 dark:bg-gray-900/50">
+            <MapControlsContent {...controlsProps} />
+        </div>
+      </motion.div>
     </div>
   );
 }

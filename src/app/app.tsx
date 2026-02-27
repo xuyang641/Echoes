@@ -1,19 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, useParams } from 'react-router-dom';
-import { PlusCircle, BookOpen, Loader2, Calendar, LogOut, GitCommit, Map as MapIcon, Sparkles, Printer, UserCircle, Heart, Bot, Target, Menu, X } from 'lucide-react';
+import { PlusCircle, BookOpen, Loader2, Calendar, GitCommit, Map as MapIcon, Sparkles, Printer, UserCircle, Heart, Bot, Target, X, Home, Mail, Grid } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { DiaryEntryForm, type DiaryEntry } from './components/diary-entry-form';
 import { AIChatView } from './components/ai-chat-view';
-import { TimelineView } from './components/timeline-view';
-import { CalendarView } from './components/calendar-view';
-import { MapView } from './components/map-view';
-import { InsightsView } from './components/insights-view';
-import { MilestonesView } from './components/milestones-view';
-import { ExportMenu } from './components/export-menu';
-import { ChangelogView } from './components/changelog-view';
-import { PrintShopView } from './components/print-shop-view';
-import { AccountView } from './components/account-view';
-import { CoupleSplitView } from './components/couple-split-view';
+// Lazy load views
+const TimelineView = lazy(() => import('./components/timeline-view').then(module => ({ default: module.TimelineView })));
+const CalendarView = lazy(() => import('./components/calendar-view').then(module => ({ default: module.CalendarView })));
+const MapView = lazy(() => import('./components/map-view').then(module => ({ default: module.MapView })));
+const InsightsView = lazy(() => import('./components/insights-view').then(module => ({ default: module.InsightsView })));
+const MilestonesView = lazy(() => import('./components/milestones-view').then(module => ({ default: module.MilestonesView })));
+const ExportMenu = lazy(() => import('./components/export-menu').then(module => ({ default: module.ExportMenu })));
+const ChangelogView = lazy(() => import('./components/changelog-view').then(module => ({ default: module.ChangelogView })));
+const PrintShopView = lazy(() => import('./components/print-shop-view').then(module => ({ default: module.PrintShopView })));
+const AccountView = lazy(() => import('./components/account-view').then(module => ({ default: module.AccountView })));
+const CoupleSplitView = lazy(() => import('./components/couple-split-view').then(module => ({ default: module.CoupleSplitView })));
+const SharedBookView = lazy(() => import('./components/shared-book-view').then(module => ({ default: module.SharedBookView })));
+const AboutView = lazy(() => import('./components/legal-pages').then(module => ({ default: module.AboutView })));
+const PrivacyView = lazy(() => import('./components/legal-pages').then(module => ({ default: module.PrivacyView })));
+const TermsView = lazy(() => import('./components/legal-pages').then(module => ({ default: module.TermsView })));
+const SubscriptionView = lazy(() => import('./components/subscription-view').then(module => ({ default: module.SubscriptionView })));
+
 import { ThemeProvider } from './context/ThemeContext';
 import { GroupProvider } from './context/GroupContext';
 import { FriendProvider } from './context/FriendContext';
@@ -21,21 +28,15 @@ import { ThemeSelector } from './components/theme-selector';
 import { InstallButton } from './components/install-button';
 import { WelcomeModal } from './components/welcome-modal';
 import { Footer } from './components/footer';
-import { AboutView, PrivacyView, TermsView } from './components/legal-pages';
-import { SubscriptionView } from './components/subscription-view';
 import { fetchEntries, createEntry, deleteEntry, updateEntry } from './utils/api';
 import { useAuth } from './context/AuthContext';
-import { useGroup } from './context/GroupContext';
 import { supabase } from './utils/supabaseClient';
 import { LoginForm } from './components/auth/login-form';
 import { offlineStorage } from './services/offline-storage';
-
 import { useTranslation } from 'react-i18next';
 import { ReloadPrompt } from './components/reload-prompt';
-
 import { AnimatePresence, motion } from 'framer-motion';
-
-import { SharedBookView } from './components/shared-book-view';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const PageTransition = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -64,8 +65,7 @@ export default function App() {
 
 function AppContent() {
   const { t } = useTranslation();
-  const { user, loading: authLoading, signOut } = useAuth();
-  const { currentGroupId } = useGroup();
+  const { user, loading: authLoading } = useAuth();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,15 +83,111 @@ function AppContent() {
     }
   }, [searchParams, navigate]);
 
+  // Handle Deep Links (OAuth Callback)
+  useEffect(() => {
+    CapacitorApp.addListener('appUrlOpen', (data) => {
+      console.log('App opened with URL:', data.url);
+      
+      // Handle Supabase Auth Callback
+      if (data.url.includes('login-callback')) {
+        // Extract tokens from URL fragment if present (implicit flow)
+        // or just let Supabase client handle the session recovery if it detected the URL opening
+        
+        // Specifically for PKCE flow which is default in recent Supabase:
+        // The URL usually looks like: com.echoes.app://login-callback#access_token=...&refresh_token=...
+        
+        const params = new URLSearchParams(data.url.split('#')[1]);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken && refreshToken) {
+            supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+            }).then(({ error }) => {
+                if (!error) {
+                    toast.success('Successfully logged in!');
+                    navigate('/');
+                } else {
+                    toast.error('Login failed: ' + error.message);
+                }
+            });
+        }
+      }
+    });
+
+    return () => {
+        CapacitorApp.removeAllListeners();
+    };
+  }, [navigate]);
+
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // --- Swipe Navigation Logic ---
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Define the order of tabs for swipe navigation
+  const tabs = ['/', '/calendar', '/map', '/insights', '/couple', '/milestones'];
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    // Disable swipe navigation on Map view to prevent conflict with map panning
+    if (location.pathname === '/map') return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe || isRightSwipe) {
+      const currentIndex = tabs.indexOf(location.pathname);
+      if (currentIndex !== -1) {
+        if (isLeftSwipe && currentIndex < tabs.length - 1) {
+          navigate(tabs[currentIndex + 1]);
+        }
+        if (isRightSwipe && currentIndex > 0) {
+          navigate(tabs[currentIndex - 1]);
+        }
+      }
+    }
+  };
+  // ------------------------------
+
+  // Scroll detection for AI Button visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY) {
+        setScrollDirection('down');
+      } else {
+        setScrollDirection('up');
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   const FloatingAIButton = () => (
     <button
       onClick={() => setIsAIChatOpen(true)}
-      className="fixed bottom-24 right-6 md:bottom-6 md:right-6 z-40 p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
+      className={`fixed right-6 z-40 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group ${
+        scrollDirection === 'down' ? 'translate-x-24 opacity-50' : 'translate-x-0 opacity-100'
+      } bottom-24 md:bottom-6`}
     >
-      <Bot className="w-6 h-6 animate-pulse" />
-      <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-        Chat with Memories
-      </span>
+      <Bot className="w-6 h-6" />
     </button>
   );
 
@@ -195,10 +291,7 @@ function AppContent() {
       // 2. Save to Private (Edge Function / API) if selected
       if (targetGroups.includes('private')) {
         console.log('Saving to Private Diary...');
-        promises.push(createEntry(payload).then(newEntry => {
-          // Update ID if server returns a real one (though we might use UUIDs on client)
-          // For now, assume client ID is fine or server returns same data
-        }));
+        promises.push(createEntry(payload));
       }
 
       // 3. Save to Groups (Supabase) if selected
@@ -434,9 +527,9 @@ function AppContent() {
   const isAddOrEdit = location.pathname === '/add' || location.pathname.startsWith('/edit');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
-      {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 sticky top-0 z-30 transition-all duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 pb-20 md:pb-0">
+      {/* Header - Desktop */}
+      <header className="hidden md:block bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 sticky top-0 z-30 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
@@ -444,20 +537,20 @@ function AppContent() {
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">Echoes</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block" style={{ fontFamily: '"Dancing Script", cursive' }}>Capture your daily moments</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">光阴</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block" style={{ fontFamily: '"Dancing Script", cursive' }}>记录你的日常点滴</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3 flex-1 justify-end">
-              <div className="hidden md:flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                  <InstallButton />
                  <ThemeSelector />
-                 {!isAddOrEdit && <div className="shrink-0"><ExportMenu entries={entries} /></div>}
+                 {!isAddOrEdit && <div className="shrink-0"><Suspense fallback={null}><ExportMenu entries={entries} /></Suspense></div>}
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex gap-2 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm p-1 rounded-xl transition-colors overflow-x-auto max-w-full no-scrollbar">
+              <nav className="flex gap-2 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm p-1 rounded-xl transition-colors overflow-x-auto max-w-full no-scrollbar">
                 {[
                   { path: '/', icon: BookOpen, label: 'nav.timeline' },
                   { path: '/calendar', icon: Calendar, label: 'nav.calendar' },
@@ -485,7 +578,7 @@ function AppContent() {
 
               <button
                 onClick={() => navigate('/add')}
-                className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0"
               >
                 <PlusCircle className="w-4 h-4" />
                 <span>{t('nav.add')}</span>
@@ -493,79 +586,149 @@ function AppContent() {
 
               <button
                 onClick={() => navigate('/account')}
-                className="hidden md:flex p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex-shrink-0"
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex-shrink-0"
                 title={t('nav.account')}
               >
                 <UserCircle className="w-5 h-5" />
               </button>
-              
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg shrink-0"
-              >
-                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Mobile Navigation Menu */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden shadow-xl"
-            >
-              <div className="px-4 py-6 space-y-6">
-                 <div className="flex items-center justify-between gap-4 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                     <InstallButton />
-                     <ThemeSelector />
-                     {!isAddOrEdit && <ExportMenu entries={entries} />}
-                 </div>
-                 
-                 <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { path: '/', icon: BookOpen, label: 'nav.timeline' },
-                      { path: '/add', icon: PlusCircle, label: 'nav.add' },
-                      { path: '/calendar', icon: Calendar, label: 'nav.calendar' },
-                      { path: '/map', icon: MapIcon, label: 'nav.map' },
-                      { path: '/couple', icon: Heart, label: 'nav.couple', color: 'text-pink-600 dark:text-pink-400' },
-                      { path: '/milestones', icon: Target, label: 'nav.milestones', color: 'text-amber-600 dark:text-amber-400' },
-                      { path: '/insights', icon: Sparkles, label: 'nav.insights' },
-                      { path: '/print', icon: Printer, label: 'nav.print' },
-                      { path: '/changelog', icon: GitCommit, label: 'nav.logs' },
-                      { path: '/account', icon: UserCircle, label: 'nav.account' },
-                    ].map(item => (
-                      <button
+      {/* Header - Mobile (Bilibili Style) */}
+      <header className="md:hidden bg-white dark:bg-gray-900 sticky top-0 z-30 transition-all duration-300 shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3 gap-3">
+            {/* Avatar (Left) */}
+            <div className="relative shrink-0" onClick={() => navigate('/account')}>
+                <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-100 dark:border-gray-800">
+                    {user?.user_metadata?.avatar_url ? (
+                        <img src={user.user_metadata.avatar_url} alt="User" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <UserCircle className="w-6 h-6 text-gray-400" />
+                        </div>
+                    )}
+                </div>
+                {/* Online Status Dot */}
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
+            </div>
+
+            {/* Search Bar (Center) */}
+            <div className="flex-1 flex justify-center items-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
+                    <BookOpen className="w-5 h-5 text-white" />
+                </div>
+            </div>
+
+            {/* Inbox / Messages (Right) */}
+            <button className="shrink-0 p-1 relative text-gray-600 dark:text-gray-300">
+                <Mail className="w-6 h-6" />
+                {/* Badge if needed */}
+                {/* <span className="absolute top-0 right-0 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500 transform translate-x-1/2 -translate-y-1/2"></span> */}
+            </button>
+        </div>
+        
+        {/* Scrollable Navigation Bar (Below Header) */}
+        <div className="px-2 pb-2 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex-1 overflow-x-auto no-scrollbar flex gap-4 pr-8">
+                {[
+                    { path: '/', label: 'nav.timeline', active: location.pathname === '/' },
+                    { path: '/calendar', label: 'nav.calendar', active: location.pathname === '/calendar' },
+                    { path: '/map', label: 'nav.map', active: location.pathname === '/map' },
+                    { path: '/insights', label: 'nav.insights', active: location.pathname === '/insights' },
+                    { path: '/couple', label: 'nav.couple', active: location.pathname === '/couple' },
+                    { path: '/milestones', label: 'nav.milestones', active: location.pathname === '/milestones' },
+                ].map((item) => (
+                    <button
                         key={item.path}
-                        onClick={() => {
-                            navigate(item.path);
-                            setIsMenuOpen(false);
-                        }}
-                        className={`flex items-center gap-3 p-4 rounded-xl text-sm transition-all border ${
-                          location.pathname === item.path
-                            ? `bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 font-medium ${item.color || 'text-gray-900 dark:text-white'}`
-                            : `border-transparent hover:bg-gray-50 dark:hover:bg-gray-800 ${item.color ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-400'}`
+                        onClick={() => navigate(item.path)}
+                        className={`whitespace-nowrap px-2 py-1 text-sm font-medium transition-colors relative shrink-0 ${
+                            item.active 
+                            ? 'text-pink-600 dark:text-pink-400' 
+                            : 'text-gray-600 dark:text-gray-400'
                         }`}
-                      >
-                        <item.icon className="w-5 h-5" />
-                        <span>{t(item.label)}</span>
-                      </button>
-                    ))}
-                 </div>
-              </div>
-            </motion.div>
-          )}
+                    >
+                        {t(item.label)}
+                        {item.active && (
+                            <motion.div 
+                                layoutId="activeTab"
+                                className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-600 dark:bg-pink-400 rounded-full" 
+                            />
+                        )}
+                    </button>
+                ))}
+            </div>
+            {/* Show All / More Button */}
+            <button 
+                onClick={() => setIsMenuOpen(true)}
+                className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full shrink-0"
+            >
+                <Grid className="w-4 h-4" />
+            </button>
+        </div>
+
+        {/* Mobile Menu Overlay (Full Functional Partitions) */}
+        <AnimatePresence>
+            {isMenuOpen && (
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="fixed inset-0 z-50 bg-white dark:bg-gray-900 pt-safe w-screen h-screen overflow-hidden overscroll-none"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="p-4 h-full flex flex-col">
+                        <div className="flex justify-between items-center mb-6 shrink-0">
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">全部功能</h2>
+                            <button onClick={() => setIsMenuOpen(false)} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
+                                <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                            </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-4 gap-4 pb-safe">
+                            {[
+                                { path: '/', icon: BookOpen, label: 'nav.timeline', color: 'bg-blue-100 text-blue-600' },
+                                { path: '/calendar', icon: Calendar, label: 'nav.calendar', color: 'bg-purple-100 text-purple-600' },
+                                { path: '/map', icon: MapIcon, label: 'nav.map', color: 'bg-green-100 text-green-600' },
+                                { path: '/insights', icon: Sparkles, label: 'nav.insights', color: 'bg-yellow-100 text-yellow-600' },
+                                { path: '/couple', icon: Heart, label: 'nav.couple', color: 'bg-pink-100 text-pink-600' },
+                                { path: '/milestones', icon: Target, label: 'nav.milestones', color: 'bg-orange-100 text-orange-600' },
+                                { path: '/print', icon: Printer, label: 'nav.print', color: 'bg-indigo-100 text-indigo-600' },
+                                { path: '/changelog', icon: GitCommit, label: 'nav.logs', color: 'bg-gray-100 text-gray-600' },
+                            ].map((item) => (
+                                <button
+                                    key={item.path}
+                                    onClick={() => { navigate(item.path); setIsMenuOpen(false); }}
+                                    className="flex flex-col items-center gap-2"
+                                >
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${item.color} dark:bg-opacity-20`}>
+                                        <item.icon className="w-6 h-6" />
+                                    </div>
+                                    <span className="text-xs text-center font-medium text-gray-600 dark:text-gray-300">{t(item.label)}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
         </AnimatePresence>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
+      <main 
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 min-h-[calc(100vh-140px)]"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        }>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
             <Route path="/" element={
               <PageTransition>
                 <TimelineView 
@@ -660,23 +823,15 @@ function AppContent() {
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </AnimatePresence>
+          </AnimatePresence>
+        </Suspense>
       </main>
 
-      {/* Floating Action Button - Mobile */}
-      {!isAddOrEdit && location.pathname !== '/changelog' && (
-        <button
-          onClick={() => navigate('/add')}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center md:hidden z-50"
-          aria-label="Add new entry"
-        >
-          <PlusCircle className="w-6 h-6" />
-        </button>
-      )}
-
+      {/* Floating Action Button - Mobile (REMOVED - Replaced by Bottom Nav) */}
+      
       {!isAddOrEdit && <FloatingAIButton />}
 
-      <AIChatView 
+      <AIChatView  
         entries={entries}
         isOpen={isAIChatOpen}
         onClose={() => setIsAIChatOpen(false)}
@@ -684,6 +839,40 @@ function AppContent() {
 
       <WelcomeModal />
       <Footer />
+      
+      {/* Mobile Bottom Navigation Bar */}
+      {!isAddOrEdit && !isAIChatOpen && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 pb-safe z-50 flex justify-around items-center h-16">
+            <button 
+                onClick={() => navigate('/')}
+                className={`flex flex-col items-center justify-center w-16 h-full space-y-1 ${
+                    location.pathname === '/' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+                }`}
+            >
+                <Home className={`w-6 h-6 ${location.pathname === '/' ? 'fill-current' : ''}`} />
+                <span className="text-[10px] font-medium">{t('nav.timeline')}</span>
+            </button>
+            
+            <button 
+                onClick={() => navigate('/add')}
+                className="flex flex-col items-center justify-center w-16 h-full -mt-6"
+            >
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg text-white">
+                    <PlusCircle className="w-7 h-7" />
+                </div>
+            </button>
+
+            <button 
+                onClick={() => navigate('/account')}
+                className={`flex flex-col items-center justify-center w-16 h-full space-y-1 ${
+                    location.pathname === '/account' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
+                }`}
+            >
+                <UserCircle className={`w-6 h-6 ${location.pathname === '/account' ? 'fill-current' : ''}`} />
+                <span className="text-[10px] font-medium">{t('nav.account')}</span>
+            </button>
+        </nav>
+      )}
     </div>
   );
 }

@@ -1,14 +1,14 @@
 import { useMemo, useState, useEffect } from 'react';
 import { DiaryEntry } from './diary-entry-form';
-import { format, startOfToday, subDays, getDay, isSameDay, subYears } from 'date-fns';
+import { format, startOfToday, subDays, getDay } from 'date-fns';
 import { 
   BarChart, Bar, XAxis, Tooltip as RechartsTooltip, ResponsiveContainer, 
   PieChart, Pie, Cell
 } from 'recharts';
 import { 
   Calendar, Map as MapIcon, Smile, 
-  TrendingUp, Activity, Award, Disc, Play, X, Quote, 
-  Star, Camera, BookOpen, ChevronRight, RefreshCw, Zap, Hash
+  TrendingUp, Activity, Disc, Play, X, Quote, 
+  Camera, RefreshCw, Hash
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,7 +37,7 @@ const MOOD_COLORS: Record<string, string> = {
 // --- Helper Functions ---
 
 function calculateStats(entries: DiaryEntry[]) {
-  if (!entries.length) return { total: 0, streak: 0, topMood: 'N/A', topLocation: 'N/A' };
+  if (!entries.length) return { total: 0, streak: 0, topMood: '无数据', topLocation: '无数据' };
 
   // Total
   const total = entries.length;
@@ -65,7 +65,7 @@ function calculateStats(entries: DiaryEntry[]) {
   entries.forEach(e => {
     moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1;
   });
-  const topMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+  const topMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '无数据';
 
   // Top Location
   const locCounts: Record<string, number> = {};
@@ -80,7 +80,7 @@ function calculateStats(entries: DiaryEntry[]) {
       locCounts[locName] = (locCounts[locName] || 0) + 1;
     }
   });
-  const topLocation = Object.entries(locCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+  const topLocation = Object.entries(locCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '无数据';
 
   return { total, streak, topMood, topLocation };
 }
@@ -96,7 +96,7 @@ function getChartData(entries: DiaryEntry[]) {
     .sort((a, b) => b.value - a.value);
 
   // Activity by Day of Week
-  const dayCounts = Array(7).fill(0).map((_, i) => ({ name: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i], value: 0 }));
+  const dayCounts = Array(7).fill(0).map((_, i) => ({ name: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][i], value: 0 }));
   entries.forEach(e => {
     const day = getDay(new Date(e.date));
     dayCounts[day].value++;
@@ -179,7 +179,7 @@ function FlashbackCard({ entries, onPlay }: { entries: DiaryEntry[], onPlay: (en
           transition={{ duration: 0.7 }}
           className="absolute inset-0"
         >
-          <LazyImage src={currentEntry.photo} className="w-full h-full object-cover" />
+          <LazyImage src={currentEntry.photo} alt={currentEntry.caption || "回忆照片"} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10" />
         </motion.div>
       </AnimatePresence>
@@ -232,7 +232,7 @@ function StoryOverlay({ entry, onClose }: { entry: DiaryEntry, onClose: () => vo
       >
         {/* Photo Side */}
         <div className="md:w-3/5 aspect-square md:aspect-auto relative bg-black">
-          <LazyImage src={entry.photo} className="w-full h-full object-contain" />
+          <LazyImage src={entry.photo} alt={entry.caption || "详情照片"} className="w-full h-full object-contain" />
           <button onClick={onClose} className="absolute top-4 right-4 bg-black/50 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/20 transition-colors border border-white/10 md:hidden">
             <X className="w-5 h-5" />
           </button>
@@ -259,16 +259,11 @@ function StoryOverlay({ entry, onClose }: { entry: DiaryEntry, onClose: () => vo
               </p>
             </div>
             
-            {entry.content && (
-              <div className="mt-6 text-zinc-400 text-sm leading-relaxed whitespace-pre-wrap">
-                {entry.content}
-              </div>
-            )}
           </div>
           
           <div className="pt-6 mt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500">
             <MapIcon className="w-4 h-4" />
-            <span>{typeof entry.location === 'object' ? entry.location.name : (entry.location || 'Unknown Location')}</span>
+            <span>{typeof entry.location === 'object' ? entry.location.name : (entry.location || '未知位置')}</span>
           </div>
         </div>
       </motion.div>
@@ -283,20 +278,23 @@ export function InsightsView({ entries }: InsightsViewProps) {
   const stats = useMemo(() => calculateStats(entries), [entries]);
   const { moodData, dayData } = useMemo(() => getChartData(entries), [entries]);
   
+  // Memoize the MoodPixelGrid entries to prevent re-renders unless entries actually change
+  const pixelGridEntries = useMemo(() => entries, [entries]);
+
   if (!entries.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
         <div className="w-24 h-24 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6 animate-pulse">
           <Activity className="w-10 h-10 text-zinc-400" />
         </div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">{t('insights.noData')}</h2>
-        <p className="text-zinc-500 max-w-md">{t('insights.startWriting')}</p>
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">暂无数据</h2>
+        <p className="text-zinc-500 max-w-md">快去记录你的第一条回忆吧！</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-20 space-y-8">
+    <div className="max-w-7xl mx-auto pb-20 space-y-8 w-full overflow-x-hidden">
       
       {/* Header Section */}
       <motion.div 
@@ -306,21 +304,21 @@ export function InsightsView({ entries }: InsightsViewProps) {
       >
         <div>
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white mb-2 tracking-tight">
-            {t('insights.title')}
+            回忆盘点
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 text-lg">
-            {t('insights.subtitle')}
+            你的生活足迹与情感分析
           </p>
         </div>
         <div className="flex gap-4">
           <div className="text-right">
             <div className="text-3xl font-bold text-zinc-900 dark:text-white font-mono">{stats.total}</div>
-            <div className="text-xs text-zinc-500 uppercase tracking-wider">{t('insights.totalMemories')}</div>
+            <div className="text-xs text-zinc-500 uppercase tracking-wider">累计回忆</div>
           </div>
           <div className="w-px bg-zinc-200 dark:bg-zinc-800 h-12" />
           <div className="text-right">
             <div className="text-3xl font-bold text-green-500 font-mono">{stats.streak}</div>
-            <div className="text-xs text-zinc-500 uppercase tracking-wider">{t('insights.currentStreak')}</div>
+            <div className="text-xs text-zinc-500 uppercase tracking-wider">连续记录</div>
           </div>
         </div>
       </motion.div>
@@ -331,30 +329,30 @@ export function InsightsView({ entries }: InsightsViewProps) {
         {/* Left Column: Flashback & Stats (8 cols) */}
         <div className="md:col-span-8 space-y-6">
           {/* Flashback Card */}
-          <BentoCard className="h-[400px] !p-0 overflow-hidden relative border-none ring-1 ring-black/5" delay={0.1}>
+          <BentoCard className="h-[300px] md:h-[400px] !p-0 overflow-hidden relative border-none ring-1 ring-black/5" delay={0.1}>
             <FlashbackCard entries={entries} onPlay={setSelectedEntry} />
           </BentoCard>
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <BentoCard className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800" delay={0.2}>
-              <StatItem icon={Calendar} label={t('insights.activeDays')} value={stats.total} color="text-blue-600" />
+              <StatItem icon={Calendar} label="活跃天数" value={stats.total} color="text-blue-600" />
             </BentoCard>
             <BentoCard className="bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-800" delay={0.25}>
-              <StatItem icon={TrendingUp} label={t('insights.bestStreak')} value={stats.streak} color="text-green-600" />
+              <StatItem icon={TrendingUp} label="最长连续" value={stats.streak} color="text-green-600" />
             </BentoCard>
             <BentoCard className="bg-yellow-50/50 dark:bg-yellow-900/10 border-yellow-100 dark:border-yellow-800" delay={0.3}>
-              <StatItem icon={Smile} label={t('insights.topMood')} value={stats.topMood === 'N/A' ? stats.topMood : t(`moods.${stats.topMood.toLowerCase()}`)} color="text-yellow-600" />
+              <StatItem icon={Smile} label="年度心情" value={stats.topMood === '无数据' ? stats.topMood : t(`moods.${stats.topMood.toLowerCase()}`)} color="text-yellow-600" />
             </BentoCard>
             <BentoCard className="bg-purple-50/50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-800" delay={0.35}>
-              <StatItem icon={MapIcon} label={t('insights.topLocation')} value={stats.topLocation} color="text-purple-600" />
+              <StatItem icon={MapIcon} label="常驻地点" value={stats.topLocation} color="text-purple-600" />
             </BentoCard>
           </div>
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Mood Distribution */}
-            <BentoCard title={t('insights.moodSpectrum')} icon={Disc} delay={0.4}>
+            <BentoCard title="心情光谱" icon={Disc} delay={0.4}>
               <div className="h-[200px] w-full relative flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -380,15 +378,15 @@ export function InsightsView({ entries }: InsightsViewProps) {
                   </PieChart>
                 </ResponsiveContainer>
                 {/* Center Stats */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ transform: 'translateY(5px)' }}>
                   <span className="text-3xl font-bold text-zinc-800 dark:text-zinc-200">{stats.total}</span>
-                  <span className="text-xs text-zinc-400 uppercase tracking-widest">{t('milestones.memories')}</span>
+                  <span className="text-xs text-zinc-400 uppercase tracking-widest">条回忆</span>
                 </div>
               </div>
             </BentoCard>
 
             {/* Weekly Activity */}
-            <BentoCard title={t('insights.writingRhythm')} icon={Activity} delay={0.45}>
+            <BentoCard title="写作节奏" icon={Activity} delay={0.45}>
               <div className="h-[200px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dayData}>
@@ -422,9 +420,10 @@ export function InsightsView({ entries }: InsightsViewProps) {
         <div className="md:col-span-4 space-y-6">
           
           {/* Pixel Grid */}
-          <BentoCard title={t('insights.yearInPixels')} icon={Hash} delay={0.6}>
+          <BentoCard title="心情格子" icon={Hash} delay={0.6}>
             <div className="overflow-hidden">
-               <MoodPixelGrid entries={entries} />
+               {/* Use memoized entries */}
+               <MoodPixelGrid entries={pixelGridEntries} />
             </div>
           </BentoCard>
 

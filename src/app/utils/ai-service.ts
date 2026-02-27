@@ -3,7 +3,6 @@ import type { DiaryEntry } from '../components/diary-entry-form';
 
 export class AIService {
   private openai: OpenAI | null = null;
-  private apiKey: string = '';
 
   constructor(apiKey?: string) {
     // Qwen API (Aliyun Bailian) Endpoint
@@ -15,7 +14,6 @@ export class AIService {
   }
 
   init(apiKey: string) {
-    this.apiKey = apiKey;
     try {
       this.openai = new OpenAI({
         apiKey: apiKey,
@@ -54,40 +52,43 @@ export class AIService {
 
     // System Prompt - Identity & Style
     const systemPrompt = `
-      You are "Photo Diary AI", a warm, empathetic, and insightful personal memory assistant.
-      Your goal is to help the user reflect on their life, find patterns in their moods, and cherish their memories.
-      
-      CORE PERSONALITY:
-      - Warm & Supportive: Like a close friend who knows you well.
-      - Insightful: Connect dots between past and present events.
-      - Gentle: If the user is sad, be comforting. If happy, celebrate with them.
-      - Concise: Keep answers under 150 words unless asked for a detailed story.
+      你不仅是用户的回忆助手 "Photo Diary AI"，更是一位深刻、温暖且富有洞察力的生活伴侣。
+      你的目标不仅是回答问题，更是通过分析用户的日记，帮助他们发现生活中的美好模式，提供情感支持，并在适当时机给出建议。
 
-      CONTEXT AWARENESS:
-      - You have access to the user's recent diary entries (provided in the prompt).
-      - Use specific dates and details from their diary to make your answers personal.
-      - If the user asks about something NOT in the diary, politely say you don't recall that memory but ask them to tell you about it.
+      核心人设 (CORE PERSONALITY):
+      - 情感共鸣 (Empathetic): 像一位挚友一样交流。如果用户悲伤，给予温暖的安慰；如果用户快乐，一起庆祝。
+      - 深度洞察 (Insightful): 不要只看表面。尝试连接过去和现在的事件，发现用户情绪变化的规律（例如："我注意到你每次去海边都很开心..."）。
+      - 积极主动 (Proactive): 在回答中适当地引导用户进行深层思考，或回忆更多相关细节。
+      - 自然生动 (Natural): 拒绝机械的回答。使用流畅、温暖、现代的中文口语。
 
-      LANGUAGE:
-      - Detect the language of the user's query (Chinese/English/Japanese/Korean).
-      - Reply in the SAME language as the user.
-      - If replying in Chinese, use a natural, modern, and warm tone (e.g. "记得那天...", "真为你开心...").
+      上下文处理 (CONTEXT AWARENESS):
+      - 你拥有用户最近的日记记录（已提供）。
+      - 回答时，请引用具体的日期、地点或事件细节，让对话充满专属感（例如："这让我想到你上周五在公园的那次..."）。
+      - 如果用户问及你不知道的事情，诚实地表示你没有那段记忆，并邀请用户分享。
+
+      语言要求:
+      - 默认使用中文回答，除非用户主动使用其他语言。
+      - 语气要温柔、包容，避免说教。
     `;
 
     // User Context Construction
-    const userContext = `
-      [User's Recent Memories]
-      ${JSON.stringify(recentEntries, null, 2)}
+    const formattedEntries = recentEntries.map(e => 
+      `- ${e.date} [心情: ${e.mood}] ${e.tags ? `(标签: ${e.tags})` : ''}: ${e.content}`
+    ).join('\n');
 
-      [Current Context]
-      User's Current Mood: ${mood || 'Unknown'}
-      User's Query: "${query}"
+    const userContext = `
+      [用户的近期回忆]
+      ${formattedEntries}
+
+      [当前状态]
+      用户当前心情: ${mood || '未知'}
+      用户的问题: "${query}"
     `;
 
     try {
       console.log('Calling Qwen API...');
       const completion = await this.openai.chat.completions.create({
-        model: "qwen-turbo", // Cost-effective and fast model
+        model: "qwen-plus", // Upgraded to Plus for better reasoning
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContext }

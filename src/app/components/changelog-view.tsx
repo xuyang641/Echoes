@@ -1,4 +1,4 @@
-import { GitCommit, Rocket, Zap, PenTool, Layout, Shield, Map as MapIcon, Tag as TagIcon, Sparkles, Palette, Share2, Smartphone, Box, Heart, BarChart3, Globe, Printer, Database, Languages, Sprout, Target } from 'lucide-react';
+import { GitCommit, Rocket, Zap, Shield, Map as MapIcon, Sparkles, Palette, Share2, Heart, BarChart3, Printer, Database, Languages, Sprout, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface Release {
@@ -11,6 +11,15 @@ interface Release {
 }
 
 const releases: Release[] = [
+  // Feb 27
+  {
+    version: 'v3.6.0',
+    date: '2026-02-27',
+    titleKey: '体验升级与功能优化',
+    icon: Zap,
+    color: 'bg-blue-100 text-blue-700',
+    changesKey: 'changelog.features.v3.6.0'
+  },
   // Feb 13
   {
     version: 'v3.5.0',
@@ -33,7 +42,7 @@ const releases: Release[] = [
   {
     version: 'v3.1.0',
     date: '2026-01-22',
-    titleKey: 'changelog.garden3d',
+    titleKey: '3D 花园体验升级',
     icon: Sprout,
     color: 'bg-green-100 text-green-700',
     changesKey: 'changelog.features.garden3d'
@@ -50,7 +59,7 @@ const releases: Release[] = [
   {
     version: 'v2.5.0',
     date: '2026-01-20',
-    titleKey: 'changelog.features.i18n',
+    titleKey: '国际化支持',
     icon: Languages,
     color: 'bg-red-100 text-red-700',
     changesKey: 'changelog.features.i18n'
@@ -58,7 +67,7 @@ const releases: Release[] = [
   {
     version: 'v2.4.0',
     date: '2026-01-20',
-    titleKey: 'changelog.features.profile',
+    titleKey: '个人中心升级',
     icon: Shield,
     color: 'bg-orange-100 text-orange-700',
     changesKey: 'changelog.features.profile'
@@ -136,6 +145,12 @@ export function ChangelogView() {
 
   // Helper to get changes array based on version
   const getChanges = (version: string) => {
+    if (version === 'v3.6.0') return [
+      'UI 优化: 修复移动端菜单溢出抖动问题，优化顶部导航栏布局',
+      '地图功能: 新增热力图模式、轨迹回放功能，优化移动端地图控制面板（底部抽屉式）',
+      '国际化: 全面汉化“全部功能”菜单、“回忆盘点”页面及日志表单',
+      '性能与质量: 修复大量代码规范问题（Linter errors），优化代码结构，提升稳定性'
+    ];
     if (version === 'v3.5.0') return [
       t('changelog.features.printShopV2'),
       t('changelog.features.printEditor'),
@@ -152,7 +167,8 @@ export function ChangelogView() {
       t('changelog.features.smartTags')
     ];
     if (version === 'v3.1.0') return [
-      t('changelog.features.dateLocation')
+      '3D 花园模式支持显示回忆的日期与地点信息',
+      '优化场景交互体验'
     ];
     if (version === 'v3.0.0') return [
       t('changelog.features.garden3d'),
@@ -164,11 +180,13 @@ export function ChangelogView() {
       t('changelog.features.planetUI')
     ];
     if (version === 'v2.5.0') return [
-      t('changelog.features.i18n'),
-      t('changelog.features.polish')
+      '新增多语言支持（中文/英文）',
+      '体验优化与细节打磨'
     ];
     if (version === 'v2.4.0') return [
-      t('changelog.features.profile')
+      '个人中心界面重构',
+      '新增数据统计与成就系统',
+      '支持修改头像与昵称'
     ];
     if (version === 'v2.3.0') return [
       t('changelog.features.shareCard'),
@@ -254,7 +272,9 @@ export function ChangelogView() {
                 {/* Content Card */}
                 <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-transparent hover:border-blue-100 dark:hover:border-blue-900 hover:shadow-md transition-all">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t(release.titleKey)}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {release.titleKey.includes('changelog.') ? t(release.titleKey) : release.titleKey}
+                    </h3>
                     {/* Mobile Version Badge */}
                     <div className="sm:hidden flex items-center gap-2">
                       <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-xs font-mono dark:text-gray-300">{release.version}</span>

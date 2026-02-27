@@ -9,6 +9,7 @@ import { supabase } from '../utils/supabaseClient';
 import { EditProfileModal } from './edit-profile-modal';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 interface UserProfile {
   username?: string;
@@ -189,6 +190,25 @@ export function AccountView() {
                   <span className="text-sm font-medium">{lang.label}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Legal & Info Links */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-4">About</h3>
+            <div className="space-y-2">
+              <Link to="/about" className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('footer.about')}</span>
+                <div className="w-5 h-5 text-gray-400">→</div>
+              </Link>
+              <Link to="/privacy" className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('footer.privacy')}</span>
+                <div className="w-5 h-5 text-gray-400">→</div>
+              </Link>
+              <Link to="/terms" className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('footer.terms')}</span>
+                <div className="w-5 h-5 text-gray-400">→</div>
+              </Link>
             </div>
           </div>
         </div>

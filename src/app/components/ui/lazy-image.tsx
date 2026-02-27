@@ -69,7 +69,7 @@ export function LazyImage({
     <div 
       ref={imgRef} 
       className={cn(
-        "relative overflow-hidden bg-gray-100 dark:bg-gray-800", 
+        "relative overflow-hidden bg-gray-100 dark:bg-gray-800 touch-pan-y", // Added touch-pan-y to prevent scroll blocking
         aspectRatioClass,
         className
       )}

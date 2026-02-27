@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, Loader2, MapPin, Tag, X, Wand2, Users, Check, Lock, Sparkles, Calendar as CalendarIcon, Map as MapIcon, Clock } from 'lucide-react';
-import imageCompression from 'browser-image-compression';
+import { optimizeImage } from '../utils/image-utils';
 import * as mobilenet from '@tensorflow-models/mobilenet';
 import '@tensorflow/tfjs';
 import { useGroup } from '../context/GroupContext';
@@ -8,24 +8,8 @@ import { MOODS } from '../utils/mood-constants';
 import { useTranslation } from 'react-i18next';
 import { extractPalette, ColorPalette } from '../utils/color-extractor';
 import { format } from 'date-fns';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { wgs84ToGcj02, gcj02ToWgs84 } from '../utils/coord-transform';
 import { AmapLocationPicker } from './amap-location-picker';
-
-// Fix for default Leaflet icon not finding images
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
 
 interface DiaryEntryFormProps {
   onAddEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
@@ -64,16 +48,6 @@ export interface Comment {
   userAvatar?: string;
   text: string;
   date: string;
-}
-
-function LocationMarker({ position, setPosition }: { position: { lat: number, lng: number } | null, setPosition: (pos: { lat: number, lng: number }) => void }) {
-  useMapEvents({
-    click(e) {
-      setPosition({ lat: e.latlng.lat, lng: e.latlng.lng });
-    },
-  });
-
-  return position ? <Marker position={[position.lat, position.lng]} /> : null;
 }
 
 export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData, isEdit = false }: DiaryEntryFormProps) {
@@ -159,13 +133,13 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     if (file) {
       try {
         setCompressing(true);
-        const options = {
-          maxSizeMB: 0.5, // Reduced for better performance
+        
+        // Use the new optimization utility
+        const compressedFile = await optimizeImage(file, {
+          maxSizeMB: 0.8, // Slightly higher quality for main image
           maxWidthOrHeight: 1920,
-          useWebWorker: true,
-          fileType: 'image/webp' as const
-        };
-        const compressedFile = await imageCompression(file, options);
+          fileType: 'image/webp'
+        });
         
         const reader = new FileReader();
         reader.onloadend = async () => {
@@ -187,13 +161,15 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       } catch (error) {
         console.error('Error compressing image:', error);
         setCompressing(false);
+        // Fallback to original file if compression fails?
+        // For now, just stop spinner.
       }
     }
   };
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser');
+      alert('您的浏览器不支持地理定位');
       return;
     }
 
@@ -203,13 +179,13 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         setLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-          name: 'Current Location', 
+          name: '当前位置', 
         });
         setGettingLocation(false);
       },
       (error) => {
         console.error('Error getting location:', error);
-        alert('Unable to retrieve your location');
+        alert('无法获取您的位置');
         setGettingLocation(false);
       }
     );
@@ -255,12 +231,12 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
 
   const handleAIAnalyze = async () => {
     if (!caption && !photo) {
-      alert('Please add a photo or write something first for analysis!');
+      alert('请先添加照片或写点什么以便分析！');
       return;
     }
 
     if (!model && photo) {
-      alert('AI model is still loading, please wait a moment...');
+      alert('AI模型仍在加载中，请稍候...');
       return;
     }
 
@@ -272,14 +248,14 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       if (caption) {
         const words = caption.toLowerCase().split(' ');
         const keywords: Record<string, string[]> = {
-          'beach': ['beach', 'sea', 'ocean', 'sand'],
-          'food': ['food', 'eat', 'dinner', 'lunch', 'breakfast', 'yummy', 'delicious'],
-          'friends': ['friend', 'friends', 'party', 'social'],
-          'pet': ['cat', 'dog', 'pet', 'animal', 'kitten', 'puppy'],
-          'travel': ['travel', 'trip', 'journey', 'vacation', 'flight'],
-          'work': ['work', 'office', 'meeting', 'job'],
-          'love': ['love', 'date', 'romantic'],
-          'nature': ['nature', 'tree', 'flower', 'mountain', 'park'],
+          'beach': ['beach', 'sea', 'ocean', 'sand', '海滩', '海', '沙滩'],
+          'food': ['food', 'eat', 'dinner', 'lunch', 'breakfast', 'yummy', 'delicious', '美食', '吃', '晚餐', '午餐', '早餐', '好吃'],
+          'friends': ['friend', 'friends', 'party', 'social', '朋友', '聚会'],
+          'pet': ['cat', 'dog', 'pet', 'animal', 'kitten', 'puppy', '猫', '狗', '宠物'],
+          'travel': ['travel', 'trip', 'journey', 'vacation', 'flight', '旅行', '旅游', '度假'],
+          'work': ['work', 'office', 'meeting', 'job', '工作', '办公室', '会议'],
+          'love': ['love', 'date', 'romantic', '爱', '约会', '浪漫'],
+          'nature': ['nature', 'tree', 'flower', 'mountain', 'park', '自然', '树', '花', '山', '公园'],
         };
 
         Object.entries(keywords).forEach(([tag, matchWords]) => {
@@ -306,7 +282,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       setAiTags(newAiTags);
     } catch (error) {
       console.error('Error during AI analysis:', error);
-      alert('Something went wrong during AI analysis.');
+      alert('AI分析过程中出错了。');
     } finally {
       setIsAnalyzing(false);
     }
@@ -315,12 +291,12 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!photo || !caption || !selectedMood) {
-      alert('Please fill in all fields');
+      alert('请填写所有必填项（照片、描述、心情）');
       return;
     }
 
     if (selectedGroups.length === 0) {
-      alert('Please select at least one destination (Private or a Group)');
+      alert('请至少选择一个发布目标（私密或群组）');
       return;
     }
 
@@ -328,11 +304,6 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       finalTags.push(tagInput.trim());
     }
-
-    // Ensure we keep the time part if it's today, or default to noon if picked manually?
-    // The date input only gives YYYY-MM-DD. 
-    // If user didn't change date, it's ISO string with time.
-    // If user changed date, we need to construct a new ISO string.
     
     const entry: DiaryEntry = {
       id: initialData?.id || Date.now().toString(),
@@ -451,11 +422,11 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
 
       {/* Photo Upload */}
       <div>
-        <label className="block text-sm mb-2 text-gray-700">Photo</label>
+        <label className="block text-sm mb-2 text-gray-700">照片</label>
         {compressing ? (
           <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
-            <span className="text-sm text-gray-500">Compressing image...</span>
+            <span className="text-sm text-gray-500">正在压缩图片...</span>
           </div>
         ) : previewUrl ? (
           <div className="relative">
@@ -522,7 +493,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       {/* Tags */}
       <div>
         <label className="block text-sm mb-2 text-gray-700 flex justify-between items-center">
-          <span>Tags</span>
+          <span>标签</span>
           <button
             type="button"
             onClick={handleAIAnalyze}
@@ -530,7 +501,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
             className="text-xs flex items-center gap-1 text-purple-600 hover:text-purple-700 disabled:opacity-50 transition-colors"
           >
             {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-            {isAnalyzing ? t('common.loading') : 'Smart Tag'}
+            {isAnalyzing ? t('common.loading') : '智能标签'}
           </button>
         </label>
         
@@ -565,7 +536,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={handleAddTag}
-          placeholder="Type custom tag and press Enter"
+          placeholder="输入标签并回车"
           className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -573,42 +544,44 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       {/* Location */}
       <div>
         <label className="block text-sm mb-2 text-gray-700">{t('form.locationPlaceholder')}</label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleGetLocation}
-            disabled={gettingLocation}
-            className="flex items-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors disabled:opacity-50"
-            title="Use current location"
-          >
-            {gettingLocation ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <MapPin className="w-4 h-4" />
-            )}
-          </button>
-          
-          <button
-            type="button"
-            onClick={handleOpenMapPicker}
-            className="flex items-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl transition-colors"
-            title="Select on map"
-          >
-            <MapIcon className="w-4 h-4" />
-          </button>
+        <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
+            <button
+                type="button"
+                onClick={handleGetLocation}
+                disabled={gettingLocation}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors disabled:opacity-50 min-w-[3rem]"
+                title="使用当前位置"
+            >
+                {gettingLocation ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                <MapPin className="w-4 h-4" />
+                )}
+            </button>
+            
+            <button
+                type="button"
+                onClick={handleOpenMapPicker}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl transition-colors min-w-[3rem]"
+                title="在地图上选择"
+            >
+                <MapIcon className="w-4 h-4" />
+            </button>
+          </div>
           
           <input
             type="text"
             value={location?.name || ''}
             onChange={(e) => setLocation(prev => prev ? { ...prev, name: e.target.value } : undefined)}
-            placeholder={location ? t('form.locationPlaceholder') : "Click buttons to add location"}
+            placeholder={location ? t('form.locationPlaceholder') : "点击左侧按钮添加位置"}
             disabled={!location}
-            className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+            className="flex-1 min-w-[150px] px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
           />
         </div>
         {location && (
           <p className="mt-1 text-xs text-gray-400">
-            Lat: {location.lat.toFixed(4)}, Lng: {location.lng.toFixed(4)}
+            纬度: {location.lat.toFixed(4)}, 经度: {location.lng.toFixed(4)}
           </p>
         )}
       </div>
@@ -648,7 +621,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
             <div className="bg-white rounded-2xl w-full max-w-2xl h-[500px] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
                 <AmapLocationPicker
                     initialLocation={pickerLocation ? { lat: pickerLocation.lat, lng: pickerLocation.lng } : undefined}
-                    onConfirm={(loc) => {
+                    onConfirm={(loc: { lat: number, lng: number, name: string }) => {
                         // loc is GCJ-02 from Amap
                         const [lat, lng] = gcj02ToWgs84(loc.lat, loc.lng);
                         setLocation({

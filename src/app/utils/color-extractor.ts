@@ -6,6 +6,7 @@ export interface ColorPalette {
   dominant: string;
   vibrant: string;
   muted: string;
+  darkVibrant?: string; // Add optional property
   all: string[];
 }
 
@@ -74,6 +75,13 @@ export async function extractPalette(imageSrc: string): Promise<ColorPalette> {
           const min = Math.min(r, g, b);
           return (max - min) < 30; // Low saturation
         }) || dominant,
+        darkVibrant: sortedColors.find(c => {
+            const [r, g, b] = c.match(/\d+/g)!.map(Number);
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            return (max - min) > 40 && lum < 100; // High saturation AND dark
+        }),
         all: sortedColors.slice(0, 5)
       };
 

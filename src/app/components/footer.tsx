@@ -8,7 +8,7 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 mt-auto transition-colors">
+    <footer className="hidden md:block bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 mt-auto transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
@@ -24,13 +24,17 @@ export function Footer() {
             <button onClick={() => navigate('/subscription')} className="hover:text-gray-900 dark:hover:text-white transition-colors text-blue-600 dark:text-blue-400 font-semibold">
               {t('footer.pricing') || 'Pricing'}
             </button>
-            <button onClick={() => navigate('/about')} className="hover:text-gray-900 dark:hover:text-white transition-colors">
+            {/* Legal links moved to Profile page on mobile, kept here for desktop if needed, or remove completely? 
+                User asked to remove them from "other places". Let's hide them on mobile at least, or remove if redundancy is the issue.
+                Let's keep them for Desktop (md:block) but hide on mobile since space is tight and they are in Profile.
+            */}
+            <button onClick={() => navigate('/about')} className="hidden md:block hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.about')}
             </button>
-            <button onClick={() => navigate('/privacy')} className="hover:text-gray-900 dark:hover:text-white transition-colors">
+            <button onClick={() => navigate('/privacy')} className="hidden md:block hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.privacy')}
             </button>
-            <button onClick={() => navigate('/terms')} className="hover:text-gray-900 dark:hover:text-white transition-colors">
+            <button onClick={() => navigate('/terms')} className="hidden md:block hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.terms')}
             </button>
             <a href="mailto:2311752562@qq.com" className="hover:text-gray-900 dark:hover:text-white transition-colors">

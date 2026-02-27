@@ -6,7 +6,9 @@
 A private, beautiful, and intelligent space to document your life's journey, now available on Web, Android, and iOS.  
 一个私密、精美且智能的生活记录空间，现已支持 Web、Android 和 iOS 全平台。
 
-![Banner](https://github.com/xuyanghou640-maker/Photo-Diary/raw/main/public/banner.svg)
+<div align="center">
+  <img src="public/PWA/icon.svg" width="120" alt="Echoes Logo" />
+</div>
 
 [![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)

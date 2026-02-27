@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Filter, Calendar } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Filter, Calendar, Loader2 } from 'lucide-react';
 import { EntryCard } from './entry-card';
 import { SearchBar } from './search-bar';
 import type { DiaryEntry } from './diary-entry-form';
@@ -13,10 +13,39 @@ interface TimelineViewProps {
   loading?: boolean;
 }
 
+const PAGE_SIZE = 12;
+
 export function TimelineView({ entries, onDeleteEntry, loading = false }: TimelineViewProps) {
   const { t } = useTranslation();
   const [selectedMood, setSelectedMood] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Pagination State
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setDisplayCount(PAGE_SIZE);
+  }, [selectedMood, searchQuery, entries]);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setDisplayCount((prev) => prev + PAGE_SIZE);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   // Use mood names from constants for consistent filtering
   const allMoods = ['All', ...MOODS.map(m => m.name)];
@@ -41,6 +70,10 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
     
     return filtered;
   }, [entries, selectedMood, searchQuery]);
+
+  const visibleEntries = useMemo(() => {
+    return filteredEntries.slice(0, displayCount);
+  }, [filteredEntries, displayCount]);
 
   if (loading) {
     return (
@@ -96,7 +129,7 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
           <h2 className="text-2xl text-gray-900 dark:text-gray-100">{t('timeline.title')}</h2>
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          {filteredEntries.length} {filteredEntries.length === 1 ? 'memory' : 'memories'}
+          {filteredEntries.length} {filteredEntries.length === 1 ? '条回忆' : '条回忆'}
         </div>
       </div>
 
@@ -122,8 +155,6 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
           ))}
         </div>
       </div>
-
-      {/* Search Bar */}
       <div className="mt-4">
         <SearchBar
           value={searchQuery}
@@ -133,8 +164,8 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
       </div>
 
       {/* Timeline Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEntries.map((entry) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        {visibleEntries.map((entry) => (
           <EntryCard 
             key={entry.id} 
             entry={entry} 
@@ -143,16 +174,23 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
         ))}
       </div>
       
+      {/* Loading Trigger / Sentinel */}
+      {visibleEntries.length < filteredEntries.length && (
+        <div ref={observerTarget} className="flex justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      )}
+      
       {filteredEntries.length === 0 && (
         <div className="text-center py-16">
           <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
             <Calendar className="w-10 h-10 text-gray-400 dark:text-gray-500" />
           </div>
-          <h3 className="text-xl mb-2 text-gray-700 dark:text-gray-200">No matches found</h3>
+          <h3 className="text-xl mb-2 text-gray-700 dark:text-gray-200">未找到匹配项</h3>
           <p className="text-gray-500 dark:text-gray-400">
             {selectedMood !== 'All' 
-              ? `No entries with "${t(`moods.${selectedMood.toLowerCase()}`, selectedMood)}" mood found` 
-              : 'Try adjusting your search'}
+              ? `未找到心情为“${t(`moods.${selectedMood.toLowerCase()}`, selectedMood)}”的回忆` 
+              : '尝试调整搜索关键词'}
           </p>
         </div>
       )}

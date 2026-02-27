@@ -57,9 +57,11 @@ export default defineConfig({
     },
   },
   server: {
+    host: true, // Allow LAN access
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'https://traem2c66pq6.vercel.app',
+        target: 'https://photo-diary-rebirth.vercel.app',
         changeOrigin: true,
         secure: false,
       },
