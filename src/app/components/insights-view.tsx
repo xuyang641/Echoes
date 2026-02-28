@@ -14,6 +14,9 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LazyImage } from './ui/lazy-image';
 import { MoodPixelGrid } from './mood-pixel-grid';
+import { haptics } from '../utils/haptics';
+import { EmptyState } from './ui/empty-state';
+import { useNavigate } from 'react-router-dom';
 
 interface InsightsViewProps {
   entries: DiaryEntry[];
@@ -167,7 +170,10 @@ function FlashbackCard({ entries, onPlay }: { entries: DiaryEntry[], onPlay: (en
 
   return (
     <div 
-      onClick={() => onPlay(currentEntry)}
+      onClick={() => {
+        onPlay(currentEntry);
+        haptics.medium();
+      }}
       className="relative h-full w-full overflow-hidden cursor-pointer group rounded-xl"
     >
       <AnimatePresence mode="wait">
@@ -273,6 +279,7 @@ function StoryOverlay({ entry, onClose }: { entry: DiaryEntry, onClose: () => vo
 
 export function InsightsView({ entries }: InsightsViewProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
 
   const stats = useMemo(() => calculateStats(entries), [entries]);
@@ -283,13 +290,10 @@ export function InsightsView({ entries }: InsightsViewProps) {
 
   if (!entries.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-        <div className="w-24 h-24 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-6 animate-pulse">
-          <Activity className="w-10 h-10 text-zinc-400" />
-        </div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">暂无数据</h2>
-        <p className="text-zinc-500 max-w-md">快去记录你的第一条回忆吧！</p>
-      </div>
+      <EmptyState 
+        type="insights" 
+        onAction={() => navigate('/add')}
+      />
     );
   }
 

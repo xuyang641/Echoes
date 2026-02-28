@@ -60,7 +60,7 @@ export function AddEntryForm({ onSave, onCancel }: AddEntryFormProps) {
     <Card className="p-6 max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label className="mb-2 block">Photo</Label>
+          <Label className="mb-2 block">照片</Label>
           
           {!photo ? (
             <div
@@ -68,8 +68,8 @@ export function AddEntryForm({ onSave, onCancel }: AddEntryFormProps) {
               className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-gray-400 transition-colors"
             >
               <Camera className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-              <p className="text-gray-600">Click to upload a photo</p>
-              <p className="text-sm text-gray-400 mt-1">or drag and drop</p>
+              <p className="text-gray-600">点击上传照片</p>
+              <p className="text-sm text-gray-400 mt-1">或拖放到此处</p>
             </div>
           ) : (
             <div className="relative">
@@ -98,19 +98,19 @@ export function AddEntryForm({ onSave, onCancel }: AddEntryFormProps) {
         </div>
 
         <div>
-          <Label className="mb-3 block">How are you feeling?</Label>
+          <Label className="mb-3 block">你现在感觉如何？</Label>
           <MoodSelector selectedMood={mood} onSelectMood={setMood} />
         </div>
 
         <div>
           <Label htmlFor="note" className="mb-2 block">
-            Note (optional)
+            备注 (可选)
           </Label>
           <Textarea
             id="note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="What made today special?"
+            placeholder="今天有什么特别的事吗？"
             className="min-h-24 resize-none"
           />
         </div>
@@ -121,14 +121,14 @@ export function AddEntryForm({ onSave, onCancel }: AddEntryFormProps) {
             disabled={!canSubmit}
             className="flex-1"
           >
-            Save Entry
+            保存记录
           </Button>
           <Button
             type="button"
             variant="outline"
             onClick={onCancel}
           >
-            Cancel
+            取消
           </Button>
         </div>
       </form>

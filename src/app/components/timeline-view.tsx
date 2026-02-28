@@ -1,52 +1,31 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Filter, Calendar, Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Filter, Calendar } from 'lucide-react';
 import { EntryCard } from './entry-card';
 import { SearchBar } from './search-bar';
 import type { DiaryEntry } from './diary-entry-form';
 import { Skeleton } from './ui/skeleton';
 import { useTranslation } from 'react-i18next';
 import { MOODS } from '../utils/mood-constants';
+import { haptics } from '../utils/haptics';
+import { ImagePreviewModal } from './image-preview-modal';
+import { EmptyState } from './ui/empty-state';
+import { useNavigate } from 'react-router-dom';
+import { VirtuosoGrid } from 'react-virtuoso';
 
 interface TimelineViewProps {
   entries: DiaryEntry[];
   onDeleteEntry: (id: string) => void;
   loading?: boolean;
+  onRefresh?: () => Promise<void>;
 }
-
-const PAGE_SIZE = 12;
 
 export function TimelineView({ entries, onDeleteEntry, loading = false }: TimelineViewProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   
-  // Pagination State
-  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
-  const observerTarget = useRef<HTMLDivElement>(null);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setDisplayCount(PAGE_SIZE);
-  }, [selectedMood, searchQuery, entries]);
-
-  // Infinite Scroll Observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setDisplayCount((prev) => prev + PAGE_SIZE);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
   // Use mood names from constants for consistent filtering
   const allMoods = ['All', ...MOODS.map(m => m.name)];
 
@@ -70,10 +49,6 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
     
     return filtered;
   }, [entries, selectedMood, searchQuery]);
-
-  const visibleEntries = useMemo(() => {
-    return filteredEntries.slice(0, displayCount);
-  }, [filteredEntries, displayCount]);
 
   if (loading) {
     return (
@@ -108,33 +83,28 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
 
   if (entries.length === 0) {
     return (
-      <div className="text-center py-20 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl border border-white/20 dark:border-gray-700/30">
-        <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-          <span className="text-4xl">📸</span>
-        </div>
-        <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-100 mb-2">{t('timeline.empty')}</h3>
-        <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
-          {t('timeline.start')}
-        </p>
-      </div>
+      <EmptyState 
+        type="timeline" 
+        onAction={() => navigate('/add')}
+      />
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-4 shrink-0">
         <div className="flex items-center gap-2">
           <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-2xl text-gray-900 dark:text-gray-100">{t('timeline.title')}</h2>
+          <h2 className="text-2xl text-gray-900 dark:text-gray-100 font-serif tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>{t('timeline.title')}</h2>
         </div>
-        <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
           {filteredEntries.length} {filteredEntries.length === 1 ? '条回忆' : '条回忆'}
         </div>
       </div>
 
       {/* Mood Filter */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 border border-gray-100 dark:border-gray-700 transition-colors">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 border border-gray-100 dark:border-gray-700 transition-colors shrink-0">
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           <span className="text-sm text-gray-700 dark:text-gray-200">{t('timeline.filter')}</span>
@@ -143,7 +113,10 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
           {allMoods.map(mood => (
             <button
               key={mood}
-              onClick={() => setSelectedMood(mood)}
+              onClick={() => {
+                setSelectedMood(mood);
+                haptics.light();
+              }}
               className={`px-4 py-2 rounded-full text-sm transition-all ${
                 selectedMood === mood
                   ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-sm'
@@ -155,7 +128,7 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
           ))}
         </div>
       </div>
-      <div className="mt-4">
+      <div className="mt-4 shrink-0">
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
@@ -163,37 +136,46 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
         />
       </div>
 
-      {/* Timeline Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {visibleEntries.map((entry) => (
-          <EntryCard 
-            key={entry.id} 
-            entry={entry} 
-            onDelete={onDeleteEntry} 
+      {/* Virtual Timeline Grid */}
+      {filteredEntries.length > 0 ? (
+        <div 
+            className="flex-1 min-h-[500px] -mx-4 px-4"
+        >
+          <VirtuosoGrid
+            useWindowScroll
+            data={filteredEntries}
+            listClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20"
+            itemClassName="h-full"
+            itemContent={(_index, entry) => (
+              <div className="h-full pb-4">
+                <EntryCard 
+                  entry={entry} 
+                  onDelete={onDeleteEntry}
+                  onImageClick={(url) => {
+                      setPreviewImage(url);
+                      haptics.medium();
+                  }} 
+                />
+              </div>
+            )}
           />
-        ))}
-      </div>
-      
-      {/* Loading Trigger / Sentinel */}
-      {visibleEntries.length < filteredEntries.length && (
-        <div ref={observerTarget} className="flex justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
-      )}
-      
-      {filteredEntries.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-10 h-10 text-gray-400 dark:text-gray-500" />
-          </div>
-          <h3 className="text-xl mb-2 text-gray-700 dark:text-gray-200">未找到匹配项</h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            {selectedMood !== 'All' 
+      ) : (
+        <EmptyState 
+            type="search" 
+            message="未找到匹配项"
+            description={selectedMood !== 'All' 
               ? `未找到心情为“${t(`moods.${selectedMood.toLowerCase()}`, selectedMood)}”的回忆` 
               : '尝试调整搜索关键词'}
-          </p>
-        </div>
+        />
       )}
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal 
+        isOpen={!!previewImage} 
+        imageUrl={previewImage || ''} 
+        onClose={() => setPreviewImage(null)} 
+      />
     </div>
   );
 }

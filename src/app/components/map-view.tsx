@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+// Clean up imports and comments
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DiaryEntry } from './diary-entry-form';
@@ -15,6 +16,8 @@ import { MOODS } from '../utils/mood-constants';
 import { LazyImage } from './ui/lazy-image';
 import { wgs84ToGcj02 } from '../utils/coord-transform';
 import { motion } from 'framer-motion';
+import { ImagePreviewModal } from './image-preview-modal';
+import { haptics } from '../utils/haptics';
 
 // Fix for default Leaflet icon not finding images
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -253,7 +256,7 @@ interface MapViewProps {
   onUpdateEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
 }
 
-function MapEntryPopup({ entry, onUpdateEntry }: { entry: DiaryEntry, onUpdateEntry?: (entry: DiaryEntry, targetGroups: string[]) => void }) {
+function MapEntryPopup({ entry, onUpdateEntry, onImageClick }: { entry: DiaryEntry, onUpdateEntry?: (entry: DiaryEntry, targetGroups: string[]) => void, onImageClick: (url: string) => void }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [commentText, setCommentText] = useState('');
@@ -316,8 +319,15 @@ function MapEntryPopup({ entry, onUpdateEntry }: { entry: DiaryEntry, onUpdateEn
       )}
       
       {/* Photo & Caption (Click to edit) */}
-      <div className="cursor-pointer group" onClick={() => navigate(`/edit/${entry.id}`)}>
-        <div className="w-full h-32 mb-2 rounded-lg overflow-hidden relative">
+      <div className="cursor-pointer group">
+        <div 
+            className="w-full h-32 mb-2 rounded-lg overflow-hidden relative"
+            onClick={(e) => {
+                e.stopPropagation();
+                onImageClick(entry.photo);
+                haptics.medium();
+            }}
+        >
             <LazyImage 
             src={entry.photo} 
             alt={entry.caption} 
@@ -325,7 +335,7 @@ function MapEntryPopup({ entry, onUpdateEntry }: { entry: DiaryEntry, onUpdateEn
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
         </div>
-        <p className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">{entry.caption}</p>
+        <p className="font-medium text-sm text-gray-900 line-clamp-2 mb-1" onClick={() => navigate(`/edit/${entry.id}`)}>{entry.caption}</p>
       </div>
 
       {/* Tags & Meta */}
@@ -393,7 +403,7 @@ function MapEntryPopup({ entry, onUpdateEntry }: { entry: DiaryEntry, onUpdateEn
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     placeholder="写下评论..."
-                    className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:border-blue-500"
+                    className="flex-1 px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white focus:outline-none focus:border-blue-500"
                     onClick={(e) => e.stopPropagation()}
                 />
                 <button 
@@ -499,7 +509,7 @@ function MapControlsContent({
         {dateFilter === 'range' && (
           <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 pt-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 w-8">From</span>
+              <span className="text-xs text-gray-400 w-8">从</span>
               <input
                 type="date"
                 value={startDate}
@@ -627,9 +637,20 @@ function MapControlsContent({
   );
 }
 
+// Remove the local state previewImage and the partial modal render in MapEntryPopup
+// Revert the previous change inside MapEntryPopup that added previewImage state
+// And remove the partial modal block at the end of MapEntryPopup
+
+// Actually, I need to clean up the previous SearchReplace which added previewImage state and the div block.
+// Since I can't undo, I will overwrite MapEntryPopup cleanly with the prop version.
+
+// Wait, I am in a sequence of SearchReplace calls.
+// Let's modify MapView to hold the state and pass it down.
+
 export function MapView({ entries, onUpdateEntry }: MapViewProps) {
   const { t } = useTranslation();
   const { currentGroupId, getGroupEntries } = useGroup();
+  // ... existing state ...
   const [selectedMood, setSelectedMood] = useState('All');
   const [selectedTag, setSelectedTag] = useState('');
   const [tagInput, setTagInput] = useState('');
@@ -643,6 +664,8 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [isPlayingRoute, setIsPlayingRoute] = useState(false);
   
+  const [previewImage, setPreviewImage] = useState<string | null>(null); // Lifted state
+
   // Mobile UI State
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
 
@@ -784,7 +807,11 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
                 icon={createCustomIcon(markerColor, entry.userAvatar)}
               >
                 <Popup>
-                  <MapEntryPopup entry={entry} onUpdateEntry={onUpdateEntry} />
+                  <MapEntryPopup 
+                    entry={entry} 
+                    onUpdateEntry={onUpdateEntry} 
+                    onImageClick={(url) => setPreviewImage(url)}
+                  />
                 </Popup>
               </Marker>
             );
@@ -831,6 +858,13 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
             <MapControlsContent {...controlsProps} />
         </div>
       </motion.div>
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal 
+        isOpen={!!previewImage} 
+        imageUrl={previewImage || ''} 
+        onClose={() => setPreviewImage(null)} 
+      />
     </div>
   );
 }

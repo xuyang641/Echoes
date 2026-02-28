@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import type { DiaryEntry } from './diary-entry-form';
 import { EntryCard } from './entry-card';
+import { ImagePreviewModal } from './image-preview-modal';
+import { haptics } from '../utils/haptics';
 
 interface CalendarViewProps {
   entries: DiaryEntry[];
@@ -12,6 +15,7 @@ interface CalendarViewProps {
 export function CalendarView({ entries, onDeleteEntry }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const daysInMonth = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -51,36 +55,38 @@ export function CalendarView({ entries, onDeleteEntry }: CalendarViewProps) {
   return (
     <div className="space-y-6">
       {/* Calendar Header */}
-      <div className="bg-white rounded-2xl shadow-sm p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 transition-colors">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl">{format(currentMonth, 'MMMM yyyy')}</h2>
           <div className="flex gap-2">
             <button
               onClick={previousMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
+            <h2 className="text-xl font-medium text-gray-900 dark:text-white">
+                {format(currentMonth, 'yyyy年 MMMM', { locale: zhCN })}
+            </h2>
             <button
               onClick={nextMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
         </div>
 
         {/* Weekday Headers */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="text-center text-sm text-gray-500 p-2">
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['日', '一', '二', '三', '四', '五', '六'].map(day => (
+            <div key={day} className="text-center text-sm font-medium text-gray-400 dark:text-gray-500 py-2">
               {day}
             </div>
           ))}
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {daysInMonth.map(day => {
             const dateKey = format(day, 'yyyy-MM-dd');
             const dayEntries = entriesByDate.get(dateKey) || [];
@@ -139,7 +145,15 @@ export function CalendarView({ entries, onDeleteEntry }: CalendarViewProps) {
           {selectedDateEntries.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {selectedDateEntries.map(entry => (
-                <EntryCard key={entry.id} entry={entry} onDelete={onDeleteEntry} />
+                <EntryCard 
+                    key={entry.id} 
+                    entry={entry} 
+                    onDelete={onDeleteEntry}
+                    onImageClick={(url) => {
+                        setPreviewImage(url);
+                        haptics.medium();
+                    }} 
+                />
               ))}
             </div>
           ) : (
@@ -149,6 +163,13 @@ export function CalendarView({ entries, onDeleteEntry }: CalendarViewProps) {
           )}
         </div>
       )}
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal 
+        isOpen={!!previewImage} 
+        imageUrl={previewImage || ''} 
+        onClose={() => setPreviewImage(null)} 
+      />
     </div>
   );
 }

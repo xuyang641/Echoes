@@ -209,9 +209,9 @@ export function AmapLocationPicker({ initialLocation, onConfirm, onCancel }: Ama
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-        <div className="text-red-500 mb-2">Error</div>
+        <div className="text-red-500 mb-2">{t('common.error')}</div>
         <p className="text-sm text-gray-500 mb-4">{error}</p>
-        <button onClick={onCancel} className="text-blue-500 hover:underline">Close</button>
+        <button onClick={onCancel} className="text-blue-500 hover:underline">{t('common.cancel')}</button>
       </div>
     );
   }
@@ -226,10 +226,14 @@ export function AmapLocationPicker({ initialLocation, onConfirm, onCancel }: Ama
              value={searchKeyword}
              onChange={(e) => setSearchKeyword(e.target.value)}
              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-             placeholder="搜索地点 (Search location)..."
+             placeholder={t('form.locationPlaceholder')}
              className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
            />
-           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+           {isSearching ? (
+             <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute left-3 top-1/2 -translate-y-1/2" />
+           ) : (
+             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+           )}
            {searchResults.length > 0 && (
              <div className="absolute top-full left-0 right-0 mt-2 bg-white shadow-xl rounded-lg max-h-60 overflow-y-auto z-50 border border-gray-100">
                {searchResults.map((poi) => (
@@ -255,7 +259,7 @@ export function AmapLocationPicker({ initialLocation, onConfirm, onCancel }: Ama
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-20">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            <span className="ml-2 text-sm text-gray-500">Loading Map...</span>
+            <span className="ml-2 text-sm text-gray-500">{t('common.loading')}</span>
           </div>
         )}
         <div ref={mapContainerRef} className="w-full h-full" />
@@ -276,7 +280,7 @@ export function AmapLocationPicker({ initialLocation, onConfirm, onCancel }: Ama
                onClick={() => onConfirm(selectedLocation)}
                className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
              >
-               Confirm Selection
+               {t('common.save')}
              </button>
            </div>
         )}

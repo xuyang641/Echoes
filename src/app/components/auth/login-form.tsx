@@ -91,12 +91,12 @@ export function LoginForm() {
             <BookOpen className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 font-display">Echoes</h1>
-          <p className="text-gray-500 mt-2">Sign in to save your memories</p>
+          <p className="text-gray-500 mt-2">登录以保存您的回忆</p>
         </div>
 
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm border border-red-100 flex items-center gap-2">
-            <span className="font-bold">Error:</span> {error}
+            <span className="font-bold">错误：</span> {error}
           </div>
         )}
 
@@ -108,7 +108,7 @@ export function LoginForm() {
               !isSignUp ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Sign In
+            登录
           </button>
           <button
             onClick={() => setIsSignUp(true)}
@@ -116,13 +116,13 @@ export function LoginForm() {
               isSignUp ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Sign Up
+            注册
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
             <div className="relative">
               <Mail className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -137,7 +137,7 @@ export function LoginForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
             <div className="relative">
               <Lock className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -163,7 +163,7 @@ export function LoginForm() {
             disabled={loading}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 rounded-xl hover:opacity-90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isSignUp ? 'Create Account' : 'Sign In')}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isSignUp ? '创建账号' : '登录')}
           </button>
         </form>
 
@@ -173,7 +173,7 @@ export function LoginForm() {
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-2 bg-white text-gray-500">或者通过以下方式继续</span>
               </div>
             </div>
 

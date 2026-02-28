@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Camera, Loader2, MapPin, Tag, X, Wand2, Users, Check, Lock, Sparkles, Calendar as CalendarIcon, Map as MapIcon, Clock } from 'lucide-react';
+import { Camera, Loader2, MapPin, Tag, X, Wand2, Users, Check, Lock, Sparkles, Calendar as CalendarIcon, Map as MapIcon, Clock, Image as ImageIcon } from 'lucide-react';
 import { optimizeImage } from '../utils/image-utils';
+import { useCamera } from '../hooks/useCamera';
+import { Capacitor } from '@capacitor/core';
 import * as mobilenet from '@tensorflow-models/mobilenet';
 import '@tensorflow/tfjs';
 import { useGroup } from '../context/GroupContext';
@@ -10,6 +12,7 @@ import { extractPalette, ColorPalette } from '../utils/color-extractor';
 import { format } from 'date-fns';
 import { wgs84ToGcj02, gcj02ToWgs84 } from '../utils/coord-transform';
 import { AmapLocationPicker } from './amap-location-picker';
+import { haptics } from '../utils/haptics';
 
 interface DiaryEntryFormProps {
   onAddEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
@@ -67,6 +70,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [model, setModel] = useState<mobilenet.MobileNet | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const { takePhoto, pickFromGallery } = useCamera();
   
   // Date State
   const [date, setDate] = useState<string>(new Date().toISOString());
@@ -126,6 +130,42 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         return [...prev, groupId];
       }
     });
+  };
+
+  const handlePhotoSelect = async (source: 'camera' | 'gallery') => {
+    try {
+      if (!Capacitor.isNativePlatform()) {
+        console.warn('Native camera not available on web');
+        return;
+      }
+
+      haptics.light();
+      setCompressing(true);
+      
+      let result;
+      if (source === 'camera') {
+        result = await takePhoto();
+      } else {
+        result = await pickFromGallery();
+      }
+      
+      if (result) {
+        setPhoto(result);
+        setPreviewUrl(result);
+        
+        // Extract palette
+        try {
+          const extractedPalette = await extractPalette(result);
+          setPalette(extractedPalette);
+        } catch (err) {
+          console.error('Palette extraction failed:', err);
+        }
+      }
+    } catch (error) {
+      console.error('Error selecting photo:', error);
+    } finally {
+      setCompressing(false);
+    }
   };
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -292,14 +332,17 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     e.preventDefault();
     if (!photo || !caption || !selectedMood) {
       alert('请填写所有必填项（照片、描述、心情）');
+      haptics.error();
       return;
     }
 
     if (selectedGroups.length === 0) {
       alert('请至少选择一个发布目标（私密或群组）');
+      haptics.error();
       return;
     }
 
+    haptics.success();
     let finalTags = [...tags];
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       finalTags.push(tagInput.trim());
@@ -451,17 +494,40 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
             </button>
           </div>
         ) : (
-          <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-            <Camera className="w-12 h-12 text-gray-400 mb-2" />
-            <span className="text-sm text-gray-500">{t('form.upload')}</span>
-            <input
-              id="photo-input"
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              className="hidden"
-            />
-          </label>
+          <div className="flex flex-col gap-3">
+            {Capacitor.isNativePlatform() ? (
+              <div className="grid grid-cols-2 gap-3 h-32">
+                <button
+                  type="button"
+                  onClick={() => handlePhotoSelect('camera')}
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-500">拍照</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePhotoSelect('gallery')}
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-500">相册</span>
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                <Camera className="w-12 h-12 text-gray-400 mb-2" />
+                <span className="text-sm text-gray-500">{t('form.upload')}</span>
+                <input
+                  id="photo-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
         )}
       </div>
 
@@ -475,7 +541,10 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
               <button
                 type="button"
                 key={mood.name}
-                onClick={() => setSelectedMood(mood.name)}
+                onClick={() => {
+                  setSelectedMood(mood.name);
+                  haptics.light();
+                }}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all ${
                   selectedMood === mood.name
                     ? `${mood.color} ring-2 ring-offset-2 ring-current scale-105`

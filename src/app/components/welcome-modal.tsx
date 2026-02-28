@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Heart, X } from 'lucide-react';
 
-export function WelcomeModal() {
+interface WelcomeModalProps {
+  onComplete?: () => void;
+}
+
+export function WelcomeModal({ onComplete }: WelcomeModalProps) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -19,6 +23,10 @@ export function WelcomeModal() {
   const handleClose = () => {
     setIsOpen(false);
     localStorage.setItem('hasSeenWelcome_v1', 'true');
+    if (onComplete) {
+        // Small delay to allow modal to close animation
+        setTimeout(onComplete, 300);
+    }
   };
 
   if (!isOpen) return null;

@@ -9,35 +9,38 @@ coverage
 # Production
 dist
 build
+android/app/build
+android/.gradle
+ios/App/Pods
 
-# Misc
-.DS_Store
+# Environment Variables & Secrets (CRITICAL)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+android/**/google-services.json
+ios/**/GoogleService-Info.plist
+supabase/functions/.env
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # Capacitor
-capacitor.config.json
+capacitor.config.json.timestamp-*
 capacitor.config.ts.timestamp-*
-android/app/build
-android/.gradle
-ios/App/Pods
 
-# Editor directories and files
+# Editor & OS
 .idea
 .vscode
+.DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Huge binary folders (User specific)
+# User Specific
 Adobe Photoshop 2023/

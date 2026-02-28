@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useFriend } from '../context/FriendContext';
-import { User, Mail, UserPlus, Check, X, Search, Trash2, LogOut, Settings, Trophy, Hash, Globe } from 'lucide-react';
+import { User, Mail, UserPlus, Check, X, Trash2, LogOut, Settings, Hash, Globe } from 'lucide-react';
 import { AchievementList } from './achievement-list';
 import { fetchEntries } from '../utils/api'; // Or pass from props
 import { DiaryEntry } from './diary-entry-form';
@@ -220,7 +220,7 @@ export function AccountView() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-blue-500" />
-              Add New Friend
+              添加新好友
             </h3>
             <form onSubmit={handleAddFriend} className="flex gap-2">
               <div className="relative flex-1">
@@ -229,7 +229,7 @@ export function AccountView() {
                   type="email"
                   value={addFriendEmail}
                   onChange={(e) => setAddFriendEmail(e.target.value)}
-                  placeholder="Enter friend's email address"
+                  placeholder="输入好友的邮箱地址"
                   className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
                 />
               </div>
@@ -237,7 +237,7 @@ export function AccountView() {
                 type="submit"
                 className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition-colors font-medium"
               >
-                Send Request
+                发送请求
               </button>
             </form>
           </div>
@@ -247,7 +247,7 @@ export function AccountView() {
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border border-blue-100 dark:border-blue-800">
               <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
                 <Check className="w-5 h-5" />
-                Friend Requests
+                好友请求
               </h3>
               <div className="space-y-3">
                 {friendRequests.map(request => (
@@ -269,14 +269,14 @@ export function AccountView() {
                       <button 
                         onClick={() => acceptFriendRequest(request.id)}
                         className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
-                        title="Accept"
+                        title="接受"
                       >
                         <Check className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => rejectFriendRequest(request.id)}
                         className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                        title="Reject"
+                        title="拒绝"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -291,13 +291,13 @@ export function AccountView() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-purple-500" />
-              Your Friends
+              你的好友
             </h3>
             
             {friends.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <UserPlus className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                <p>No friends yet. Invite someone above!</p>
+                <p>还没有好友。在上方邀请一位吧！</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,7 +321,7 @@ export function AccountView() {
                         if(confirm(`Remove ${friend.name} from friends?`)) removeFriend(friend.id);
                       }}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                      title="Remove Friend"
+                      title="删除好友"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

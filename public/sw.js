@@ -11,7 +11,7 @@ const STATIC_ASSETS = [
 ];
 
 // Install Event: Cache static assets
-self.addEventListener('install', (event: any) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[ServiceWorker] Caching app shell');
@@ -19,11 +19,11 @@ self.addEventListener('install', (event: any) => {
     })
   );
   // Force waiting service worker to become active
-  (self as any).skipWaiting();
+  self.skipWaiting();
 });
 
 // Activate Event: Clean up old caches
-self.addEventListener('activate', (event: any) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -36,11 +36,11 @@ self.addEventListener('activate', (event: any) => {
       );
     })
   );
-  (self as any).clients.claim();
+  self.clients.claim();
 });
 
 // Fetch Event: Stale-While-Revalidate for static, Network-First for API
-self.addEventListener('fetch', (event: any) => {
+self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Ignore non-http requests (e.g. chrome-extension)

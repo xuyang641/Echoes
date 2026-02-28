@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Send, Sparkles, Bot, User, Clock, Heart, Music, ArrowRight, Settings, Key } from 'lucide-react';
 import type { DiaryEntry } from './diary-entry-form';
 import { format } from 'date-fns';
@@ -22,7 +21,6 @@ interface Message {
 }
 
 export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
-  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -192,13 +190,13 @@ export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
               <Bot className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-bold text-gray-800 dark:text-white">AI Companion</h3>
+              <h3 className="font-bold text-gray-800 dark:text-white">AI 伴侣</h3>
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${aiService.isConfigured() ? 'bg-green-500' : 'bg-orange-500'}`} />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {aiService.isConfigured() 
-                    ? 'Powered by Qwen AI' 
-                    : 'Simulated Mode'}
+                    ? '由通义千问 (Qwen) 驱动' 
+                    : '模拟模式'}
                 </p>
               </div>
             </div>
@@ -208,7 +206,7 @@ export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
               <button 
                 onClick={() => setShowSettings(!showSettings)}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
-                title="AI Settings"
+                title="AI 设置"
               >
                 <Settings className="w-5 h-5 text-gray-500" />
               </button>
@@ -225,7 +223,7 @@ export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 <Key className="w-4 h-4" />
-                Qwen API Key (Aliyun)
+                通义千问 API Key (阿里云)
               </label>
               <div className="flex gap-2">
                 <input 
@@ -239,11 +237,11 @@ export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
                   onClick={handleSaveKey}
                   className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  Save
+                  保存
                 </button>
               </div>
               <p className="text-xs text-gray-500">
-                Get a free key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Google AI Studio</a>. Your key is stored locally in your browser.
+                从 <a href="https://dashscope.console.aliyun.com/apiKey" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">阿里云百炼控制台</a> 获取免费 Key。您的 Key 仅存储在本地浏览器中。
               </p>
             </div>
           </div>
@@ -276,7 +274,7 @@ export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
                   <div className="bg-white dark:bg-gray-800 p-3 rounded-xl border border-purple-100 dark:border-purple-900/30 shadow-sm w-64">
                     <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
                       <Clock className="w-3 h-3" />
-                      <span>Memory Context</span>
+                      <span>回忆上下文</span>
                     </div>
                     {/* In a real app, we'd fetch the entry details here. For now simpler UI */}
                     <div className="h-20 bg-gray-100 dark:bg-gray-700 rounded-lg mb-2 overflow-hidden relative">
@@ -285,7 +283,7 @@ export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
                             <Heart className="w-8 h-8 opacity-20" />
                          </div>
                     </div>
-                    <button className="text-xs text-purple-600 font-medium hover:underline">View Full Entry</button>
+                    <button className="text-xs text-purple-600 font-medium hover:underline">查看完整记录</button>
                   </div>
                 )}
 
@@ -343,7 +341,7 @@ export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask about your memories..."
+              placeholder="询问关于你的回忆..."
               className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-purple-500 dark:text-white"
             />
             <button
