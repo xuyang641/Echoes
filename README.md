@@ -1,6 +1,6 @@
 # <div align="center"><img src="public/PWA/icon.svg" width="100" height="100" alt="Echoes Logo"></div>
 
-# <div align="center">光阴 (Echoes)</div>
+# <div align="center">Echoes</div>
 
 <div align="center">
   <strong>记录你的日常点滴 · Capture Your Daily Moments</strong>
@@ -15,7 +15,7 @@
 
 <br />
 
-> **光阴 (Echoes)** 是一款注重隐私、界面精美的照片日记应用。它帮助你轻松捕捉生活中的美好瞬间，并通过原生移动体验让回忆触手可及。
+> **Echoes** 是一款注重隐私、界面精美的照片日记应用。它帮助你轻松捕捉生活中的美好瞬间，并通过原生移动体验让回忆触手可及。
 >
 > **Echoes** is a beautiful, privacy-first photo diary application that helps you preserve your precious memories with ease. Built with modern web technologies and wrapped as a native mobile experience.
 
