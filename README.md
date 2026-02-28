@@ -1,4 +1,4 @@
-# <div align="center"><img src="public/icons/icon-512.webp" width="128" height="128" alt="Echoes Logo" style="border-radius: 24px;"></div>
+# <div align="center"><img src="public/PWA/icon.svg" width="128" height="128" alt="Echoes Logo" style="border-radius: 24px;"></div>
 
 # <div align="center">Echoes</div>
 
