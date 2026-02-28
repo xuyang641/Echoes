@@ -1,6 +1,6 @@
 # <div align="center"><img src="public/icons/icon-512.webp" width="128" height="128" alt="Echoes Logo" style="border-radius: 24px;"></div>
 
-# <div align="center">Echoes (光阴)</div>
+# <div align="center">Echoes</div>
 
 <div align="center">
   <strong>记录你的日常点滴 · Capture Your Daily Moments</strong>
@@ -20,9 +20,13 @@
 
 <br />
 
-> **Echoes (光阴)** 是一款注重隐私、界面精美的照片日记应用。它帮助你轻松捕捉生活中的美好瞬间，并通过原生移动体验让回忆触手可及。无论是通过地图足迹、时间轴还是日历，都能让你以独特的方式重温过去。
+> **Echoes** 是一款注重隐私、界面精美的照片日记应用。它帮助你轻松捕捉生活中的美好瞬间，并通过原生移动体验让回忆触手可及。无论是通过地图足迹、时间轴还是日历，都能让你以独特的方式重温过去。
+>
+> <details>
+> <summary><i>English Description (Click to expand)</i></summary>
 >
 > **Echoes** is a beautiful, privacy-first photo diary application that helps you preserve your precious memories with ease. Built with modern web technologies and wrapped as a native mobile experience. Whether through map footprints, timelines, or calendars, it offers unique ways to relive your past.
+> </details>
 
 <br />
 
@@ -61,29 +65,47 @@
 
 ## ✨ 功能特性 (Features)
 
-### 📸 原生体验 (Native Experience)
-- **原生相机集成**: 直接调用系统相机拍照，或从相册选择，体验如原生 App 般流畅。
-- **Native Camera**: Seamlessly capture photos using your device's native camera or pick from the gallery.
+### 📸 原生体验
+直接调用系统相机拍照，或从相册选择，体验如原生 App 般流畅。
+<details>
+<summary><i>Native Experience (English)</i></summary>
+Seamlessly capture photos using your device's native camera or pick from the gallery.
+</details>
 
-### ☁️ 云端同步 (Cloud Sync)
-- **实时同步**: 基于 Supabase，数据在所有设备间实时同步，再也不怕丢日记。
-- **Real-time Sync**: Your memories are safely stored and instantly synchronized across all your devices via Supabase.
+### ☁️ 云端同步
+基于 Supabase，数据在所有设备间实时同步，再也不怕丢日记。
+<details>
+<summary><i>Cloud Sync (English)</i></summary>
+Your memories are safely stored and instantly synchronized across all your devices via Supabase.
+</details>
 
-### 🗺️ 足迹地图 (Map Journey)
-- **地理标记**: 自动读取照片位置信息，在地图上点亮你的足迹。
-- **Geotagging**: Automatically reads photo location data to light up your footprints on the map.
+### 🗺️ 足迹地图
+自动读取照片位置信息，在地图上点亮你的足迹。
+<details>
+<summary><i>Map Journey (English)</i></summary>
+Automatically reads photo location data to light up your footprints on the map.
+</details>
 
-### 📅 多维回顾 (Multi-view Review)
-- **时间轴与日历**: 通过精美的时间轴或直观的日历视图，回顾你的人生旅程。
-- **Timeline & Calendar**: Browse your life's journey through a beautiful timeline view or an organized calendar grid.
+### 📅 多维回顾
+通过精美的时间轴或直观的日历视图，回顾你的人生旅程。
+<details>
+<summary><i>Multi-view Review (English)</i></summary>
+Browse your life's journey through a beautiful timeline view or an organized calendar grid.
+</details>
 
-### 🔒 隐私优先 (Privacy First)
-- **数据安全**: 你的数据完全属于你。支持安全认证，未来将支持生物识别锁。
-- **Data Security**: Your data is yours. Secure authentication and optional biometric lock support.
+### 🔒 隐私优先
+你的数据完全属于你。支持安全认证，未来将支持生物识别锁。
+<details>
+<summary><i>Privacy First (English)</i></summary>
+Your data is yours. Secure authentication and optional biometric lock support.
+</details>
 
-### 🌙 深色模式 (Dark Mode)
-- **护眼主题**: 精心设计的深色主题，深夜写日记也能护眼。
-- **Eye-care Theme**: A stunning dark theme for comfortable night-time journaling.
+### 🌙 深色模式
+精心设计的深色主题，深夜写日记也能护眼。
+<details>
+<summary><i>Dark Mode (English)</i></summary>
+A stunning dark theme for comfortable night-time journaling.
+</details>
 
 <br />
 
@@ -151,7 +173,6 @@ cd android
 ## 📮 联系我们 (Contact Us)
 
 如果你有任何问题、建议或反馈，欢迎随时联系我们！
-If you have any questions, suggestions, or feedback, please feel free to contact us!
 
 - **Email**: [2311752562@qq.com](mailto:2311752562@qq.com)
 - **GitHub Issues**: [Submit an issue](https://github.com/xuyang641/Echoes/issues)
@@ -161,12 +182,10 @@ If you have any questions, suggestions, or feedback, please feel free to contact
 ## 🤝 贡献 (Contributing)
 
 欢迎提交 Issue 和 Pull Request！详见 [Contributing Guide](CONTRIBUTING.md)。
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## 📄 许可证 (License)
 
 本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 <div align="center">
