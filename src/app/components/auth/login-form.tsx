@@ -55,8 +55,25 @@ export function LoginForm() {
         if (error) throw error;
       }
     } catch (err: any) {
-      setError(err.message);
-      toast.error(err.message);
+      console.error('Auth error:', err);
+      let message = err.message || 'Authentication failed';
+      
+      // Handle email not confirmed
+      if (err.message.includes('Email not confirmed') || err.code === 'email_not_confirmed') {
+        message = '请先查收验证邮件并激活账号，之后方可登录。';
+      } else if (err.message.includes('Invalid login credentials')) {
+        message = '邮箱或密码错误，请重试。';
+      }
+
+      setError(message);
+      toast.error(message, {
+        duration: 5000,
+      });
+      
+      // Only alert for unknown errors in debug builds, or if explicitly needed
+      if (Capacitor.isNativePlatform() && !message.includes('请先查收') && !message.includes('邮箱或密码错误')) {
+         // alert(`Auth Error: ${JSON.stringify(err)}`); // Commented out to avoid scaring users
+      }
     } finally {
       setLoading(false);
     }

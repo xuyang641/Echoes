@@ -43,7 +43,10 @@ export function MobileHeader({ user, isOffline = false, pendingSyncCount = 0 }: 
         </div>
 
         {/* Inbox / Messages (Right) */}
-        <button className="shrink-0 p-1 relative text-gray-600 dark:text-gray-300">
+        <button 
+          onClick={() => navigate('/notifications')}
+          className="shrink-0 p-1 relative text-gray-600 dark:text-gray-300"
+        >
           {pendingSyncCount > 0 ? (
              <CloudUpload className="w-6 h-6 text-blue-500 animate-pulse" />
           ) : (

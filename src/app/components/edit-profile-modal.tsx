@@ -76,9 +76,14 @@ export function EditProfileModal({ isOpen, onClose, onProfileUpdate }: EditProfi
     } catch (error: any) {
       console.error('Error updating profile:', error);
       let message = error.message || t('profile.error');
-      if (message.includes('schema cache')) {
+      
+      // Friendly message for duplicate username
+      if (message.includes('duplicate key value') && message.includes('profiles_username_key')) {
+        message = '用户名已被占用，请尝试其他名称。';
+      } else if (message.includes('schema cache')) {
         message += ' (Database schema update required)';
       }
+      
       toast.error(message);
     } finally {
       setLoading(false);

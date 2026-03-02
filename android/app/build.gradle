@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     namespace = "com.echoes.app"
     compileSdk = rootProject.ext.compileSdkVersion
+
     defaultConfig {
         applicationId "com.echoes.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -16,10 +17,27 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+    signingConfigs {
+        release {
+            storeFile file("upload-keystore.jks")
+            storePassword "123456"
+            keyAlias "upload"
+            keyPassword "123456"
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            
+            applicationVariants.all { variant ->
+                variant.outputs.all {
+                    outputFileName = "Echoes.apk"
+                }
+            }
         }
     }
 }

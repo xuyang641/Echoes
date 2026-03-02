@@ -5,8 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Echoes',
   webDir: 'dist',
   server: {
-    url: 'http://192.168.1.104:5175', // Updated Local Dev Server
-    cleartext: true
+    androidScheme: 'https'
   }
 };
 

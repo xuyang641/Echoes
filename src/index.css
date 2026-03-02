@@ -1,7 +1,8 @@
 @import "tailwindcss";
+@import "./styles/fonts.css";
 
 @theme {
-  --font-serif: "Noto Serif", "Noto Serif SC", serif;
+  --font-serif: "LXGW WenKai", "Noto Serif", "Noto Serif SC", serif;
   --font-handwriting: "Dancing Script", cursive;
   --font-artistic: "Ma Shan Zheng", cursive;
 }

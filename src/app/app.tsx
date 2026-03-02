@@ -22,16 +22,25 @@ import { MobileHeader } from './components/layout/mobile-header';
 import { MobileNavigation } from './components/layout/mobile-navigation';
 
 // Managers & Routes
-import { DataSyncManager } from './components/managers/data-sync-manager';
 import { InteractionManager } from './components/managers/interaction-manager';
+import { NotificationManager } from './components/managers/notification-manager';
+import { MigrationManager } from './components/managers/migration-manager'; // New import
 import { AppRoutes } from './routes/app-routes';
+import { useDiaryStore } from './store/diaryStore';
+import { useDiarySync } from './hooks/useDiarySync';
 
 export default function App() {
   return (
     <ThemeProvider>
       <GroupProvider>
         <FriendProvider>
-          <AppContent />
+          <NotificationManager>
+            {() => (
+              <MigrationManager>
+                <AppContent />
+              </MigrationManager>
+            )}
+          </NotificationManager>
           <ReloadPrompt />
           <Toaster position="top-center" reverseOrder={false} />
         </FriendProvider>
@@ -116,49 +125,51 @@ function AppContent() {
 
   const isAddOrEdit = location.pathname === '/add' || location.pathname.startsWith('/edit');
 
+  // Sync Logic (replaces DataSyncManager)
+  useDiarySync();
+
+  // Store
+  const { entries, loading, saving, addEntry, updateEntry, deleteEntry, refresh } = useDiaryStore();
+
   return (
-    <DataSyncManager user={user}>
-      {({ entries, loading, saving, onAddEntry, onUpdateEntry, onDeleteEntry, onRefresh }) => (
-        <InteractionManager onAIChatOpen={() => setIsAIChatOpen(true)}>
-          {({ onTouchStart, onTouchMove, onTouchEnd }) => (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 pb-20 md:pb-0">
-              
-              <DesktopHeader entries={entries} isAddOrEdit={isAddOrEdit} />
-              <MobileHeader user={user} />
+    <InteractionManager onAIChatOpen={() => setIsAIChatOpen(true)}>
+      {({ onTouchStart, onTouchMove, onTouchEnd }) => (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 pb-20 md:pb-0">
+          
+          <DesktopHeader entries={entries} isAddOrEdit={isAddOrEdit} />
+          <MobileHeader user={user} />
 
-              {/* Main Content */}
-              <main 
-                className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 min-h-[calc(100vh-140px)]"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-              >
-                <AppRoutes 
-                  entries={entries} 
-                  loading={loading} 
-                  saving={saving} 
-                  onDeleteEntry={onDeleteEntry} 
-                  onAddEntry={onAddEntry} 
-                  onUpdateEntry={onUpdateEntry} 
-                  onRefresh={onRefresh}
-                />
-              </main>
+          {/* Main Content */}
+          <main 
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 min-h-[calc(100vh-140px)]"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
+            <AppRoutes 
+              entries={entries} 
+              loading={loading} 
+              saving={saving} 
+              onDeleteEntry={deleteEntry} 
+              onAddEntry={addEntry} 
+              onUpdateEntry={updateEntry} 
+              onRefresh={refresh}
+            />
+          </main>
 
-              <AIChatView  
-                entries={entries}
-                isOpen={isAIChatOpen}
-                onClose={() => setIsAIChatOpen(false)}
-              />
+          <AIChatView  
+            entries={entries}
+            isOpen={isAIChatOpen}
+            onClose={() => setIsAIChatOpen(false)}
+          />
 
-              <WelcomeModal onComplete={handleWelcomeComplete} />
-              <OnboardingTutorial isOpen={showTutorial} onComplete={handleTutorialComplete} />
-              <Footer />
-              
-              <MobileNavigation />
-            </div>
-          )}
-        </InteractionManager>
+          <WelcomeModal onComplete={handleWelcomeComplete} />
+          <OnboardingTutorial isOpen={showTutorial} onComplete={handleTutorialComplete} />
+          <Footer />
+          
+          <MobileNavigation />
+        </div>
       )}
-    </DataSyncManager>
+    </InteractionManager>
   );
 }

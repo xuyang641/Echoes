@@ -11,6 +11,15 @@ interface Release {
 }
 
 const releases: Release[] = [
+  // Mar 03
+  {
+    version: 'v4.0.0',
+    date: '2026-03-03',
+    titleKey: 'AI 深度集成与安全重构',
+    icon: Sparkles,
+    color: 'bg-violet-100 text-violet-700',
+    changesKey: 'changelog.features.v4.0.0'
+  },
   // Feb 27
   {
     version: 'v3.6.0',
@@ -145,6 +154,12 @@ export function ChangelogView() {
 
   // Helper to get changes array based on version
   const getChanges = (version: string) => {
+    if (version === 'v4.0.0') return [
+      '核心架构升级: 引入自动化测试 (Vitest) 与 Zustand 状态管理，提升应用稳定性',
+      '安全增强: 新增 AI Proxy Edge Function，实现 API Key 的服务端加密存储',
+      'AI 体验: 优化“每日回顾”与“梦境画师”生成速度，支持离线队列',
+      'UI 质感: 全局引入 Framer Motion 动画，优化触感反馈 (Haptics) 与毛玻璃视觉效果'
+    ];
     if (version === 'v3.6.0') return [
       'UI 优化: 修复移动端菜单溢出抖动问题，优化顶部导航栏布局',
       '地图功能: 新增热力图模式、轨迹回放功能，优化移动端地图控制面板（底部抽屉式）',

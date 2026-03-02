@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useFriend } from '../context/FriendContext';
-import { User, Mail, UserPlus, Check, X, Trash2, LogOut, Settings, Hash, Globe } from 'lucide-react';
+import { User, Mail, UserPlus, Check, X, Trash2, LogOut, Settings, Hash, Globe, Bell, MapPin, Camera, BookOpen, Calendar } from 'lucide-react';
 import { AchievementList } from './achievement-list';
 import { fetchEntries } from '../utils/api'; // Or pass from props
 import { DiaryEntry } from './diary-entry-form';
@@ -10,6 +10,13 @@ import { EditProfileModal } from './edit-profile-modal';
 import { useTheme } from '../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { NotificationManager } from './managers/notification-manager';
+import { BackupManager } from './managers/backup-manager';
+import { SecurityManager } from './managers/security-manager';
+import { StorageManager } from './managers/storage-manager';
+import { ThemeManager } from './managers/theme-manager';
+import { differenceInDays } from 'date-fns';
+import { motion } from 'framer-motion';
 
 interface UserProfile {
   username?: string;
@@ -50,6 +57,30 @@ export function AccountView() {
     if (data) setProfile(data);
   }
 
+  // Calculate Statistics
+  const stats = useMemo(() => {
+    if (entries.length === 0) return null;
+
+    const totalEntries = entries.length;
+    const totalPhotos = entries.filter(e => e.photo).length;
+    const totalLocations = new Set(entries.filter(e => e.location?.name).map(e => e.location!.name)).size;
+    
+    // Calculate days streak or total days active (simple version: first entry to now)
+    // Or just distinct days with entries
+    const distinctDays = new Set(entries.map(e => e.date.split('T')[0])).size;
+    
+    // Total words (approx)
+    const totalWords = entries.reduce((acc, curr) => acc + (curr.caption?.length || 0), 0);
+
+    return {
+        totalEntries,
+        totalPhotos,
+        totalLocations,
+        distinctDays,
+        totalWords
+    };
+  }, [entries]);
+
   const handleAddFriend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addFriendEmail.trim()) return;
@@ -58,46 +89,80 @@ export function AccountView() {
     setAddFriendEmail('');
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="max-w-4xl mx-auto space-y-6 pb-20"
+    >
+      <motion.div variants={itemVariants} className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('account.title')}</h1>
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={signOut}
           className="flex items-center gap-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors"
         >
           <LogOut className="w-4 h-4" />
           {t('account.signOut')}
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
-      <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700">
+      <motion.div variants={itemVariants} className="flex gap-4 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+          className={`relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'profile'
-              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
           }`}
         >
           {t('account.myProfile')}
+          {activeTab === 'profile' && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+            />
+          )}
         </button>
         <button
           onClick={() => setActiveTab('achievements')}
-          className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+          className={`relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'achievements'
-              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
           }`}
         >
           {t('account.achievements')}
+          {activeTab === 'achievements' && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+            />
+          )}
         </button>
         <button
           onClick={() => setActiveTab('friends')}
-          className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+          className={`relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'friends'
-              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
           }`}
         >
           {t('account.friends')} ({friends.length})
@@ -106,14 +171,20 @@ export function AccountView() {
               {friendRequests.length}
             </span>
           )}
+          {activeTab === 'friends' && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+            />
+          )}
         </button>
-      </div>
+      </motion.div>
 
       {activeTab === 'profile' ? (
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700">
+        <motion.div variants={containerVariants} className="space-y-6">
+          <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center text-4xl shadow-inner overflow-hidden border-4 border-white dark:border-gray-700">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center text-4xl shadow-inner overflow-hidden border-4 border-white dark:border-gray-700 shrink-0">
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
@@ -121,20 +192,31 @@ export function AccountView() {
                 )}
               </div>
               
-              <div className="flex-1 space-y-4 text-center md:text-left">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {profile?.full_name || t('account.anonymous')}
-                  </h2>
-                  <p className="text-sm text-gray-500">@{profile?.username || t('account.noUsername')}</p>
+              <div className="flex-1 space-y-4 text-center md:text-left w-full">
+                <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {profile?.full_name || t('account.anonymous')}
+                        </h2>
+                        <p className="text-sm text-gray-500">@{profile?.username || t('account.noUsername')}</p>
+                    </div>
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+                    >
+                        <Settings className="w-4 h-4" />
+                        {t('account.editProfile')}
+                    </motion.button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 max-w-md">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
                   <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                     <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
                       <Mail className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 text-left">
+                    <div className="flex-1 text-left overflow-hidden">
                       <p className="text-xs text-gray-500 uppercase font-bold">{t('account.email')}</p>
                       <p className="text-sm font-medium truncate">{user?.email}</p>
                     </div>
@@ -150,22 +232,120 @@ export function AccountView() {
                     </div>
                   </div>
                 </div>
-
-                <div className="pt-2">
-                  <button 
-                    onClick={() => setIsEditModalOpen(true)}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-200 mx-auto md:mx-0"
-                  >
-                    <Settings className="w-4 h-4" />
-                    {t('account.editProfile')}
-                  </button>
-                </div>
               </div>
             </div>
-          </div>
+
+            {/* Data Dashboard */}
+            {stats && (
+                <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Your Journey</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <motion.div whileHover={{ y: -2 }} className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-orange-100 dark:border-orange-800">
+                            <div className="flex items-center gap-2 mb-2 text-orange-600 dark:text-orange-400">
+                                <Calendar className="w-4 h-4" />
+                                <span className="text-xs font-bold">DAYS</span>
+                            </div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.distinctDays}</div>
+                            <div className="text-xs text-gray-500">Active Days</div>
+                        </motion.div>
+                        <motion.div whileHover={{ y: -2 }} className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
+                            <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
+                                <BookOpen className="w-4 h-4" />
+                                <span className="text-xs font-bold">WORDS</span>
+                            </div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">{(stats.totalWords / 1000).toFixed(1)}k</div>
+                            <div className="text-xs text-gray-500">Total Words</div>
+                        </motion.div>
+                        <motion.div whileHover={{ y: -2 }} className="bg-pink-50 dark:bg-pink-900/20 p-4 rounded-2xl border border-pink-100 dark:border-pink-800">
+                            <div className="flex items-center gap-2 mb-2 text-pink-600 dark:text-pink-400">
+                                <Camera className="w-4 h-4" />
+                                <span className="text-xs font-bold">PHOTOS</span>
+                            </div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalPhotos}</div>
+                            <div className="text-xs text-gray-500">Moments Captured</div>
+                        </motion.div>
+                        <motion.div whileHover={{ y: -2 }} className="bg-green-50 dark:bg-green-900/20 p-4 rounded-2xl border border-green-100 dark:border-green-800">
+                            <div className="flex items-center gap-2 mb-2 text-green-600 dark:text-green-400">
+                                <MapPin className="w-4 h-4" />
+                                <span className="text-xs font-bold">PLACES</span>
+                            </div>
+                            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalLocations}</div>
+                            <div className="text-xs text-gray-500">Locations Visited</div>
+                        </motion.div>
+                    </div>
+                </div>
+            )}
+          </motion.div>
+
+          {/* Security Manager */}
+          <motion.div variants={itemVariants}>
+            <SecurityManager />
+          </motion.div>
+
+          {/* Theme & Appearance */}
+          <motion.div variants={itemVariants}>
+            <ThemeManager />
+          </motion.div>
+
+          {/* Storage & Data */}
+          <motion.div variants={itemVariants}>
+            <StorageManager />
+          </motion.div>
+
+          {/* Notification Settings */}
+          <motion.div variants={itemVariants}>
+            <NotificationManager>
+                {({ settings, updateSettings }) => (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-yellow-500" />
+                    {t('notifications.title', 'Daily Reminder')}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="toggle-notification"
+                            className="peer sr-only"
+                            checked={settings.enabled}
+                            onChange={(e) => updateSettings({ ...settings, enabled: e.target.checked })}
+                        />
+                        <label 
+                            htmlFor="toggle-notification"
+                            className="block w-12 h-6 overflow-hidden bg-gray-200 rounded-full cursor-pointer peer-checked:bg-blue-500 transition-colors"
+                        ></label>
+                        <span className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-6"></span>
+                        </div>
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                        {settings.enabled ? t('notifications.on', 'On') : t('notifications.off', 'Off')}
+                        </span>
+                    </div>
+                    
+                    {settings.enabled && (
+                        <input 
+                        type="time" 
+                        value={settings.time}
+                        onChange={(e) => updateSettings({ ...settings, time: e.target.value })}
+                        className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                        />
+                    )}
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    {t('notifications.desc', 'Receive a gentle reminder to record your memories.')}
+                    </p>
+                </div>
+                )}
+            </NotificationManager>
+          </motion.div>
+
+          {/* Backup Manager */}
+          <motion.div variants={itemVariants}>
+            <BackupManager />
+          </motion.div>
 
           {/* Language Selector */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Globe className="w-5 h-5 text-indigo-500" />
               {t('account.language')}
@@ -177,8 +357,10 @@ export function AccountView() {
                 { code: 'ja', label: '日本語', flag: '🇯🇵' },
                 { code: 'ko', label: '한국어', flag: '🇰🇷' },
               ].map((lang) => (
-                <button
+                <motion.button
                   key={lang.code}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setLanguage(lang.code as any)}
                   className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all ${
                     language === lang.code
@@ -188,15 +370,19 @@ export function AccountView() {
                 >
                   <span className="text-lg">{lang.flag}</span>
                   <span className="text-sm font-medium">{lang.label}</span>
-                </button>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Legal & Info Links */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4">About</h3>
             <div className="space-y-2">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Version</span>
+                <span className="text-sm font-mono text-gray-500">v2.1.0 (Build 2024.05)</span>
+              </div>
               <Link to="/about" className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('footer.about')}</span>
                 <div className="w-5 h-5 text-gray-400">→</div>
@@ -210,14 +396,20 @@ export function AccountView() {
                 <div className="w-5 h-5 text-gray-400">→</div>
               </Link>
             </div>
-          </div>
-        </div>
+            
+            <div className="mt-6 text-center">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Made with ❤️ by Echoes Team
+                </p>
+            </div>
+          </motion.div>
+        </motion.div>
       ) : activeTab === 'achievements' ? (
         <AchievementList entries={entries} />
       ) : (
-        <div className="space-y-6">
+        <motion.div variants={containerVariants} className="space-y-6">
           {/* Add Friend */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-blue-500" />
               添加新好友
@@ -233,18 +425,20 @@ export function AccountView() {
                   className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
                 />
               </div>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 type="submit"
                 className="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition-colors font-medium"
               >
                 发送请求
-              </button>
+              </motion.button>
             </form>
-          </div>
+          </motion.div>
 
           {/* Friend Requests */}
           {friendRequests.length > 0 && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border border-blue-100 dark:border-blue-800">
+            <motion.div variants={itemVariants} className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border border-blue-100 dark:border-blue-800">
               <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
                 <Check className="w-5 h-5" />
                 好友请求
@@ -284,11 +478,11 @@ export function AccountView() {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Friend List */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+          <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <User className="w-5 h-5 text-purple-500" />
               你的好友
@@ -302,7 +496,11 @@ export function AccountView() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {friends.map(friend => (
-                  <div key={friend.id} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all group">
+                  <motion.div 
+                    key={friend.id} 
+                    whileHover={{ scale: 1.02 }}
+                    className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-all group"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
                         {friend.avatar ? (
@@ -325,18 +523,18 @@ export function AccountView() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
       <EditProfileModal 
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onProfileUpdate={fetchProfile}
       />
-    </div>
+    </motion.div>
   );
 }

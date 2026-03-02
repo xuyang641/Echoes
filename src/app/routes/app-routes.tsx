@@ -19,6 +19,7 @@ const AboutView = lazy(() => import('../components/legal-pages').then(module => 
 const PrivacyView = lazy(() => import('../components/legal-pages').then(module => ({ default: module.PrivacyView })));
 const TermsView = lazy(() => import('../components/legal-pages').then(module => ({ default: module.TermsView })));
 const SubscriptionView = lazy(() => import('../components/subscription-view').then(module => ({ default: module.SubscriptionView })));
+const NotificationsView = lazy(() => import('../components/notifications-view').then(module => ({ default: module.NotificationsView })));
 
 const PageTransition = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -149,6 +150,11 @@ export function AppRoutes({ entries, loading, saving, onDeleteEntry, onAddEntry,
           <Route path="/subscription" element={
             <PageTransition>
               <SubscriptionView />
+            </PageTransition>
+          } />
+          <Route path="/notifications" element={
+            <PageTransition>
+              <NotificationsView />
             </PageTransition>
           } />
           <Route path="/share/book/:id" element={

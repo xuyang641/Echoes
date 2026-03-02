@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, Loader2, MapPin, Tag, X, Wand2, Users, Check, Lock, Sparkles, Calendar as CalendarIcon, Map as MapIcon, Clock, Image as ImageIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { optimizeImage } from '../utils/image-utils';
 import { useCamera } from '../hooks/useCamera';
 import { Capacitor } from '@capacitor/core';
@@ -13,6 +14,7 @@ import { format } from 'date-fns';
 import { wgs84ToGcj02, gcj02ToWgs84 } from '../utils/coord-transform';
 import { AmapLocationPicker } from './amap-location-picker';
 import { haptics } from '../utils/haptics';
+import { DreamPainter } from './dream-painter';
 
 interface DiaryEntryFormProps {
   onAddEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
@@ -342,7 +344,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       return;
     }
 
-    haptics.success();
+    haptics.success(); // Success haptic on valid submit
     let finalTags = [...tags];
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       finalTags.push(tagInput.trim());
@@ -387,7 +389,14 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 space-y-6">
+    <motion.form 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      onSubmit={handleSubmit} 
+      className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 space-y-6"
+    >
       {/* Date & Time Selection */}
       <div className="text-center">
         <h2 className="text-2xl mb-2">{isEdit ? t('form.titleEdit') : t('form.titleAdd')}</h2>
@@ -531,6 +540,15 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         )}
       </div>
 
+      {/* Dream Painter (Text to Image) */}
+      <DreamPainter 
+        description={caption} 
+        onImageGenerated={(url) => {
+            setPhoto(url);
+            setPreviewUrl(url);
+        }}
+      />
+
       {/* Mood Selection */}
       <div>
         <label className="block text-sm mb-3 text-gray-700">{t('form.moodLabel')}</label>
@@ -538,22 +556,24 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
           {MOODS.map((mood) => {
             const Icon = mood.icon;
             return (
-              <button
+              <motion.button
                 type="button"
                 key={mood.name}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setSelectedMood(mood.name);
                   haptics.light();
                 }}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all ${
                   selectedMood === mood.name
-                    ? `${mood.color} ring-2 ring-offset-2 ring-current scale-105`
-                    : `${mood.color} opacity-60`
+                    ? `${mood.color} ring-2 ring-offset-2 ring-current shadow-md`
+                    : `${mood.color} opacity-60 hover:opacity-80`
                 }`}
               >
                 <Icon className="w-5 h-5 mb-1" />
-                <span className="text-xs">{t(`moods.${mood.name.toLowerCase()}`, mood.name)}</span>
-              </button>
+                <span className="text-xs font-medium">{t(`moods.${mood.name.toLowerCase()}`, mood.name)}</span>
+              </motion.button>
             );
           })}
         </div>
@@ -668,10 +688,12 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       </div>
 
       {/* Submit Button */}
-      <button
+      <motion.button
         type="submit"
         disabled={saving || compressing}
-        className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium text-lg"
       >
         {saving ? (
           <>
@@ -681,13 +703,24 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         ) : (
           isEdit ? t('form.save') : t('form.save')
         )}
-      </button>
-    </form>
+      </motion.button>
+    </motion.form>
 
     {/* Map Picker Modal */}
+    <AnimatePresence>
     {isMapPickerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-2xl h-[500px] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+            <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-2xl w-full max-w-2xl h-[500px] overflow-hidden flex flex-col shadow-2xl"
+            >
                 <AmapLocationPicker
                     initialLocation={pickerLocation ? { lat: pickerLocation.lat, lng: pickerLocation.lng } : undefined}
                     onConfirm={(loc: { lat: number, lng: number, name: string }) => {
@@ -702,9 +735,10 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
                     }}
                     onCancel={() => setIsMapPickerOpen(false)}
                 />
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     )}
+    </AnimatePresence>
     </>
   );
 }

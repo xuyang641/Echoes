@@ -21,6 +21,14 @@ android/**/google-services.json
 ios/**/GoogleService-Info.plist
 supabase/functions/.env
 
+# Android Signing
+*.jks
+*.keystore
+key.properties
+android/key.properties
+android/keystore.properties
+android/local.properties
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
@@ -44,3 +52,4 @@ Thumbs.db
 
 # User Specific
 Adobe Photoshop 2023/
+.trae/

@@ -12,6 +12,8 @@ interface InteractionManagerProps {
   }) => React.ReactElement;
 }
 
+import { haptics } from '../../utils/haptics';
+
 export function InteractionManager({ onAIChatOpen, children }: InteractionManagerProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,9 +65,11 @@ export function InteractionManager({ onAIChatOpen, children }: InteractionManage
       const currentIndex = tabs.indexOf(location.pathname);
       if (currentIndex !== -1) {
         if (isLeftSwipe && currentIndex < tabs.length - 1) {
+          haptics.light(); // Haptic feedback on swipe
           navigate(tabs[currentIndex + 1]);
         }
         if (isRightSwipe && currentIndex > 0) {
+          haptics.light(); // Haptic feedback on swipe
           navigate(tabs[currentIndex - 1]);
         }
       }
@@ -83,7 +87,10 @@ export function InteractionManager({ onAIChatOpen, children }: InteractionManage
       
       {/* Floating AI Button is managed here as it depends on scroll direction */}
       <button
-        onClick={onAIChatOpen}
+        onClick={() => {
+            haptics.medium(); // Haptic feedback on click
+            onAIChatOpen();
+        }}
         className={`fixed right-6 z-40 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group ${
           scrollDirection === 'down' ? 'translate-x-24 opacity-50' : 'translate-x-0 opacity-100'
         } bottom-24 md:bottom-6`}

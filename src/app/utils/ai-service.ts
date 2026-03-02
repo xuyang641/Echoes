@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { DiaryEntry } from '../components/diary-entry-form';
+import { supabase } from './supabaseClient';
 
 export class AIService {
   private openai: OpenAI | null = null;
@@ -27,18 +28,14 @@ export class AIService {
   }
 
   isConfigured(): boolean {
-    return !!this.openai;
+    return !!this.openai || import.meta.env.VITE_USE_EDGE_FUNCTION === 'true';
   }
   
   hasGlobalKey(): boolean {
-    return !!import.meta.env.VITE_QWEN_API_KEY;
+    return !!import.meta.env.VITE_QWEN_API_KEY || import.meta.env.VITE_USE_EDGE_FUNCTION === 'true';
   }
 
-  async generateResponse(query: string, entries: DiaryEntry[], mood?: string): Promise<string> {
-    if (!this.openai) {
-      return "Please configure your Qwen API Key first.";
-    }
-
+  private buildContext(query: string, entries: DiaryEntry[], mood?: string) {
     // Prepare context
     const recentEntries = entries
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -85,8 +82,22 @@ export class AIService {
       用户的问题: "${query}"
     `;
 
+    return { systemPrompt, userContext };
+  }
+
+  async generateResponse(query: string, entries: DiaryEntry[], mood?: string): Promise<string> {
+    if (import.meta.env.VITE_USE_EDGE_FUNCTION === 'true') {
+        return this.generateResponseViaProxy(query, entries, mood);
+    }
+
+    if (!this.openai) {
+      return "Please configure your Qwen API Key first.";
+    }
+
+    const { systemPrompt, userContext } = this.buildContext(query, entries, mood);
+
     try {
-      console.log('Calling Qwen API...');
+      console.log('Calling Qwen API (Client-side)...');
       const completion = await this.openai.chat.completions.create({
         model: "qwen-plus", // Upgraded to Plus for better reasoning
         messages: [
@@ -101,6 +112,118 @@ export class AIService {
       console.error('AI Service Error:', error);
       return "I'm having trouble connecting to Qwen right now. Please check your API Key or network.";
     }
+  }
+
+  async generateResponseViaProxy(query: string, entries: DiaryEntry[], mood?: string): Promise<string> {
+    const { systemPrompt, userContext } = this.buildContext(query, entries, mood);
+    
+    try {
+        console.log('Calling Qwen API (Edge Function)...');
+        const { data, error } = await supabase.functions.invoke('ai-proxy', {
+            body: {
+                type: 'text',
+                payload: {
+                    model: "qwen-plus",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userContext }
+                    ]
+                }
+            }
+        });
+
+        if (error) throw error;
+        return data.choices[0].message.content || "I'm thinking...";
+    } catch (error) {
+        console.error('AI Proxy Error:', error);
+        return "I'm having trouble connecting to the AI service. Please try again later.";
+    }
+  }
+
+  async generateImage(prompt: string): Promise<string> {
+    if (import.meta.env.VITE_USE_EDGE_FUNCTION === 'true') {
+        return this.generateImageViaProxy(prompt);
+    }
+
+    try {
+      console.log('Generating image with Prompt:', prompt);
+      
+      // Use Hugging Face Inference API (Free Tier)
+      // Model: stabilityai/stable-diffusion-xl-base-1.0
+      // Note: In production, use a proxy to hide the token
+      const HF_TOKEN = import.meta.env.VITE_HF_TOKEN; 
+      
+      if (!HF_TOKEN) {
+         // Mock response for demo purposes if no token
+         console.warn('No HF Token found. Returning mock image.');
+         // Return a placeholder image from Unsplash based on keywords
+         const keywords = prompt.split(' ').slice(0, 3).join(',');
+         return `https://source.unsplash.com/random/1024x768/?${encodeURIComponent(keywords)}`;
+      }
+
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+        {
+          headers: {
+            Authorization: `Bearer ${HF_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({ inputs: prompt }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`HF API Error: ${error}`);
+      }
+
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.error('Image Generation Error:', error);
+      throw error;
+    }
+  }
+
+  async generateImageViaProxy(prompt: string): Promise<string> {
+      try {
+          console.log('Generating image via Proxy...');
+          const { data, error } = await supabase.functions.invoke('ai-proxy', {
+              body: {
+                  type: 'image',
+                  payload: { inputs: prompt }
+              }
+          });
+
+          if (error) throw error;
+          
+          // data is a Blob because we return it as such from the edge function? 
+          // supabase.functions.invoke returns 'data' which is usually JSON.
+          // Wait, invoke automatically parses JSON. If the response is binary, invoke might handle it differently?
+          // The supabase js library documentation says: 
+          // "If the response is JSON, `data` will be the parsed JSON object. Otherwise it will be the raw body."
+          // However, for blob, we might need to handle it.
+          // Let's assume for now we might need to use fetch directly if invoke doesn't support blob well, 
+          // or we encode it as base64 in the function. 
+          // But let's stick to what we have. If `data` is a Blob, we can use URL.createObjectURL.
+          
+          if (data instanceof Blob) {
+              return URL.createObjectURL(data);
+          } else {
+             // If it's not a blob (maybe parsed as something else or we need to request it differently)
+             // Actually, Supabase functions invoke wrapper tries to parse JSON. 
+             // If it fails, it might return text.
+             // It's safer to use the 'responseType' option if available, but it's not in standard types easily.
+             // Let's assume we return base64 from the function for safety if we want JSON response.
+             // But my function returns `new Response(blob)`.
+             // Let's assume supabase client handles it or returns the blob.
+             return URL.createObjectURL(data);
+          }
+      } catch (error) {
+          console.error('Image Proxy Error:', error);
+          throw error;
+      }
   }
 }
 

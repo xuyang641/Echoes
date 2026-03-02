@@ -9,6 +9,7 @@ interface WelcomeModalProps {
 export function WelcomeModal({ onComplete }: WelcomeModalProps) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const [showWelcomeDiary, setShowWelcomeDiary] = useState(false);
 
   useEffect(() => {
     // Check if user has seen the welcome message
@@ -20,9 +21,33 @@ export function WelcomeModal({ onComplete }: WelcomeModalProps) {
     }
   }, []);
 
+  const handleCreateWelcomeDiary = () => {
+    const welcomeEntry = {
+      id: 'welcome-entry-' + Date.now(),
+      date: new Date().toISOString(),
+      photo: '/assets/splash.jpg', // Placeholder, will be fetched in manager
+      caption: '欢迎来到 Echoes。这是您的第一篇日记。\n\n在这里，您可以：\n✨ 记录生活的点滴\n🗺️ 在地图上留下足迹\n🎵 聆听白噪音放松身心\n\n所有的美好，都值得被铭记。',
+      mood: 'happy',
+      location: {
+        lat: 39.9042,
+        lng: 116.4074,
+        name: 'Echoes - 新的开始'
+      },
+      tags: ['Echoes', '新的开始', '使用指南'],
+      aiTags: ['welcome', 'start', 'guide'],
+      groupIds: ['private']
+    };
+
+    window.dispatchEvent(new CustomEvent('create-welcome-entry', { detail: welcomeEntry }));
+  };
+
   const handleClose = () => {
     setIsOpen(false);
     localStorage.setItem('hasSeenWelcome_v1', 'true');
+    
+    // Create the welcome diary entry
+    handleCreateWelcomeDiary();
+
     if (onComplete) {
         // Small delay to allow modal to close animation
         setTimeout(onComplete, 300);

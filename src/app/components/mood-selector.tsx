@@ -1,5 +1,6 @@
 import { Smile, Frown, Sparkles, Wind, Heart, Zap, Brain, Sun } from "lucide-react";
 import { cn } from "@/app/components/ui/utils";
+import { haptics } from "@/app/utils/haptics";
 
 export type MoodType = 
   | "happy" 
@@ -45,7 +46,10 @@ export function MoodSelector({ selectedMood, onSelectMood }: MoodSelectorProps) 
           <button
             key={mood.value}
             type="button"
-            onClick={() => onSelectMood(mood.value)}
+            onClick={() => {
+                haptics.light(); // Light impact on selection
+                onSelectMood(mood.value);
+            }}
             className={cn(
               "flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
               mood.color,

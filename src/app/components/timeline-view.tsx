@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Filter, Calendar } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { EntryCard } from './entry-card';
 import { SearchBar } from './search-bar';
 import type { DiaryEntry } from './diary-entry-form';
@@ -11,6 +12,7 @@ import { ImagePreviewModal } from './image-preview-modal';
 import { EmptyState } from './ui/empty-state';
 import { useNavigate } from 'react-router-dom';
 import { VirtuosoGrid } from 'react-virtuoso';
+import { AISummaryCard } from './ai-summary-card';
 
 interface TimelineViewProps {
   entries: DiaryEntry[];
@@ -90,29 +92,56 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
     );
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        staggerChildren: 0.1 
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="space-y-6 h-full flex flex-col">
+    <motion.div 
+      className="space-y-6 h-full flex flex-col"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4 shrink-0">
+      <motion.div variants={itemVariants} className="flex items-center justify-between flex-wrap gap-4 shrink-0">
         <div className="flex items-center gap-2">
           <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           <h2 className="text-2xl text-gray-900 dark:text-gray-100 font-serif tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>{t('timeline.title')}</h2>
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-          {filteredEntries.length} {filteredEntries.length === 1 ? '条回忆' : '条回忆'}
+          {filteredEntries.length} {t('timeline.memories', '条回忆')}
         </div>
-      </div>
+      </motion.div>
+
+      {/* AI Daily Summary */}
+      <motion.div variants={itemVariants}>
+        <AISummaryCard entries={entries} date={new Date().toISOString()} />
+      </motion.div>
 
       {/* Mood Filter */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 border border-gray-100 dark:border-gray-700 transition-colors shrink-0">
+      <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 border border-gray-100 dark:border-gray-700 transition-colors shrink-0">
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           <span className="text-sm text-gray-700 dark:text-gray-200">{t('timeline.filter')}</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {allMoods.map(mood => (
-            <button
+            <motion.button
               key={mood}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => {
                 setSelectedMood(mood);
                 haptics.light();
@@ -124,21 +153,22 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
               }`}
             >
               {mood === 'All' ? t('timeline.all') : t(`moods.${mood.toLowerCase()}`, mood)}
-            </button>
+            </motion.button>
           ))}
         </div>
-      </div>
-      <div className="mt-4 shrink-0">
+      </motion.div>
+      <motion.div variants={itemVariants} className="mt-4 shrink-0">
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder={t('timeline.search')}
         />
-      </div>
+      </motion.div>
 
       {/* Virtual Timeline Grid */}
       {filteredEntries.length > 0 ? (
-        <div 
+        <motion.div 
+            variants={itemVariants}
             className="flex-1 min-h-[500px] -mx-4 px-4"
         >
           <VirtuosoGrid
@@ -159,15 +189,17 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
               </div>
             )}
           />
-        </div>
+        </motion.div>
       ) : (
-        <EmptyState 
-            type="search" 
-            message="未找到匹配项"
-            description={selectedMood !== 'All' 
-              ? `未找到心情为“${t(`moods.${selectedMood.toLowerCase()}`, selectedMood)}”的回忆` 
-              : '尝试调整搜索关键词'}
-        />
+        <motion.div variants={itemVariants}>
+            <EmptyState 
+                type="search" 
+                message={t('timeline.no_matches', '未找到匹配项')}
+                description={selectedMood !== 'All' 
+                ? t('timeline.no_mood_matches', `未找到心情为“${t(`moods.${selectedMood.toLowerCase()}`, selectedMood)}”的回忆`)
+                : t('timeline.adjust_search', '尝试调整搜索关键词')}
+            />
+        </motion.div>
       )}
 
       {/* Image Preview Modal */}
@@ -176,6 +208,6 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
         imageUrl={previewImage || ''} 
         onClose={() => setPreviewImage(null)} 
       />
-    </div>
+    </motion.div>
   );
 }

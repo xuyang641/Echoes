@@ -13,13 +13,16 @@
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
+    "@capacitor-community/privacy-screen": "^6.0.0",
     "@capacitor/android": "^8.1.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/camera": "^8.0.1",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/core": "^8.1.0",
+    "@capacitor/filesystem": "^8.1.2",
     "@capacitor/haptics": "^8.0.1",
     "@capacitor/ios": "^8.1.0",
+    "@capacitor/local-notifications": "^8.0.1",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@google/generative-ai": "^0.24.1",
@@ -100,19 +103,25 @@
     "sonner": "2.0.3",
     "tailwind-merge": "3.2.0",
     "tw-animate-css": "1.3.8",
-    "vaul": "1.1.2"
+    "vaul": "1.1.2",
+    "virtua": "^0.48.6"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@tailwindcss/vite": "4.1.12",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/file-saver": "^2.0.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "4.7.0",
+    "jsdom": "^28.1.0",
     "rollup": "^4.55.1",
     "supabase": "^2.72.8",
     "tailwindcss": "4.1.12",
     "vercel": "^50.4.6",
     "vite": "6.3.5",
     "vite-plugin-pwa": "^0.21.2",
+    "vitest": "^4.0.18",
     "workbox-window": "^7.4.0"
   }
 }

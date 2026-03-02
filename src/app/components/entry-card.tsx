@@ -1,11 +1,13 @@
 import { format } from 'date-fns';
 import { Smile, Frown, Heart, Zap, Coffee, Sparkles, CloudRain, Sun, Trash2, Edit2, Share2, Heart as HeartIcon, CloudOff } from 'lucide-react';
+import { MoodPlaylist } from './mood-playlist';
 import type { DiaryEntry } from './diary-entry-form';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { LazyImage } from './ui/lazy-image';
 import { ShareModal } from './share-modal';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { haptics } from '../utils/haptics';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,10 +56,43 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
   const navigate = useNavigate();
   const [showShare, setShowShare] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const lastClickTime = useRef<number>(0);
 
   const handleLike = () => {
+    // If liking (not unliking), trigger animation and haptics
+    if (!isLiked) {
+      haptics.success(); // "Pop" effect
+      setShowLikeAnimation(true);
+      setTimeout(() => setShowLikeAnimation(false), 1000);
+    } else {
+      haptics.light(); // Light feedback for unlike
+    }
+    
     setIsLiked(!isLiked);
     onLike?.(entry.id);
+  };
+
+  const handleImageClick = () => {
+    const now = Date.now();
+    const DOUBLE_CLICK_DELAY = 300;
+    
+    if (now - lastClickTime.current < DOUBLE_CLICK_DELAY) {
+      // Double click detected!
+      if (!isLiked) {
+        handleLike();
+      } else {
+        // Just show animation if already liked
+        haptics.medium();
+        setShowLikeAnimation(true);
+        setTimeout(() => setShowLikeAnimation(false), 1000);
+      }
+    } else {
+      // Single click - open full screen (with slight delay to wait for double click?)
+      // For responsiveness, we just trigger it. Double click will also trigger this but that's okay.
+      onImageClick?.(entry.photo);
+    }
+    lastClickTime.current = now;
   };
 
   return (
@@ -70,7 +105,23 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
       className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden group hover:shadow-xl transition-all duration-300 ease-out border border-gray-100 dark:border-gray-700 ${isPendingSync ? 'opacity-90' : ''}`}
     >
       {/* Photo */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 cursor-zoom-in" onClick={() => onImageClick?.(entry.photo)}>
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 cursor-zoom-in" onClick={handleImageClick}>
+        {/* Double Click Like Animation Overlay */}
+        <AnimatePresence>
+          {showLikeAnimation && (
+            <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+              <motion.div
+                initial={{ scale: 0, opacity: 0, rotate: -20 }}
+                animate={{ scale: 1.5, opacity: 1, rotate: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: -50 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <HeartIcon className="w-24 h-24 text-white fill-white drop-shadow-2xl" />
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         {isPendingSync && (
           <div className="absolute top-3 left-3 z-20 bg-black/50 text-white p-1.5 rounded-full backdrop-blur-sm">
             <CloudOff className="w-4 h-4" />
@@ -90,25 +141,31 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
             e.stopPropagation();
             handleLike();
           }}
-          className={`absolute bottom-3 right-3 p-2 rounded-full backdrop-blur-md shadow-lg transition-colors z-10 ${
+          className={`absolute bottom-3 right-3 p-3 rounded-full backdrop-blur-md shadow-lg transition-colors z-10 touch-manipulation ${
             isLiked 
               ? 'bg-pink-500 text-white' 
               : 'bg-white/30 text-white hover:bg-white/50'
           }`}
         >
-          <HeartIcon className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+          <motion.div
+            animate={isLiked ? { scale: [1, 1.4, 1] } : {}}
+            transition={{ duration: 0.3 }}
+          >
+            <HeartIcon className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+          </motion.div>
         </motion.button>
 
         {/* Action buttons - appear on hover */}
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all z-20">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.stopPropagation();
+              haptics.light();
               setShowShare(true);
             }}
-            className="bg-white/90 dark:bg-gray-800/90 hover:bg-purple-500 hover:text-white text-gray-700 dark:text-gray-300 rounded-full p-2 shadow-lg transition-colors"
+            className="bg-white/90 dark:bg-gray-800/90 hover:bg-purple-500 hover:text-white text-gray-700 dark:text-gray-300 rounded-full p-2.5 shadow-lg transition-colors touch-manipulation"
             aria-label="Share entry"
           >
             <Share2 className="w-4 h-4" />
@@ -119,9 +176,10 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
             whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.stopPropagation();
+              haptics.light();
               navigate(`/edit/${entry.id}`);
             }}
-            className="bg-white/90 dark:bg-gray-800/90 hover:bg-blue-500 hover:text-white text-gray-700 dark:text-gray-300 rounded-full p-2 shadow-lg transition-colors"
+            className="bg-white/90 dark:bg-gray-800/90 hover:bg-blue-500 hover:text-white text-gray-700 dark:text-gray-300 rounded-full p-2.5 shadow-lg transition-colors touch-manipulation"
             aria-label="Edit entry"
           >
             <Edit2 className="w-4 h-4" />
@@ -132,8 +190,11 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white/90 dark:bg-gray-800/90 hover:bg-red-500 hover:text-white text-gray-700 dark:text-gray-300 rounded-full p-2 shadow-lg transition-colors"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    haptics.medium(); // Warning vibration
+                }}
+                className="bg-white/90 dark:bg-gray-800/90 hover:bg-red-500 hover:text-white text-gray-700 dark:text-gray-300 rounded-full p-2.5 shadow-lg transition-colors touch-manipulation"
                 aria-label="Delete entry"
               >
                 <Trash2 className="w-4 h-4" />
@@ -148,7 +209,13 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 border-none active:scale-95 transition-transform">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(entry.id)} className="bg-red-600 hover:bg-red-700 active:scale-95 transition-transform">
+                <AlertDialogAction 
+                    onClick={() => {
+                        haptics.medium(); // Confirm deletion vibration
+                        onDelete(entry.id);
+                    }} 
+                    className="bg-red-600 hover:bg-red-700 active:scale-95 transition-transform"
+                >
                   Delete
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -210,6 +277,9 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
             ))}
           </div>
         )}
+
+        {/* AI Mood Playlist */}
+        <MoodPlaylist mood={entry.mood} caption={entry.caption} tags={entry.tags} />
       </div>
     </motion.div>
     
