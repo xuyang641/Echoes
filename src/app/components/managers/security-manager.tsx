@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
-import { App } from '@capacitor/app';
 import { useTranslation } from 'react-i18next';
-import { Shield, Fingerprint, Lock, EyeOff } from 'lucide-react';
+import { Shield, Fingerprint, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
+import { NativeBiometric } from '@capacitor-community/native-biometric';
 
 export function SecurityManager() {
   const { t } = useTranslation();
@@ -26,14 +26,35 @@ export function SecurityManager() {
   }, []);
 
   const toggleBiometric = async (enabled: boolean) => {
-    // In a real app, we would use @capacitor-community/native-biometric
-    // Since we don't have that plugin installed yet, we simulate the setting
-    // and focus on Privacy Screen which we DO have.
+    if (Capacitor.isNativePlatform()) {
+        try {
+            const result = await NativeBiometric.isAvailable();
+            if (!result.isAvailable) {
+                toast.error('Biometric authentication not available on this device');
+                return;
+            }
+
+            if (enabled) {
+                // Verify identity before enabling
+                await NativeBiometric.verifyIdentity({
+                    reason: "Enable biometric lock",
+                    title: "Authenticate",
+                    subtitle: "Please verify your identity",
+                    description: "Use FaceID or Fingerprint"
+                });
+            }
+        } catch (error) {
+            console.error('Biometric error:', error);
+            toast.error('Authentication failed');
+            return;
+        }
+    }
+
     setIsEnabled(enabled);
     localStorage.setItem('security_biometric_enabled', JSON.stringify(enabled));
     
     if (enabled) {
-        toast.success(t('security.biometric_enabled', 'Biometric lock enabled (Simulated)'));
+        toast.success(t('security.biometric_enabled', 'Biometric lock enabled'));
     } else {
         toast.success(t('security.biometric_disabled', 'Biometric lock disabled'));
     }
