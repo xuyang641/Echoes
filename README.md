@@ -38,7 +38,7 @@
       <td align="center">
         <img src="public/screenshots/screenshot1.png" width="260" alt="Home Screen / 时光轴" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <br />
-        <sub><b>时光轴 (Timeline)</b><br/>流淌的回忆长河</sub>
+        <sub><b>日记记录 (Timeline)</b><br/>记录你的每一步足迹</sub>
       </td>
       <td align="center">
         <img src="public/screenshots/screenshot4.png" width="260" alt="Insights / 洞察分析" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
