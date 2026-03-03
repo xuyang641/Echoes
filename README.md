@@ -26,12 +26,12 @@
       <td align="center">
         <img src="public/screenshots/screenshot3.png" width="260" alt="Map View / 足迹地图" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <br />
-        <sub><b>足迹地图 (Map View)</b><br/>记录你的每一步足迹</sub>
+        <sub><b>日记记录 (Map View)</b><br/>记录你的每一步足迹</sub>
       </td>
       <td align="center">
         <img src="public/screenshots/screenshot2.png" width="260" alt="Calendar View / 日历视图" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <br />
-        <sub><b>日历视图 (Calendar View)</b><br/>每一天都值得铭记</sub>
+        <sub><b>足迹地图 (Calendar View)</b><br/>每一天都值得铭记</sub>
       </td>
     </tr>
     <tr>
