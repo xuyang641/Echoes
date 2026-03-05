@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { AIChatView } from './components/ai-chat-view';
 
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { GroupProvider } from './context/GroupContext';
 import { FriendProvider } from './context/FriendContext';
 import { OnboardingTutorial } from './components/onboarding-tutorial';
@@ -51,14 +51,31 @@ export default function App() {
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
+  const { backgroundVideo } = useTheme();
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  // Remove hooks that depend on Router here if AppContent is not inside Router
+  // But AppContent IS used inside App which is usually wrapped by Router in main.tsx?
+  // Wait, looking at main.tsx usually. Let's assume Router is in main.tsx.
+  // If hooks count mismatch, it's usually conditional return.
+  
+  // FIX: Move all hooks to top level, BEFORE any conditional returns.
+  // The issue was:
+  // if (authLoading) return ...
+  // if (!user) return ...
+  // useDiarySync() <--- This hook was called conditionally!
+  // useDiaryStore() <--- This too!
+
   const navigate = useNavigate();
   const location = useLocation();
+  const isAddOrEdit = location.pathname === '/add' || location.pathname.startsWith('/edit');
+
+  // Move hooks up
+  const diarySync = useDiarySync(); // Call it always
+  const diaryStore = useDiaryStore(); // Call it always
 
   // Check for tutorial on mount
   useEffect(() => {
-    // If welcome modal has already been seen (so it won't show), check for tutorial
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome_v1');
     const hasSeenTutorial = localStorage.getItem('hasSeenTutorial_v1');
     
@@ -123,51 +140,68 @@ function AppContent() {
     return <LoginForm />;
   }
 
-  const isAddOrEdit = location.pathname === '/add' || location.pathname.startsWith('/edit');
-
-  // Sync Logic (replaces DataSyncManager)
-  useDiarySync();
-
-  // Store
-  const { entries, loading, saving, addEntry, updateEntry, deleteEntry, refresh } = useDiaryStore();
+  // Destructure after checks, but hooks ran above
+  const { entries, loading, saving, addEntry, updateEntry, deleteEntry, refresh } = diaryStore;
 
   return (
     <InteractionManager onAIChatOpen={() => setIsAIChatOpen(true)}>
       {({ onTouchStart, onTouchMove, onTouchEnd }) => (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300 pb-20 md:pb-0">
+        <div className={`min-h-screen transition-colors duration-300 pb-20 md:pb-0 relative overflow-hidden ${
+            backgroundVideo === 'none' 
+              ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900' 
+              : 'bg-black/20'
+          }`}>
           
-          <DesktopHeader entries={entries} isAddOrEdit={isAddOrEdit} />
-          <MobileHeader user={user} />
+          {/* Background Video */}
+          {backgroundVideo !== 'none' && (
+            <>
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+                src={backgroundVideo === 'rain' ? '/videos/backgrounds/rain_window.mp4' : '/videos/backgrounds/forest.mp4'}
+              />
+              <div className="fixed inset-0 bg-white/40 dark:bg-black/60 backdrop-blur-[2px] z-0 pointer-events-none" />
+            </>
+          )}
 
-          {/* Main Content */}
-          <main 
-            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 min-h-[calc(100vh-140px)]"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-          >
-            <AppRoutes 
-              entries={entries} 
-              loading={loading} 
-              saving={saving} 
-              onDeleteEntry={deleteEntry} 
-              onAddEntry={addEntry} 
-              onUpdateEntry={updateEntry} 
-              onRefresh={refresh}
+          {/* Content Wrapper */}
+          <div className="relative z-10">
+            <DesktopHeader entries={entries} isAddOrEdit={isAddOrEdit} />
+            <MobileHeader user={user} />
+
+            {/* Main Content */}
+            <main 
+              className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 min-h-[calc(100vh-140px)]"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
+              <AppRoutes 
+                entries={entries} 
+                loading={loading} 
+                saving={saving} 
+                onDeleteEntry={deleteEntry} 
+                onAddEntry={addEntry} 
+                onUpdateEntry={updateEntry} 
+                onRefresh={refresh}
+              />
+            </main>
+
+            <AIChatView  
+              entries={entries}
+              isOpen={isAIChatOpen}
+              onClose={() => setIsAIChatOpen(false)}
             />
-          </main>
 
-          <AIChatView  
-            entries={entries}
-            isOpen={isAIChatOpen}
-            onClose={() => setIsAIChatOpen(false)}
-          />
-
-          <WelcomeModal onComplete={handleWelcomeComplete} />
-          <OnboardingTutorial isOpen={showTutorial} onComplete={handleTutorialComplete} />
-          <Footer />
-          
-          <MobileNavigation />
+            <WelcomeModal onComplete={handleWelcomeComplete} />
+            <OnboardingTutorial isOpen={showTutorial} onComplete={handleTutorialComplete} />
+            <Footer />
+            
+            <MobileNavigation />
+          </div>
         </div>
       )}
     </InteractionManager>

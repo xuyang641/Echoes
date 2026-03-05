@@ -20,9 +20,9 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("upload-keystore.jks")
+            storeFile file("../my-release-key.keystore")
             storePassword "123456"
-            keyAlias "upload"
+            keyAlias "my-key-alias"
             keyPassword "123456"
         }
     }
@@ -32,12 +32,6 @@ android {
             signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            
-            applicationVariants.all { variant ->
-                variant.outputs.all {
-                    outputFileName = "Echoes.apk"
-                }
-            }
         }
     }
 }

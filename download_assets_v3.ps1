@@ -1,54 +1,55 @@
-# Echoes Asset Downloader v3
-# Fixed URLs for fonts and missing sounds.
+$userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
-$ErrorActionPreference = "Continue"
+# Ensure directories exist
+New-Item -ItemType Directory -Force -Path "public/fonts" | Out-Null
+New-Item -ItemType Directory -Force -Path "public/videos/backgrounds" | Out-Null
+New-Item -ItemType Directory -Force -Path "public/sounds" | Out-Null
 
-$soundsDir = "public/sounds"
-$fontsDir = "public/fonts"
-
-function Download-File {
-    param ($Name, $Dest, $Urls)
-    Write-Host "⬇️ Attempting to download $Name..."
-    foreach ($url in $Urls) {
-        try {
-            Write-Host "   Trying: $url"
-            Invoke-WebRequest -Uri $url -OutFile $Dest -UserAgent "Mozilla/5.0" -TimeoutSec 20
-            $item = Get-Item $Dest
-            if ($item.Length -gt 10KB) {
-                Write-Host "   ✅ Success! ($([math]::Round($item.Length/1MB, 2)) MB)"
-                return
-            }
-        } catch { Write-Warning "   ❌ Failed: $_" }
+function Download-Asset {
+    param ($Url, $Dest)
+    Write-Host "Downloading $Dest..."
+    try {
+        Invoke-WebRequest -Uri $Url -OutFile $Dest -UserAgent $userAgent -ErrorAction Stop
+        $size = (Get-Item $Dest).Length
+        if ($size -lt 5000) { # < 5KB is likely an error page
+            Write-Warning "File $Dest is too small ($size bytes). Likely an error."
+            Remove-Item $Dest
+        } else {
+            Write-Host "Success: $Dest ($($size/1MB) MB)"
+        }
+    } catch {
+        Write-Warning "Failed to download $Dest : $_"
     }
-    Write-Error "🔥 All mirrors failed for $Name"
 }
 
-# 1. Font: Use WOFF2 from jsDelivr (Very stable)
-# Note: Changing extension to .woff2
-Download-File -Name "lxgw-wenkai-regular.woff2" -Dest "$fontsDir/lxgw-wenkai-regular.woff2" -Urls @(
-    "https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.6.0/lxgw-wenkai-regular.woff2",
-    "https://cdn.jsdelivr.net/npm/lxgw-wenkai-lite-webfont@1.1.0/lxgw-wenkai-lite-regular.woff2"
-)
+# 1. Fonts (Using jsDelivr for reliability)
+# Noto Serif SC
+Download-Asset "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notoserifsc/NotoSerifSC-Regular.otf" "public/fonts/NotoSerifSC-Regular.otf"
+# Noto Sans SC
+Download-Asset "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosanssc/NotoSansSC-Regular.otf" "public/fonts/NotoSansSC-Regular.otf"
+# LXGW WenKai Light (Adding more weight)
+Download-Asset "https://github.com/lxgw/LxgwWenKai/releases/download/v1.330/LXGWWenKai-Light.ttf" "public/fonts/LXGWWenKai-Light.ttf"
 
-# 2. Ocean: Try BigSoundBank or Wikipedia
-Download-File -Name "ocean.mp3" -Dest "$soundsDir/ocean.mp3" -Urls @(
-    "https://upload.wikimedia.org/wikipedia/commons/e/e0/Ocean_waves.ogg", 
-    "https://actions.google.com/sounds/v1/water/waves_crashing_on_rocks_beach.ogg"
-)
+# 2. Videos (Archive.org - No 403s)
+# Rain (Confirmed item)
+Download-Asset "https://archive.org/download/littlecloudcinema_rainyday/rain3.mp4" "public/videos/backgrounds/rain_window.mp4"
 
-# 3. Forest: Try Wikipedia or BigSoundBank
-Download-File -Name "forest.mp3" -Dest "$soundsDir/forest.mp3" -Urls @(
-    "https://upload.wikimedia.org/wikipedia/commons/a/a2/Forest_ambience_-_birds.ogg",
-    "https://actions.google.com/sounds/v1/animals/birds_forest_morning.ogg"
-)
+# Ocean (Best guess from search)
+# Try a known Archive.org item "Ocean_Waves_Stock_Footage"
+Download-Asset "https://archive.org/download/StockFootageOceanWaves/StockFootageOceanWaves.mp4" "public/videos/backgrounds/calm_sea.mp4"
 
-# Note: Rain and Cafe were already successful in previous run, but we can re-verify if needed.
-# Since they are already there (checked by previous command success), we skip unless missing.
-if (-not (Test-Path "$soundsDir/rain.mp3")) {
-    Write-Warning "rain.mp3 missing, please re-run v2 script for it."
-}
-if (-not (Test-Path "$soundsDir/cafe.mp3")) {
-    Write-Warning "cafe.mp3 missing, please re-run v2 script for it."
-}
+# Forest (Best guess)
+# Try "forest_201503"
+Download-Asset "https://archive.org/download/forest_201503/forest.mp4" "public/videos/backgrounds/forest.mp4"
 
-Write-Host "🎉 Asset download v3 complete!"
+# 3. Sounds (Archive.org)
+# Rain
+Download-Asset "https://archive.org/download/RainSound13/Gentle%20Rain%20and%20Thunder.mp3" "public/sounds/rain.mp3"
+# Ocean
+Download-Asset "https://archive.org/download/OceanSounds_201605/Ocean%20Sounds.mp3" "public/sounds/ocean.mp3"
+# Cafe (Trying a specific one or generic)
+Download-Asset "https://archive.org/download/coffee-shop-sound-effect/Coffee%20Shop%20Sound%20Effect.mp3" "public/sounds/cafe.mp3"
+
+# Check sizes
+Write-Host "`nFinal Asset Check:"
+Get-ChildItem -Recurse public/fonts, public/videos/backgrounds, public/sounds | Select-Object Name, @{Name="Size(MB)";Expression={"{0:N2}" -f ($_.Length / 1MB)}}

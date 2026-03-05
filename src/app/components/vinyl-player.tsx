@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Disc, CloudRain, Trees, Waves, Coffee } from 'lucide-react';
+import { Play, Pause, Disc, CloudRain, Trees, Waves } from 'lucide-react';
 
-export type SoundscapeType = 'rain' | 'forest' | 'ocean' | 'cafe' | null;
+export type SoundscapeType = 'rain' | 'forest' | 'ocean' | null;
 
 interface VinylPlayerProps {
   onSelect: (type: SoundscapeType) => void;
@@ -12,7 +12,6 @@ const SOUNDSCAPES = [
   { id: 'rain', name: 'Rainy Day', icon: CloudRain, color: 'bg-blue-500', file: '/sounds/rain.mp3' },
   { id: 'forest', name: 'Forest Walk', icon: Trees, color: 'bg-green-600', file: '/sounds/forest.mp3' },
   { id: 'ocean', name: 'Ocean Waves', icon: Waves, color: 'bg-cyan-500', file: '/sounds/ocean.mp3' },
-  { id: 'cafe', name: 'Coffee Shop', icon: Coffee, color: 'bg-amber-700', file: '/sounds/cafe.mp3' },
 ] as const;
 
 export function VinylPlayer({ onSelect, selectedSound }: VinylPlayerProps) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useFriend } from '../context/FriendContext';
-import { User, Mail, UserPlus, Check, X, Trash2, LogOut, Settings, Hash, Globe, Bell, MapPin, Camera, BookOpen, Calendar } from 'lucide-react';
+import { User, Mail, UserPlus, Check, X, Trash2, LogOut, Settings, Hash, Globe, Bell, MapPin, Camera, BookOpen, Calendar, Coffee, ExternalLink, Copy } from 'lucide-react';
 import { AchievementList } from './achievement-list';
 import { fetchEntries } from '../utils/api'; // Or pass from props
 import { DiaryEntry } from './diary-entry-form';
@@ -59,8 +59,7 @@ export function AccountView() {
 
   // Calculate Statistics
   const stats = useMemo(() => {
-    if (entries.length === 0) return null;
-
+    // Always return stats object, even if empty
     const totalEntries = entries.length;
     const totalPhotos = entries.filter(e => e.photo).length;
     const totalLocations = new Set(entries.filter(e => e.location?.name).map(e => e.location!.name)).size;
@@ -129,7 +128,7 @@ export function AccountView() {
           onClick={() => setActiveTab('profile')}
           className={`relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'profile'
-              ? 'text-blue-600 dark:text-blue-400'
+              ? 'text-[var(--primary)] font-bold'
               : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
           }`}
         >
@@ -137,7 +136,7 @@ export function AccountView() {
           {activeTab === 'profile' && (
             <motion.div
               layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)]"
             />
           )}
         </button>
@@ -145,7 +144,7 @@ export function AccountView() {
           onClick={() => setActiveTab('achievements')}
           className={`relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'achievements'
-              ? 'text-blue-600 dark:text-blue-400'
+              ? 'text-[var(--primary)] font-bold'
               : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
           }`}
         >
@@ -153,7 +152,7 @@ export function AccountView() {
           {activeTab === 'achievements' && (
             <motion.div
               layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)]"
             />
           )}
         </button>
@@ -161,7 +160,7 @@ export function AccountView() {
           onClick={() => setActiveTab('friends')}
           className={`relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'friends'
-              ? 'text-blue-600 dark:text-blue-400'
+              ? 'text-[var(--primary)] font-bold'
               : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
           }`}
         >
@@ -174,7 +173,7 @@ export function AccountView() {
           {activeTab === 'friends' && (
             <motion.div
               layoutId="activeTab"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)]"
             />
           )}
         </button>
@@ -238,39 +237,39 @@ export function AccountView() {
             {/* Data Dashboard */}
             {stats && (
                 <div className="mt-8 pt-8 border-t border-gray-100 dark:border-gray-700">
-                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Your Journey</h3>
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">{t('account.journey')}</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <motion.div whileHover={{ y: -2 }} className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-orange-100 dark:border-orange-800">
                             <div className="flex items-center gap-2 mb-2 text-orange-600 dark:text-orange-400">
                                 <Calendar className="w-4 h-4" />
-                                <span className="text-xs font-bold">DAYS</span>
+                                <span className="text-xs font-bold">{t('account.days')}</span>
                             </div>
                             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.distinctDays}</div>
-                            <div className="text-xs text-gray-500">Active Days</div>
+                            <div className="text-xs text-gray-500">{t('account.activeDays')}</div>
                         </motion.div>
                         <motion.div whileHover={{ y: -2 }} className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
                             <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400">
                                 <BookOpen className="w-4 h-4" />
-                                <span className="text-xs font-bold">WORDS</span>
+                                <span className="text-xs font-bold">{t('account.words')}</span>
                             </div>
                             <div className="text-2xl font-bold text-gray-900 dark:text-white">{(stats.totalWords / 1000).toFixed(1)}k</div>
-                            <div className="text-xs text-gray-500">Total Words</div>
+                            <div className="text-xs text-gray-500">{t('account.totalWords')}</div>
                         </motion.div>
                         <motion.div whileHover={{ y: -2 }} className="bg-pink-50 dark:bg-pink-900/20 p-4 rounded-2xl border border-pink-100 dark:border-pink-800">
                             <div className="flex items-center gap-2 mb-2 text-pink-600 dark:text-pink-400">
                                 <Camera className="w-4 h-4" />
-                                <span className="text-xs font-bold">PHOTOS</span>
+                                <span className="text-xs font-bold">{t('account.photos')}</span>
                             </div>
                             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalPhotos}</div>
-                            <div className="text-xs text-gray-500">Moments Captured</div>
+                            <div className="text-xs text-gray-500">{t('account.momentsCaptured')}</div>
                         </motion.div>
                         <motion.div whileHover={{ y: -2 }} className="bg-green-50 dark:bg-green-900/20 p-4 rounded-2xl border border-green-100 dark:border-green-800">
                             <div className="flex items-center gap-2 mb-2 text-green-600 dark:text-green-400">
                                 <MapPin className="w-4 h-4" />
-                                <span className="text-xs font-bold">PLACES</span>
+                                <span className="text-xs font-bold">{t('account.places')}</span>
                             </div>
                             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalLocations}</div>
-                            <div className="text-xs text-gray-500">Locations Visited</div>
+                            <div className="text-xs text-gray-500">{t('account.locationsVisited')}</div>
                         </motion.div>
                     </div>
                 </div>
@@ -375,12 +374,50 @@ export function AccountView() {
             </div>
           </motion.div>
 
+          {/* Sponsor / Donate */}
+          <motion.div variants={itemVariants} className="bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 rounded-2xl p-6 shadow-sm border border-pink-100 dark:border-pink-800">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+              <Coffee className="w-5 h-5 text-rose-500" />
+              {t('account.sponsor', 'Sponsor Developer')}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+              {t('account.sponsor_desc', 'If you like Echoes, consider buying me a coffee to support development and server costs.')}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a 
+                href="https://afdian.com/a/2311752562hxy" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition-colors font-medium shadow-sm hover:shadow-md"
+              >
+                <img src="https://afdian.net/favicon.ico" alt="Afdian" className="w-4 h-4 bg-white rounded-full" />
+                <span>{t('account.donate_afdian', 'Sponsor on Afdian')}</span>
+                <ExternalLink className="w-3 h-3 opacity-80" />
+              </a>
+              
+              <button 
+                onClick={() => {
+                    navigator.clipboard.writeText(user?.id || '');
+                    // toast.success('Copied ID! Please paste it in the "Remark" field on Afdian.');
+                    alert(t('account.idCopied'));
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+              >
+                <Copy className="w-4 h-4" />
+                <span>{t('account.copyId')}</span>
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                {t('account.sponsorTip')}
+            </p>
+          </motion.div>
+
           {/* Legal & Info Links */}
           <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="font-bold text-gray-900 dark:text-white mb-4">About</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white mb-4">{t('footer.about')}</h3>
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Version</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('account.version')}</span>
                 <span className="text-sm font-mono text-gray-500">v2.1.0 (Build 2024.05)</span>
               </div>
               <Link to="/about" className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -399,7 +436,7 @@ export function AccountView() {
             
             <div className="mt-6 text-center">
                 <p className="text-xs text-gray-400 dark:text-gray-500">
-                    Made with ❤️ by Echoes Team
+                    {t('account.madeWith')}
                 </p>
             </div>
           </motion.div>
@@ -516,10 +553,10 @@ export function AccountView() {
                     </div>
                     <button 
                       onClick={() => {
-                        if(confirm(`Remove ${friend.name} from friends?`)) removeFriend(friend.id);
+                        if(confirm(t('account.confirmRemove', { name: friend.name }))) removeFriend(friend.id);
                       }}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                      title="删除好友"
+                      title={t('account.removeFriend')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

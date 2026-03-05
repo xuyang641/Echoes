@@ -73,12 +73,12 @@ export function StorageManager() {
 
   const handleClearCache = async () => {
     setIsCleaning(true);
-    const toastId = toast.loading('Cleaning cache...');
+    const toastId = toast.loading(t('storage.cleaning'));
     
     // Simulate cleanup (in real app, delete thumbnails or temp files)
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    toast.success('Cache cleaned!', { id: toastId });
+    toast.success(t('storage.cacheCleaned'), { id: toastId });
     setIsCleaning(false);
   };
 
@@ -96,7 +96,7 @@ export function StorageManager() {
         localStorage.clear();
         window.location.reload();
     } catch (err) {
-        toast.error('Failed to reset app');
+        toast.error(t('storage.resetFailed'));
         console.error(err);
     }
   };
@@ -115,13 +115,13 @@ export function StorageManager() {
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
                     {fileCount}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Files</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('storage.files')}</div>
             </div>
             <div className="text-center flex-1">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
                     ~{formatSize(totalSize)}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Used</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('storage.used')}</div>
             </div>
         </div>
 
@@ -147,18 +147,16 @@ export function StorageManager() {
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2 text-red-600">
                             <AlertTriangle className="w-5 h-5" />
-                            Danger Zone
+                            {t('storage.dangerZone')}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
-                            This will permanently delete ALL your diaries, photos, and settings. This action cannot be undone.
-                            <br/><br/>
-                            Please make sure you have a backup before proceeding.
+                            {t('storage.dangerDesc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-none">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white border-none">{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleResetApp} className="bg-red-600 hover:bg-red-700 text-white">
-                            Delete Everything
+                            {t('storage.deleteEverything')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

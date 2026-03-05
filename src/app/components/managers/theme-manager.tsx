@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Palette, Moon, Sun, Type } from 'lucide-react';
 
 const colors = [
-    { id: 'blue', color: 'bg-blue-500', label: 'Default' },
-    { id: 'mint', color: 'bg-emerald-500', label: 'Mint' },
-    { id: 'sakura', color: 'bg-rose-500', label: 'Sakura' },
-    { id: 'ocean', color: 'bg-cyan-500', label: 'Ocean' },
-    { id: 'violet', color: 'bg-violet-500', label: 'Violet' },
-    { id: 'orange', color: 'bg-orange-500', label: 'Sunset' },
+    { id: 'blue', color: 'bg-blue-500', label: 'appearance.colors.default' },
+    { id: 'mint', color: 'bg-emerald-500', label: 'appearance.colors.mint' },
+    { id: 'sakura', color: 'bg-rose-500', label: 'appearance.colors.sakura' },
+    { id: 'ocean', color: 'bg-cyan-500', label: 'appearance.colors.ocean' },
+    { id: 'violet', color: 'bg-violet-500', label: 'appearance.colors.violet' },
+    { id: 'orange', color: 'bg-orange-500', label: 'appearance.colors.sunset' },
 ];
 
 export function ThemeManager() {
@@ -18,7 +18,7 @@ export function ThemeManager() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
       <h3 className="font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-        <Palette className="w-5 h-5 text-indigo-500" />
+        <Palette className="w-5 h-5 text-[var(--primary)]" />
         {t('appearance.title', 'Appearance')}
       </h3>
 
@@ -46,7 +46,7 @@ export function ThemeManager() {
                     checked={theme === 'dark'}
                     onChange={toggleTheme}
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--primary)]"></div>
             </label>
         </div>
 
@@ -70,7 +70,7 @@ export function ThemeManager() {
                         {size === 'small' && 'Aa'}
                         {size === 'medium' && 'Aa'}
                         {size === 'large' && 'Aa'}
-                        <span className="text-xs ml-1 opacity-60 capitalize">{size}</span>
+                        <span className="text-xs ml-1 opacity-60 capitalize">{t(`appearance.font.${size}`)}</span>
                     </button>
                 ))}
             </div>
@@ -89,8 +89,8 @@ export function ThemeManager() {
                         className={`w-10 h-10 rounded-full ${c.color} transition-transform hover:scale-110 focus:outline-none ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 ${
                             accentColor === c.id ? 'ring-gray-400 dark:ring-gray-500 scale-110' : 'ring-transparent'
                         }`}
-                        title={c.label}
-                        aria-label={`Select ${c.label} color`}
+                        title={t(c.label)}
+                        aria-label={`Select ${t(c.label)} color`}
                     />
                 ))}
             </div>

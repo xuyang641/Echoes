@@ -5,16 +5,22 @@ type Theme = 'light' | 'dark';
 type AccentColor = 'blue' | 'purple' | 'pink' | 'orange' | 'green' | 'mint' | 'sakura' | 'ocean' | 'violet';
 type Language = 'en' | 'zh' | 'ja' | 'ko';
 type FontSize = 'small' | 'medium' | 'large';
+type BackgroundVideo = 'none' | 'rain' | 'forest';
+type FontFamily = 'sans' | 'serif' | 'lxgw' | 'mashanzheng' | 'zcool';
 
 interface ThemeContextType {
   theme: Theme;
   accentColor: AccentColor;
   language: Language;
   fontSize: FontSize;
+  backgroundVideo: BackgroundVideo;
+  fontFamily: FontFamily;
   setTheme: (theme: Theme) => void;
   setAccentColor: (color: AccentColor) => void;
   setLanguage: (lang: Language) => void;
   setFontSize: (size: FontSize) => void;
+  setBackgroundVideo: (video: BackgroundVideo) => void;
+  setFontFamily: (font: FontFamily) => void;
   toggleTheme: () => void;
 }
 
@@ -37,6 +43,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return (saved as FontSize) || 'medium';
   });
 
+  const [backgroundVideo, setBackgroundVideo] = useState<BackgroundVideo>(() => {
+    const saved = localStorage.getItem('backgroundVideo');
+    return (saved as BackgroundVideo) || 'none';
+  });
+
+  const [fontFamily, setFontFamily] = useState<FontFamily>(() => {
+    const saved = localStorage.getItem('fontFamily');
+    return (saved as FontFamily) || 'sans';
+  });
+
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('language');
     // Default to browser language or 'en'
@@ -56,12 +72,38 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('fontSize', size);
   };
 
+  const setBackgroundVideoState = (video: BackgroundVideo) => {
+    setBackgroundVideo(video);
+    localStorage.setItem('backgroundVideo', video);
+  };
+
+  const setFontFamilyState = (font: FontFamily) => {
+    setFontFamily(font);
+    localStorage.setItem('fontFamily', font);
+  };
+
   // Initialize i18n on mount
   useEffect(() => {
     if (i18n.language !== language) {
       i18n.changeLanguage(language);
     }
   }, []);
+
+  // Apply Font Family
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const fontMap = {
+      sans: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      serif: '"Noto Serif", "Noto Serif SC", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+      lxgw: '"LXGW WenKai", "Noto Serif SC", serif',
+      mashanzheng: '"Ma Shan Zheng", "Noto Serif SC", cursive',
+      zcool: '"ZCOOL KuaiLe", "Noto Sans SC", cursive',
+    };
+    // Update CSS variables if you use them
+    root.style.setProperty('--font-sans', fontMap[fontFamily]);
+    root.style.setProperty('--font-serif', fontMap[fontFamily]); 
+    document.body.style.fontFamily = fontMap[fontFamily];
+  }, [fontFamily]);
 
   // Apply theme to document
   useEffect(() => {
@@ -117,7 +159,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, accentColor, language, fontSize, setTheme, setAccentColor, setLanguage, setFontSize, toggleTheme }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      accentColor, 
+      language, 
+      fontSize, 
+      backgroundVideo,
+      fontFamily,
+      setTheme, 
+      setAccentColor, 
+      setLanguage, 
+      setFontSize, 
+      setBackgroundVideo: setBackgroundVideoState,
+      setFontFamily: setFontFamilyState,
+      toggleTheme 
+    }}>
       {children}
     </ThemeContext.Provider>
   );

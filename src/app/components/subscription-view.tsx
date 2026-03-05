@@ -12,10 +12,12 @@ export function SubscriptionView() {
       id: 'free',
       name: 'Starter',
       price: '0',
-      description: t('subscription.features.unlimited'),
+      description: t('subscription.features.starter.storage'),
       features: [
-        t('subscription.features.unlimited'),
-        t('subscription.features.filters'),
+        t('subscription.features.starter.storage'),
+        t('subscription.features.starter.sync'),
+        t('subscription.features.starter.ai'),
+        t('subscription.features.starter.theme'),
         t('subscription.features.export')
       ],
       icon: Star,
@@ -24,14 +26,16 @@ export function SubscriptionView() {
     {
       id: 'pro',
       name: 'Pro',
-      price: billingCycle === 'monthly' ? '4.99' : '3.99',
-      period: billingCycle === 'monthly' ? '/mo' : '/mo',
+      price: billingCycle === 'monthly' ? '10.00' : '96.00',
+      period: billingCycle === 'monthly' ? '/mo' : '/yr',
+      currency: '¥',
       description: t('subscription.features.ai'),
       features: [
         t('subscription.features.unlimited'),
         t('subscription.features.ai'),
         t('subscription.features.quality'),
-        t('subscription.features.support')
+        t('subscription.features.support'),
+        t('subscription.features.themes')
       ],
       popular: true,
       icon: Zap,
@@ -40,15 +44,17 @@ export function SubscriptionView() {
     {
       id: 'lifetime',
       name: 'Lifetime',
-      price: '149.99',
+      price: '198.00',
       period: 'one-time',
+      currency: '¥',
       description: t('subscription.features.lifetime'),
       features: [
         t('subscription.features.unlimited'),
         t('subscription.features.lifetime'),
         t('subscription.features.badge'),
         t('subscription.features.beta'),
-        t('subscription.features.vip')
+        t('subscription.features.vip'),
+        t('subscription.features.themes')
       ],
       icon: Crown,
       color: 'amber'
@@ -109,12 +115,15 @@ export function SubscriptionView() {
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 min-h-[40px]">{plan.description}</p>
 
             <div className="flex items-baseline gap-1 mb-8">
-              <span className="text-4xl font-bold text-gray-900 dark:text-white">${plan.price}</span>
+              <span className="text-4xl font-bold text-gray-900 dark:text-white">{plan.currency || '$'}{plan.price}</span>
               {plan.period && <span className="text-gray-500 dark:text-gray-400">{plan.period}</span>}
             </div>
 
             <button 
-              onClick={() => plan.price !== '0' && toast('Coming Soon')}
+              onClick={() => {
+                if (plan.price === '0') return;
+                window.open('https://afdian.com/a/houxuyang', '_blank');
+              }}
               className={`w-full py-3 rounded-xl font-bold transition-all ${
                 plan.id === 'free'
                   ? 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'
@@ -134,6 +143,23 @@ export function SubscriptionView() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Donation Section */}
+      <div className="mt-16 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 rounded-3xl p-8 md:p-12 border border-amber-100 dark:border-gray-700 text-center">
+         <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-full mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-coffee"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>
+         </div>
+         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{t('account.sponsor')}</h2>
+         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-8">
+            {t('account.sponsor_desc')}
+         </p>
+         <button
+            onClick={() => window.open('https://afdian.com/a/houxuyang', '_blank')}
+            className="inline-flex items-center gap-2 px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-amber-500/30"
+         >
+            {t('account.donate_afdian')}
+         </button>
       </div>
 
       {/* Trust Badges */}

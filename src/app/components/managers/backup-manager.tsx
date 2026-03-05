@@ -79,7 +79,7 @@ export function BackupManager() {
       }
 
       // 3. Generate Zip
-      toast.loading('Compressing...', { id: toastId });
+      toast.loading(t('backup.exporting'), { id: toastId });
       const content = await zip.generateAsync({ type: 'blob' });
       
       // 4. Save File
@@ -93,15 +93,15 @@ export function BackupManager() {
             directory: Directory.ExternalStorage,
             recursive: true
         });
-        toast.success(`Backup saved to Downloads/${fileName}`, { id: toastId, duration: 5000 });
+        toast.success(t('backup.success'), { id: toastId, duration: 5000 });
       } else {
         saveAs(content, fileName);
-        toast.success('Backup downloaded!', { id: toastId });
+        toast.success(t('backup.downloaded'), { id: toastId });
       }
       
     } catch (error) {
       console.error('Backup failed:', error);
-      toast.error('Backup failed. Check console.', { id: toastId });
+      toast.error(t('export.failed'), { id: toastId });
     } finally {
       setIsBackingUp(false);
     }
@@ -122,8 +122,89 @@ export function BackupManager() {
 
   // ... Import logic remains same ...
   // Placeholder for handleImportBackup
-  const handleImportBackup = async (e: any) => {
-      alert('Restore feature coming soon!');
+  const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!confirm(t('backup.confirmRestore', 'This will merge backup data with your current data. Continue?'))) {
+      e.target.value = ''; // Reset input
+      return;
+    }
+
+    setIsRestoring(true);
+    const toastId = toast.loading(t('backup.restoring', 'Restoring backup...'));
+
+    try {
+      const zip = new JSZip();
+      const content = await zip.loadAsync(file);
+
+      // 1. Read JSON
+      const jsonFile = content.file('diary_entries.json');
+      if (!jsonFile) throw new Error('Invalid backup: missing diary_entries.json');
+
+      const jsonStr = await jsonFile.async('string');
+      const entries = JSON.parse(jsonStr);
+      console.log('Found entries to restore:', entries.length);
+
+      // 2. Restore Photos
+      const photoFolder = content.folder('photos');
+      let processedCount = 0;
+
+      for (const entry of entries) {
+        // If entry has a photo and it's not a remote URL (http)
+        // Note: Backup logic stores base64 content in ZIP with name `${entry.id}.jpg`
+        if (entry.photo && photoFolder) {
+          const photoName = `${entry.id}.jpg`;
+          const photoFile = photoFolder.file(photoName);
+          
+          if (photoFile) {
+            try {
+              const base64Data = await photoFile.async('base64');
+              
+              if (Capacitor.isNativePlatform()) {
+                // Save to app data directory
+                const fileName = `restored_${entry.id}_${Date.now()}.jpg`;
+                const savedFile = await Filesystem.writeFile({
+                  path: fileName,
+                  data: base64Data,
+                  directory: Directory.Data,
+                  recursive: true
+                });
+                // Update entry with new local path
+                entry.photo = savedFile.uri;
+              } else {
+                // Web: Use Data URL directly
+                entry.photo = `data:image/jpeg;base64,${base64Data}`;
+              }
+            } catch (err) {
+              console.warn(`Failed to restore photo for ${entry.id}`, err);
+            }
+          }
+        }
+        
+        processedCount++;
+        if (processedCount % 5 === 0) {
+           toast.loading(`${t('backup.restoring')} (${processedCount}/${entries.length})`, { id: toastId });
+        }
+      }
+
+      // 3. Save to Offline Storage
+      await offlineStorage.saveEntries(entries);
+      
+      toast.success(t('backup.restoreSuccess', 'Restore completed!'), { id: toastId });
+      
+      // Refresh to show new data
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Restore failed:', error);
+      toast.error(t('backup.restoreFailed', 'Failed to restore backup'), { id: toastId });
+    } finally {
+      setIsRestoring(false);
+      e.target.value = ''; // Reset input
+    }
   };
 
   return (
@@ -150,15 +231,15 @@ export function BackupManager() {
           {isBackingUp ? t('backup.exporting', 'Exporting...') : t('backup.export', 'Export Backup')}
         </button>
 
-        <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer font-medium opacity-50 cursor-not-allowed">
+        <label className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer font-medium ${isRestoring ? 'opacity-50 cursor-not-allowed' : ''}`}>
           <Upload className="w-5 h-5" />
-          <span>{t('backup.import', 'Restore Backup')}</span>
+          <span>{isRestoring ? t('backup.restoring', 'Restoring...') : t('backup.import', 'Restore Backup')}</span>
           <input 
             type="file" 
             accept=".zip" 
             onChange={handleImportBackup} 
             className="hidden" 
-            disabled={true}
+            disabled={isRestoring}
           />
         </label>
       </div>

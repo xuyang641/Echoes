@@ -66,13 +66,13 @@ export function DreamPainter({ description, onImageGenerated }: DreamPainterProp
           <div className="flex justify-between items-center">
             <h4 className="font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
-              Dream Painter
+              {t('dream.title')}
             </h4>
             <button 
                 onClick={() => setIsOpen(false)}
                 className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
             >
-                Close
+                {t('dream.close')}
             </button>
           </div>
 
@@ -80,11 +80,11 @@ export function DreamPainter({ description, onImageGenerated }: DreamPainterProp
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder={description ? "Using diary content..." : "Describe the scene (e.g. A cat sleeping on a cloud)"}
+              placeholder={description ? t('dream.placeholder_diary') : t('dream.placeholder')}
               className="w-full text-sm p-3 rounded-lg border border-purple-200 dark:border-purple-700 bg-white/50 dark:bg-black/20 focus:ring-2 focus:ring-purple-500 outline-none resize-none h-20"
             />
             <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
-                * AI works best with English. Keywords are auto-appended.
+                {t('dream.tip')}
             </p>
           </div>
 
@@ -106,12 +106,12 @@ export function DreamPainter({ description, onImageGenerated }: DreamPainterProp
             {isGenerating ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Painting...
+                {t('dream.generating')}
               </>
             ) : (
               <>
                 <Wand2 className="w-4 h-4" />
-                Generate Art
+                {t('dream.generate')}
               </>
             )}
           </button>
