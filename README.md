@@ -26,24 +26,24 @@
       <td align="center">
         <img src="public/screenshots/screenshot3.png" width="260" alt="Map View / 足迹地图" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <br />
-        <sub><b>日记记录 (Map View)</b><br/>记录你的每一步足迹</sub>
+        <sub><b>日记记录（Diary Entry） ()</b><br/>记录你的每日生活</sub>
       </td>
       <td align="center">
         <img src="public/screenshots/screenshot2.png" width="260" alt="Calendar View / 日历视图" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <br />
-        <sub><b>足迹地图 (Calendar View)</b><br/>每一天都值得铭记</sub>
+        <sub><b>足迹地图 (Footprint Map)</b><br/>展示你的每一步足迹</sub>
       </td>
     </tr>
     <tr>
       <td align="center">
         <img src="public/screenshots/screenshot1.png" width="260" alt="Home Screen / 时光轴" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <br />
-        <sub><b>日记记录 (Timeline)</b><br/>记录你的每一步足迹</sub>
+        <sub><b>日记记录 (Diary Entry)</b><br/>记录你的每日生活</sub>
       </td>
       <td align="center">
         <img src="public/screenshots/screenshot4.png" width="260" alt="Insights / 洞察分析" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <br />
-        <sub><b>洞察分析 (Insights)</b><br/>AI 驱动的情感分析</sub>
+        <sub><b> (PrintShop)</b><br/>将你的日记收录成册</sub>
       </td>
     </tr>
   </table>
