@@ -32,19 +32,21 @@ export function AIChatView({ entries, isOpen, onClose }: AIChatViewProps) {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [apiKey, setApiKey] = useState('sk-ba2aac9abdff40f183af300ae493eb93'); // Pre-fill user provided key
+  const [apiKey, setApiKey] = useState(''); // Initialize empty
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load API key from local storage on mount
+  // Load API key from local storage or environment on mount
   useEffect(() => {
-    // Check local storage
+    // Priority: 1. Local Storage (User set) -> 2. Environment Variable (Dev set)
     const storedKey = localStorage.getItem('qwen_api_key');
+    const envKey = import.meta.env.VITE_QWEN_API_KEY;
+    
     if (storedKey) {
       setApiKey(storedKey);
       aiService.init(storedKey);
-    } else {
-      // Initialize with default/hardcoded key if no local storage
-      aiService.init('sk-ba2aac9abdff40f183af300ae493eb93');
+    } else if (envKey) {
+      setApiKey(envKey);
+      aiService.init(envKey);
     }
   }, []);
 
