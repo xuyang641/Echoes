@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabaseClient';
+import { useDiaryStore } from '../store/diaryStore';
 
 interface AuthContextType {
   user: User | null;
@@ -35,6 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    // Clear local data store to prevent data leakage between accounts
+    await useDiaryStore.getState().clearStore();
     await supabase.auth.signOut();
   };
 

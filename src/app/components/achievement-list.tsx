@@ -1,18 +1,21 @@
 import { DiaryEntry } from '../components/diary-entry-form';
 import { ACHIEVEMENTS } from '../utils/achievements';
 import { Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface AchievementListProps {
   entries: DiaryEntry[];
 }
 
 export function AchievementList({ entries }: AchievementListProps) {
+  const { t } = useTranslation();
+  
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Achievements</h3>
-          <p className="text-sm text-gray-500">Unlock badges by recording your life.</p>
+          <h3 className="text-lg font-semibold text-gray-900">{t('achievements.title')}</h3>
+          <p className="text-sm text-gray-500">{t('achievements.subtitle')}</p>
         </div>
       </div>
 
@@ -49,23 +52,23 @@ export function AchievementList({ entries }: AchievementListProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                     <h4 className={`font-bold text-sm mb-0.5 truncate pr-2 ${isUnlocked ? 'text-gray-900' : 'text-gray-500'}`}>
-                      {achievement.title}
+                      {t(`achievements.${achievement.id}.title`, achievement.title)}
                     </h4>
                     {isUnlocked && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full shrink-0">
-                        Unlocked
+                        {t('achievements.unlocked')}
                       </span>
                     )}
                   </div>
                   
                   <p className="text-xs text-gray-500 line-clamp-2 h-8 leading-4">
-                    {achievement.description}
+                    {t(`achievements.${achievement.id}.description`, achievement.description)}
                   </p>
                   
                   {/* Progress Section */}
                   <div className="mt-3">
                     <div className="flex justify-between text-[10px] font-medium mb-1.5 text-gray-400">
-                      <span>Progress</span>
+                      <span>{t('achievements.progress')}</span>
                       <span className={isUnlocked ? 'text-blue-600' : ''}>
                         {Math.round(percent)}%
                       </span>

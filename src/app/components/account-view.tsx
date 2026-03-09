@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useFriend } from '../context/FriendContext';
-import { User, Mail, UserPlus, Check, X, Trash2, LogOut, Settings, Hash, Globe, Bell, MapPin, Camera, BookOpen, Calendar, Coffee, ExternalLink, Copy } from 'lucide-react';
+import { User, Mail, UserPlus, Check, X, Trash2, LogOut, Settings, Hash, Globe, Bell, MapPin, Camera, BookOpen, Calendar, Coffee, ExternalLink, Copy, Share2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { AchievementList } from './achievement-list';
 import { fetchEntries } from '../utils/api'; // Or pass from props
 import { DiaryEntry } from './diary-entry-form';
@@ -15,7 +16,6 @@ import { BackupManager } from './managers/backup-manager';
 import { SecurityManager } from './managers/security-manager';
 import { StorageManager } from './managers/storage-manager';
 import { ThemeManager } from './managers/theme-manager';
-import { differenceInDays } from 'date-fns';
 import { motion } from 'framer-motion';
 
 interface UserProfile {
@@ -103,6 +103,30 @@ export function AccountView() {
     visible: { opacity: 1, y: 0 }
   };
 
+  const handleShareApp = async () => {
+    const shareData = {
+      title: 'Echoes - 记录生活的回响',
+      text: '我正在使用 Echoes 记录生活，快来加入我吧！',
+      url: window.location.origin,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.log('Error sharing:', err);
+      }
+    } else {
+      navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+      toast.success(t('common.copied', '链接已复制到剪贴板'));
+    }
+  };
+
+  const handleForceWelcome = () => {
+    window.dispatchEvent(new CustomEvent('force-welcome'));
+    toast.success('已触发欢迎日记，请回到首页查看。');
+  };
+
   return (
     <motion.div 
       variants={containerVariants}
@@ -112,15 +136,26 @@ export function AccountView() {
     >
       <motion.div variants={itemVariants} className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('account.title')}</h1>
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={signOut}
-          className="flex items-center gap-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          {t('account.signOut')}
-        </motion.button>
+        <div className="flex items-center gap-2">
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleShareApp}
+            className="flex items-center gap-2 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 px-4 py-2 rounded-lg transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('account.share', '分享给好友')}</span>
+          </motion.button>
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={signOut}
+            className="flex items-center gap-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('account.signOut')}</span>
+          </motion.button>
+        </div>
       </motion.div>
 
       <motion.div variants={itemVariants} className="flex gap-4 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
@@ -416,8 +451,11 @@ export function AccountView() {
           <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4">{t('footer.about')}</h3>
             <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('account.version')}</span>
+              <div 
+                onClick={handleForceWelcome}
+                className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('account.version', '版本')}</span>
                 <span className="text-sm font-mono text-gray-500">v2.1.0 (Build 2024.05)</span>
               </div>
               <Link to="/about" className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -552,14 +590,16 @@ export function AccountView() {
                       </div>
                     </div>
                     <button 
-                      onClick={() => {
-                        if(confirm(t('account.confirmRemove', { name: friend.name }))) removeFriend(friend.id);
-                      }}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                      title={t('account.removeFriend')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                        onClick={() => {
+                          // if(confirm(t('account.confirmRemove', { name: friend.name }))) removeFriend(friend.id);
+                          // Fix: t function interpolation issue
+                          if(confirm(`Are you sure you want to remove ${friend.name}?`)) removeFriend(friend.id);
+                        }}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                        title={t('account.removeFriend')}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                   </motion.div>
                 ))}
               </div>

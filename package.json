@@ -124,7 +124,6 @@
     "rollup": "^4.55.1",
     "supabase": "^2.72.8",
     "tailwindcss": "4.1.12",
-    "vercel": "^50.4.6",
     "vite": "6.3.5",
     "vite-plugin-pwa": "^0.21.2",
     "vitest": "^4.0.18",

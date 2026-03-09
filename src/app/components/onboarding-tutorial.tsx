@@ -73,6 +73,7 @@ const slides = [
 ];
 
 export function OnboardingTutorial({ onComplete, isOpen }: OnboardingTutorialProps) {
+  const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,9 +122,9 @@ export function OnboardingTutorial({ onComplete, isOpen }: OnboardingTutorialPro
 
   const variants = {
     enter: (direction: number) => ({
-      x: direction > 0 ? 1000 : -1000,
+      x: direction > 0 ? 300 : -300,
       opacity: 0,
-      scale: 0.8
+      scale: 0.9
     }),
     center: {
       zIndex: 1,
@@ -133,16 +134,15 @@ export function OnboardingTutorial({ onComplete, isOpen }: OnboardingTutorialPro
     },
     exit: (direction: number) => ({
       zIndex: 0,
-      x: direction < 0 ? 1000 : -1000,
+      x: direction < 0 ? 300 : -300,
       opacity: 0,
-      scale: 0.8
+      scale: 0.9
     })
   };
 
   if (!isOpen) return null;
 
   const currentContent = slides[currentSlide];
-  const Icon = currentContent.icon;
 
   return (
     <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col items-center justify-between p-6 overflow-hidden">
@@ -152,7 +152,7 @@ export function OnboardingTutorial({ onComplete, isOpen }: OnboardingTutorialPro
           onClick={handleSkip}
           className="text-sm font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors px-4 py-2"
         >
-          跳过
+          {t('common.skip', '跳过')}
         </button>
       </div>
 
@@ -202,6 +202,16 @@ export function OnboardingTutorial({ onComplete, isOpen }: OnboardingTutorialPro
             >
               {currentContent.description}
             </motion.p>
+            
+            {/* Gesture Hint */}
+             <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-gray-300 dark:text-gray-600"
+            >
+              <span>← 滑动切换 →</span>
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </div>

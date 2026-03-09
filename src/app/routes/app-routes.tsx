@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DiaryEntryForm, type DiaryEntry } from '../components/diary-entry-form';
@@ -70,6 +70,17 @@ interface AppRoutesProps {
 
 export function AppRoutes({ entries, loading, saving, onDeleteEntry, onAddEntry, onUpdateEntry, onRefresh }: AppRoutesProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleAddEntry = async (entry: DiaryEntry, targetGroups: string[]) => {
+    await onAddEntry(entry, targetGroups);
+    navigate('/');
+  };
+
+  const handleUpdateEntry = async (entry: DiaryEntry, targetGroups: string[]) => {
+    await onUpdateEntry(entry, targetGroups);
+    navigate('/');
+  };
 
   return (
     <Suspense fallback={
@@ -165,14 +176,14 @@ export function AppRoutes({ entries, loading, saving, onDeleteEntry, onAddEntry,
           <Route path="/add" element={
             <PageTransition>
               <div className="max-w-2xl mx-auto">
-                <DiaryEntryForm onSave={onAddEntry} saving={saving} />
+                <DiaryEntryForm onSave={handleAddEntry} saving={saving} />
               </div>
             </PageTransition>
           } />
           <Route path="/edit/:id" element={
             <PageTransition>
               <div className="max-w-2xl mx-auto">
-                <EditEntryWrapper entries={entries} onSave={onUpdateEntry} saving={saving} loading={loading} />
+                <EditEntryWrapper entries={entries} onSave={handleUpdateEntry} saving={saving} loading={loading} />
               </div>
             </PageTransition>
           } />

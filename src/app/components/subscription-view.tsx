@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Check, Star, Zap, Crown, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'react-hot-toast';
 
 export function SubscriptionView() {
   const { t } = useTranslation();

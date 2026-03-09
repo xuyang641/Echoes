@@ -60,8 +60,8 @@ export function MobileHeader({ user, isOffline = false, pendingSyncCount = 0 }: 
         </button>
       </div>
       
-      {/* Scrollable Navigation Bar (Below Header) */}
-      <div className="px-2 pb-2 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800">
+      {/* Scrollable Navigation Bar (Below Header) - Always visible, not hidden by sticky */}
+      <div className="px-2 pb-2 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="flex-1 overflow-x-auto no-scrollbar flex gap-4 pr-8">
           {[
             { path: '/', label: 'nav.timeline', active: location.pathname === '/' },

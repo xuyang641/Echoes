@@ -24,6 +24,7 @@ interface DiaryState {
   syncPendingActions: () => Promise<void>;
   setOfflineStatus: (status: boolean) => void;
   updatePendingCount: () => Promise<void>;
+  clearStore: () => Promise<void>;
 }
 
 export const useDiaryStore = create<DiaryState>((set, get) => ({
@@ -48,6 +49,12 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
     set({ pendingSyncCount: count });
   },
 
+  clearStore: async () => {
+    set({ entries: [], user: null, pendingSyncCount: 0 });
+    localStorage.removeItem('photo-diary-entries');
+    await offlineStorage.clear();
+  },
+
   loadEntries: async () => {
     const { user, updatePendingCount } = get();
     if (!user) return;
@@ -56,8 +63,8 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
     try {
       // 1. Try to load from IndexedDB first (Offline-first)
       try {
-        const cachedEntries = await offlineStorage.getEntries();
-        if (cachedEntries.length > 0) {
+        const cachedEntries = await offlineStorage.getEntries(user.id);
+        if (cachedEntries && cachedEntries.length > 0) {
           set({ entries: cachedEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) });
         } else {
           // Fallback to localStorage
@@ -65,8 +72,14 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
           if (stored) {
             try {
               const parsed = JSON.parse(stored);
-              set({ entries: parsed });
-              await offlineStorage.saveEntries(parsed);
+              // Ensure we only load entries for current user if userId exists
+              const userEntries = parsed ? parsed.filter((e: any) => !e.userId || e.userId === user.id) : [];
+              if (userEntries.length > 0) {
+                 set({ entries: userEntries });
+                 // Update offline storage with userId
+                 const updatedEntries = userEntries.map((e: any) => ({ ...e, userId: user.id }));
+                 await offlineStorage.saveEntries(updatedEntries);
+              }
             } catch (e) {
               console.error('Error parsing stored entries:', e);
             }
@@ -80,11 +93,16 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
 
       // 2. Fetch from API (Network)
       if (navigator.onLine) {
-        const data = await fetchEntries();
-        const sortedData = data.sort((a: DiaryEntry, b: DiaryEntry) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        set({ entries: sortedData });
-        await offlineStorage.saveEntries(sortedData);
-        set({ isOffline: false });
+        try {
+            const data = await fetchEntries();
+            const sortedData = data.sort((a: DiaryEntry, b: DiaryEntry) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            set({ entries: sortedData });
+            await offlineStorage.saveEntries(sortedData);
+            set({ isOffline: false });
+        } catch (fetchErr) {
+            console.error('Network fetch failed:', fetchErr);
+            set({ isOffline: true }); // Fallback to offline mode if fetch fails
+        }
       } else {
         console.log('App is offline');
         set({ isOffline: true });
@@ -133,10 +151,12 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
         date: entry.date,
         location: entry.location,
         tags: entry.tags || [],
-        aiTags: entry.aiTags || [],
+        // Removed aiTags temporarily to fix 400 error if schema sync fails
+        // aiTags: entry.aiTags || [], 
         palette: entry.palette,
         likes: entry.likes || [],
         comments: entry.comments || [],
+        userId: user?.id,
       };
 
       const newEntryWithId = { ...entry, ...payload };
@@ -207,10 +227,12 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
         date: entry.date,
         location: entry.location,
         tags: entry.tags || [],
-        aiTags: entry.aiTags || [],
+        // Removed aiTags temporarily
+        // aiTags: entry.aiTags || [],
         palette: entry.palette,
         likes: entry.likes || [],
         comments: entry.comments || [],
+        userId: user?.id,
       };
 
       const updatedEntry = { ...entry, ...payload };

@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { Smile, Frown, Heart, Zap, Coffee, Sparkles, CloudRain, Sun, Trash2, Edit2, Share2, Heart as HeartIcon, CloudOff } from 'lucide-react';
 import { MoodPlaylist } from './mood-playlist';
+import { useTranslation } from 'react-i18next';
 import type { DiaryEntry } from './diary-entry-form';
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
@@ -51,6 +52,7 @@ const moodColors: Record<string, string> = {
 };
 
 export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync = false }: EntryCardProps) {
+  const { t } = useTranslation();
   const MoodIcon = moodIcons[entry.mood] || Smile;
   const date = new Date(entry.date);
   const navigate = useNavigate();
@@ -202,13 +204,13 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
             </AlertDialogTrigger>
             <AlertDialogContent className="bg-white dark:bg-gray-800 dark:text-white border-gray-200 dark:border-gray-700">
               <AlertDialogHeader>
-                <AlertDialogTitle className="text-gray-900 dark:text-white">Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogTitle className="text-gray-900 dark:text-white">{t('common.deleteConfirmTitle')}</AlertDialogTitle>
                 <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
-                  This action cannot be undone. This will permanently delete this memory from our servers.
+                  {t('common.deleteConfirmDesc')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 border-none active:scale-95 transition-transform">Cancel</AlertDialogCancel>
+                <AlertDialogCancel className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 border-none active:scale-95 transition-transform">{t('common.cancel')}</AlertDialogCancel>
                 <AlertDialogAction 
                     onClick={() => {
                         haptics.medium(); // Confirm deletion vibration
@@ -216,7 +218,7 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
                     }} 
                     className="bg-red-600 hover:bg-red-700 active:scale-95 transition-transform"
                 >
-                  Delete
+                  {t('common.delete')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

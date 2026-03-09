@@ -57,10 +57,8 @@ export function SharedBookView() {
 
         {isBookOpen ? (
             <MockBookPreview 
-                year={book.year} 
                 pages={book.pages} 
                 onClose={() => setIsBookOpen(false)} 
-                readOnly 
             />
         ) : (
             <div className="z-10 flex flex-col items-center text-center p-8 max-w-2xl animate-in fade-in zoom-in duration-500">

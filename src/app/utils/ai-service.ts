@@ -146,43 +146,85 @@ export class AIService {
     }
 
     try {
-      console.log('Generating image with Prompt:', prompt);
+      console.log('Generating image with Prompt (Wanx):', prompt);
       
-      // Use Hugging Face Inference API (Free Tier)
-      // Model: stabilityai/stable-diffusion-xl-base-1.0
-      // Note: In production, use a proxy to hide the token
-      const HF_TOKEN = import.meta.env.VITE_HF_TOKEN; 
-      
-      if (!HF_TOKEN) {
-         // Mock response for demo purposes if no token
-         console.warn('No HF Token found. Returning mock image.');
-         // Return a placeholder image from Unsplash based on keywords
-         const keywords = prompt.split(' ').slice(0, 3).join(',');
-         return `https://source.unsplash.com/random/1024x768/?${encodeURIComponent(keywords)}`;
+      const apiKey = import.meta.env.VITE_QWEN_API_KEY;
+      if (!apiKey) {
+          throw new Error('AI Service not initialized (Missing Qwen Key)');
       }
 
-      const response = await fetch(
-        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-        {
-          headers: {
-            Authorization: `Bearer ${HF_TOKEN}`,
-            "Content-Type": "application/json",
+      // 1. Submit Task (Async)
+      // Use local proxy in dev mode to avoid CORS
+      const baseUrl = import.meta.env.DEV ? '/dashscope' : 'https://dashscope.aliyuncs.com';
+      
+      const submitResponse = await fetch(`${baseUrl}/api/v1/services/aigc/text2image/image-synthesis`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable'
+        },
+        body: JSON.stringify({
+          model: 'wanx-v1',
+          input: {
+            prompt: prompt
           },
-          method: "POST",
-          body: JSON.stringify({ inputs: prompt }),
-        }
-      );
+          parameters: {
+            style: '<auto>',
+            size: '1024*1024',
+            n: 1
+          }
+        })
+      });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`HF API Error: ${error}`);
+      if (!submitResponse.ok) {
+         const errText = await submitResponse.text();
+         throw new Error(`Wanx Submit Failed: ${errText}`);
       }
 
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
+      const submitData = await submitResponse.json();
+      const taskId = submitData.output.task_id;
+      console.log('Wanx Task Submitted, ID:', taskId);
+
+      // 2. Poll for Result
+      let attempts = 0;
+      const maxAttempts = 30; // 30 * 2s = 60s timeout
+      
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
+        
+        const checkResponse = await fetch(`${baseUrl}/api/v1/tasks/${taskId}`, {
+           headers: { 'Authorization': `Bearer ${apiKey}` }
+        });
+
+        if (!checkResponse.ok) continue;
+        
+        const checkData = await checkResponse.json();
+        const status = checkData.output.task_status;
+        
+        console.log(`Wanx Task Status (${attempts + 1}/${maxAttempts}):`, status);
+
+        if (status === 'SUCCEEDED') {
+           if (checkData.output.results && checkData.output.results.length > 0) {
+              return checkData.output.results[0].url;
+           }
+           break;
+        } else if (status === 'FAILED' || status === 'CANCELED') {
+           throw new Error(`Wanx Task Failed: ${JSON.stringify(checkData.output)}`);
+        }
+        
+        attempts++;
+      }
+      
+      throw new Error('Wanx Task Timeout');
+
     } catch (error) {
-      console.error('Image Generation Error:', error);
-      throw error;
+      console.error('Wanx Image Generation Error:', error);
+      
+      // Fallback
+      console.warn('Using Lorem Picsum fallback image');
+      const seed = prompt.length; 
+      return `https://picsum.photos/seed/${seed}/1024/768`;
     }
   }
 

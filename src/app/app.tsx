@@ -13,6 +13,7 @@ import { Footer } from './components/footer';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './utils/supabaseClient';
 import { LoginForm } from './components/auth/login-form';
+import { LandingPage } from './components/landing-page';
 import { ReloadPrompt } from './components/reload-prompt';
 import { App as CapacitorApp } from '@capacitor/app';
 
@@ -34,6 +35,7 @@ export default function App() {
     <ThemeProvider>
       <GroupProvider>
         <FriendProvider>
+          <Toaster position="top-center" reverseOrder={false} />
           <NotificationManager>
             {() => (
               <MigrationManager>
@@ -42,7 +44,6 @@ export default function App() {
             )}
           </NotificationManager>
           <ReloadPrompt />
-          <Toaster position="top-center" reverseOrder={false} />
         </FriendProvider>
       </GroupProvider>
     </ThemeProvider>
@@ -54,25 +55,34 @@ function AppContent() {
   const { backgroundVideo } = useTheme();
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
-  // Remove hooks that depend on Router here if AppContent is not inside Router
-  // But AppContent IS used inside App which is usually wrapped by Router in main.tsx?
-  // Wait, looking at main.tsx usually. Let's assume Router is in main.tsx.
-  // If hooks count mismatch, it's usually conditional return.
   
-  // FIX: Move all hooks to top level, BEFORE any conditional returns.
-  // The issue was:
-  // if (authLoading) return ...
-  // if (!user) return ...
-  // useDiarySync() <--- This hook was called conditionally!
-  // useDiaryStore() <--- This too!
-
   const navigate = useNavigate();
   const location = useLocation();
   const isAddOrEdit = location.pathname === '/add' || location.pathname.startsWith('/edit');
 
-  // Move hooks up
-  const diarySync = useDiarySync(); // Call it always
-  const diaryStore = useDiaryStore(); // Call it always
+  // Ensure hooks are called before any conditional returns
+  useDiarySync();
+  const diaryStore = useDiaryStore();
+
+  // Listen for welcome entry creation event from WelcomeModal
+  useEffect(() => {
+    const handleCreateWelcomeEntry = (event: CustomEvent) => {
+        const entry = event.detail;
+        if (entry) {
+            // Using addEntry is async, but we don't need to await it here
+            // Just ensure it's called.
+            // Note: addEntry in diaryStore handles both online and offline persistence
+            // The second argument is targetGroups which expects string[]
+            diaryStore.addEntry(entry, ['private']).catch(err => {
+                console.error("Failed to save welcome entry:", err);
+                // Even if network fails, offline persistence should work if configured correctly
+            });
+            toast.success('欢迎日记已生成！', { icon: '✨' });
+        }
+    };
+    window.addEventListener('create-welcome-entry', handleCreateWelcomeEntry as EventListener);
+    return () => window.removeEventListener('create-welcome-entry', handleCreateWelcomeEntry as EventListener);
+  }, [diaryStore]);
 
   // Check for tutorial on mount
   useEffect(() => {
@@ -116,7 +126,7 @@ function AppContent() {
                     toast.success('Successfully logged in!');
                     navigate('/');
                 } else {
-                    toast.error('Login failed: ' + error.message);
+                    toast.error('Login failed: ' + (error ? error.message : 'Unknown error'));
                 }
             });
         }
@@ -136,8 +146,14 @@ function AppContent() {
     );
   }
 
+  // Handle unauthenticated state
   if (!user) {
-    return <LoginForm />;
+    // Check if we are on the login page
+    if (location.pathname === '/login') {
+      return <LoginForm />;
+    }
+    // Otherwise show landing page
+    return <LandingPage />;
   }
 
   // Destructure after checks, but hooks ran above
@@ -168,13 +184,13 @@ function AppContent() {
           )}
 
           {/* Content Wrapper */}
-          <div className="relative z-10">
+          <div className="relative z-10 flex flex-col min-h-screen">
             <DesktopHeader entries={entries} isAddOrEdit={isAddOrEdit} />
             <MobileHeader user={user} />
 
             {/* Main Content */}
             <main 
-              className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 min-h-[calc(100vh-140px)]"
+              className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 flex-1 w-full"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}

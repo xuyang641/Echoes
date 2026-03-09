@@ -17,8 +17,14 @@ export async function fetchEntries(): Promise<DiaryEntry[]> {
       throw new Error('Failed to fetch entries');
     }
 
-    return data || [];
-  } catch (error) {
+    // Map DB columns to app model
+    return (data || []).map(entry => ({
+      ...entry,
+      id: entry.id,
+      userId: entry.user_id,
+      photo: entry.photo_url || entry.photo, // Map photo_url to photo
+    }));
+  } catch (error: any) {
     console.error('Error fetching entries:', error);
     throw error;
   }
@@ -29,9 +35,20 @@ export async function createEntry(entry: Omit<DiaryEntry, 'id'>): Promise<DiaryE
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    // Extract only the fields that exist in the database schema
+    const payload = {
+      user_id: user.id,
+      photo_url: entry.photo,
+      caption: entry.caption,
+      mood: entry.mood,
+      date: entry.date,
+      location: entry.location,
+      // Note: tags, palette, likes, comments are not in the schema yet or handled separately
+    };
+
     const { data, error } = await supabase
       .from('diary_entries')
-      .insert([{ ...entry, user_id: user.id }])
+      .insert([payload])
       .select()
       .single();
 
@@ -40,8 +57,14 @@ export async function createEntry(entry: Omit<DiaryEntry, 'id'>): Promise<DiaryE
       throw new Error('Failed to create entry');
     }
 
-    return data;
-  } catch (error) {
+    // Merge returned data with original entry data to preserve client-side fields (like tags) if needed
+    return { 
+        ...entry, // Keep original fields like tags/palette
+        ...data, 
+        userId: data.user_id,
+        photo: data.photo_url 
+    };
+  } catch (error: any) {
     console.error('Error creating entry:', error);
     throw error;
   }
@@ -52,9 +75,18 @@ export async function updateEntry(id: string, entry: Omit<DiaryEntry, 'id'>): Pr
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    // Extract only the fields that exist in the database schema
+    const payload = {
+      photo_url: entry.photo,
+      caption: entry.caption,
+      mood: entry.mood,
+      date: entry.date,
+      location: entry.location,
+    };
+
     const { data, error } = await supabase
       .from('diary_entries')
-      .update(entry)
+      .update(payload)
       .eq('id', id)
       .eq('user_id', user.id)
       .select()
@@ -65,8 +97,13 @@ export async function updateEntry(id: string, entry: Omit<DiaryEntry, 'id'>): Pr
       throw new Error('Failed to update entry');
     }
 
-    return data;
-  } catch (error) {
+    return { 
+        ...entry, // Keep original fields
+        ...data, 
+        userId: data.user_id, 
+        photo: data.photo_url 
+    };
+  } catch (error: any) {
     console.error('Error updating entry:', error);
     throw error;
   }
@@ -87,7 +124,7 @@ export async function deleteEntry(id: string): Promise<void> {
       console.error('Error deleting entry:', error);
       throw new Error('Failed to delete entry');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting entry:', error);
     throw error;
   }

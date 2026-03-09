@@ -5,7 +5,7 @@ interface PhotoDiaryDB extends DBSchema {
   entries: {
     key: string;
     value: DiaryEntry;
-    indexes: { 'by-date': string };
+    indexes: { 'by-date': string; 'by-user': string };
   };
   pending_actions: {
     key: number;
@@ -23,20 +23,32 @@ export interface PendingAction {
 }
 
 const DB_NAME = 'photo-diary-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 class OfflineStorage {
   private dbPromise: Promise<IDBPDatabase<PhotoDiaryDB>>;
 
   constructor() {
     this.dbPromise = openDB<PhotoDiaryDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion, _newVersion, transaction) {
         // Entries store
-        const entryStore = db.createObjectStore('entries', { keyPath: 'id' });
-        entryStore.createIndex('by-date', 'date');
+        if (oldVersion < 1) {
+          const entryStore = db.createObjectStore('entries', { keyPath: 'id' });
+          entryStore.createIndex('by-date', 'date');
+        }
+
+        // Upgrade to v2: Add user index
+        if (oldVersion < 2) {
+          const entryStore = transaction.objectStore('entries');
+          if (!entryStore.indexNames.contains('by-user')) {
+            entryStore.createIndex('by-user', 'userId');
+          }
+        }
 
         // Pending actions store for sync
-        db.createObjectStore('pending_actions', { keyPath: 'id', autoIncrement: true });
+        if (oldVersion < 1) {
+          db.createObjectStore('pending_actions', { keyPath: 'id', autoIncrement: true });
+        }
       },
     });
   }
@@ -53,8 +65,11 @@ class OfflineStorage {
     await tx.done;
   }
 
-  async getEntries(): Promise<DiaryEntry[]> {
+  async getEntries(userId?: string): Promise<DiaryEntry[]> {
     const db = await this.dbPromise;
+    if (userId) {
+      return db.getAllFromIndex('entries', 'by-user', userId);
+    }
     return db.getAllFromIndex('entries', 'by-date');
   }
 
@@ -78,6 +93,11 @@ class OfflineStorage {
     return db.getAll('pending_actions');
   }
 
+  async getPendingCount(): Promise<number> {
+    const db = await this.dbPromise;
+    return db.count('pending_actions');
+  }
+
   async removePendingAction(id: number): Promise<void> {
     const db = await this.dbPromise;
     await db.delete('pending_actions', id);
@@ -86,6 +106,21 @@ class OfflineStorage {
   async clearPendingActions(): Promise<void> {
     const db = await this.dbPromise;
     await db.clear('pending_actions');
+  }
+
+  async clearAllEntries(): Promise<void> {
+    const db = await this.dbPromise;
+    const tx = db.transaction('entries', 'readwrite');
+    await tx.store.clear();
+    await tx.done;
+  }
+
+  async clear(): Promise<void> {
+    const db = await this.dbPromise;
+    const tx = db.transaction(['entries', 'pending_actions'], 'readwrite');
+    await tx.objectStore('entries').clear();
+    await tx.objectStore('pending_actions').clear();
+    await tx.done;
   }
 }
 

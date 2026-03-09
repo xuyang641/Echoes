@@ -2,9 +2,8 @@ import { useState } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { offlineStorage } from '../../services/offline-storage';
-import { loadPicture, savePicture } from '../../services/filesystem-service';
 import { toast } from 'react-hot-toast';
-import { Download, Upload, Cloud, RefreshCw, Archive } from 'lucide-react';
+import { Download, Upload, RefreshCw, Archive } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Capacitor } from '@capacitor/core';
@@ -87,7 +86,7 @@ export function BackupManager() {
       
       if (Capacitor.isNativePlatform()) {
         // On Android, save to Documents/Downloads
-        const result = await Filesystem.writeFile({
+        await Filesystem.writeFile({
             path: `Download/${fileName}`,
             data: await blobToBase64(content),
             directory: Directory.ExternalStorage,

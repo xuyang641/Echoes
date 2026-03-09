@@ -722,10 +722,13 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
   // Default center
   const defaultCenter: [number, number] = filteredEntries.length > 0
     ? (() => {
+        // If we have AMap key but no Mapbox token, coordinates are likely already GCJ-02 from picker
+        // But map-view logic assumes stored locations are WGS-84 and converts them.
+        // Let's stick to the existing logic: Store WGS-84, Convert to GCJ-02 for display.
         const gcj = wgs84ToGcj02(filteredEntries[0].location!.lat, filteredEntries[0].location!.lng);
         return [gcj[0], gcj[1]];
       })()
-    : [20, 0];
+    : [39.9042, 116.4074]; // Default to Beijing
 
   const controlsProps = {
     t,
@@ -759,10 +762,19 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
           zoom={filteredEntries.length > 0 ? 5 : 4} 
           style={{ height: '100%', width: '100%' }}
         >
-          <TileLayer
-            attribution='Map data &copy; <a href="https://www.amap.com/">Gaode</a> contributors'
-            url="https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"
-          />
+          {import.meta.env.VITE_MAPBOX_TOKEN ? (
+            <TileLayer
+              attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url={`https://api.mapbox.com/styles/v1/${import.meta.env.VITE_MAPBOX_STYLE || 'mapbox/streets-v11'}/tiles/{z}/{x}/{y}?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
+              tileSize={512}
+              zoomOffset={-1}
+            />
+          ) : (
+            <TileLayer
+              attribution='Map data &copy; <a href="https://www.amap.com/">Gaode</a> contributors'
+              url="https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"
+            />
+          )}
           
           {/* Heatmap Layer */}
           {showHeatmap && (

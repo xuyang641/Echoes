@@ -51,6 +51,18 @@ const resources = {
         noEntries: 'No memories found',
         noEntriesDesc: 'Start adding photos with relevant tags to fill this milestone!'
       },
+      achievements: {
+        title: 'Achievements',
+        subtitle: 'Unlock badges by recording your life.',
+        unlocked: 'Unlocked',
+        progress: 'Progress',
+        'first-step': { title: 'First Memory', description: 'Create your first diary entry' },
+        'streak-7': { title: 'Week Warrior', description: 'Post consecutively for 7 days' },
+        'mood-explorer': { title: 'Emotional Spectrum', description: 'Log 5 different moods' },
+        'globetrotter': { title: 'Globetrotter', description: 'Post from 3 different locations' },
+        'month-master': { title: 'Dedicated Diarist', description: 'Reach 30 total entries' },
+        'early-bird': { title: 'Early Bird', description: 'Post an entry before 8 AM' }
+      },
       export: {
         button: 'Export',
         pdf: 'Export as PDF',
@@ -90,7 +102,11 @@ const resources = {
         title: 'Welcome to Echoes',
         quote: '"Life is not measured by the number of breaths we take, but by the moments that take our breath away."',
         subtitle: 'Record your life, cherish your memories, and love every moment.',
-        start: 'Start My Journey'
+        start: 'Start My Journey',
+        agreement: 'I have read and agree to the ',
+        privacy: 'Privacy Policy',
+        and: ' and ',
+        terms: 'Terms of Service'
       },
       groups: {
         title: 'My Groups',
@@ -444,7 +460,9 @@ const resources = {
         save: 'Save Changes',
         delete: 'Delete',
         edit: 'Edit',
-        back: 'Back'
+        back: 'Back',
+        deleteConfirmTitle: 'Are you absolutely sure?',
+        deleteConfirmDesc: 'This action cannot be undone. This will permanently delete this memory from our servers.'
       },
       auth: {
         required: 'Please sign in to continue'
@@ -512,6 +530,18 @@ const resources = {
         noEntries: '暂无相关回忆',
         noEntriesDesc: '快去添加带有相关标签的照片，点亮这个成就吧！'
       },
+      achievements: {
+        title: '成就徽章',
+        subtitle: '记录生活，解锁徽章',
+        unlocked: '已解锁',
+        progress: '进度',
+        'first-step': { title: '初次记忆', description: '创建你的第一篇日记' },
+        'streak-7': { title: '周更战士', description: '连续打卡 7 天' },
+        'mood-explorer': { title: '情感光谱', description: '记录 5 种不同的心情' },
+        'globetrotter': { title: '环球旅行者', description: '在 3 个不同地点发布日记' },
+        'month-master': { title: '日记达人', description: '累计发布 30 篇日记' },
+        'early-bird': { title: '早起的鸟儿', description: '在早上 8 点前发布一篇日记' }
+      },
       export: {
         button: '导出数据',
         pdf: '导出为 PDF (打印版)',
@@ -551,7 +581,11 @@ const resources = {
         title: '欢迎来到 Echoes',
         quote: '“生命的广度不在于我们呼吸了多少次，而在于那些令我们屏息的瞬间。”',
         subtitle: '记录生活，珍藏回忆，热爱每一个当下。',
-        start: '开启我的旅程'
+        start: '开启我的旅程',
+        agreement: '我已阅读并同意 ',
+        privacy: '隐私政策',
+        and: ' 与 ',
+        terms: '服务条款'
       },
       groups: {
         title: '我的圈子',
@@ -968,7 +1002,9 @@ const resources = {
         save: '保存更改',
         delete: '删除',
         edit: '编辑',
-        back: '返回'
+        back: '返回',
+        deleteConfirmTitle: '您确定要删除吗？',
+        deleteConfirmDesc: '此操作无法撤销。这将永久删除此日记。'
       },
       auth: {
         required: '请先登录'
@@ -1075,7 +1111,12 @@ const resources = {
         title: 'Echoesへようこそ',
         quote: '「人生の長さは呼吸の数ではなく、息をのむような瞬間の数で測られる。」',
         subtitle: '人生を記録し、思い出を大切にし、すべての瞬間を愛そう。',
-        start: '旅を始める'
+        start: '旅を始める',
+        agreement: '私は ',
+        privacy: 'プライバシーポリシー',
+        and: ' と ',
+        terms: '利用規約',
+        agreement_suffix: ' に同意します'
       },
       groups: {
         title: 'グループ',
@@ -1352,14 +1393,6 @@ const resources = {
         language: '言語設定',
         theme: 'テーマ'
       },
-      subscription: {
-        payment: {
-          secure: '256ビット SSL 暗号化支払い',
-          scanTip: 'アプリでスキャン',
-          uploadTip: '支払い確認までしばらくお待ちください。',
-          openLink: ''
-        }
-      },
       common: {
         loading: '読み込み中...',
         saving: '保存中...',
@@ -1473,7 +1506,12 @@ const resources = {
         title: 'Echoes에 오신 것을 환영합니다',
         quote: '"인생은 우리가 쉰 숨의 횟수가 아니라, 숨 막힐 듯 아름다웠던 순간들로 측정된다."',
         subtitle: '당신의 삶을 기록하고, 추억을 소중히 여기며, 모든 순간을 사랑하세요.',
-        start: '여정 시작하기'
+        start: '여정 시작하기',
+        agreement: '저는 ',
+        privacy: '개인정보처리방침',
+        and: ' 및 ',
+        terms: '이용약관',
+        agreement_suffix: '에 동의합니다'
       },
       groups: {
         title: '내 그룹',
@@ -1748,14 +1786,6 @@ const resources = {
         confirmRemove: '{{name}} 님을 친구 목록에서 삭제하시겠습니까?',
         language: '언어 설정',
         theme: '테마'
-      },
-      subscription: {
-        payment: {
-          secure: '256비트 SSL 암호화 결제',
-          scanTip: '앱으로 스캔',
-          uploadTip: '팁: 개인정보 보호를 위해 후원 플랫폼 QR 코드를 사용하는 것이 좋습니다.',
-          openLink: '또는 결제 링크 열기'
-        }
       },
       common: {
         loading: '로딩 중...',

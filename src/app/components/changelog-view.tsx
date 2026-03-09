@@ -11,6 +11,15 @@ interface Release {
 }
 
 const releases: Release[] = [
+  // Mar 09
+  {
+    version: 'v4.1.0',
+    date: '2026-03-09',
+    titleKey: '打印店与Web端体验升级',
+    icon: Printer,
+    color: 'bg-rose-100 text-rose-700',
+    changesKey: 'changelog.features.v4.1.0'
+  },
   // Mar 03
   {
     version: 'v4.0.0',
@@ -154,6 +163,12 @@ export function ChangelogView() {
 
   // Helper to get changes array based on version
   const getChanges = (version: string) => {
+    if (version === 'v4.1.0') return [
+      '打印店升级: 新增三个全新版式模组与示例模板，优化自定义排版体验，支持更灵活的日记布局',
+      'Web 端体验: 全新设计的 Web 端介绍页，提供更直观的功能展示与引导',
+      '问题修复: 修复欢迎日记图片加载失败、删除确认弹窗未汉化、保存后无法自动跳转等一系列体验问题',
+      '系统优化: 修复 ReferenceError 等潜在报错，提升应用稳定性'
+    ];
     if (version === 'v4.0.0') return [
       '核心架构升级: 引入自动化测试 (Vitest) 与 Zustand 状态管理，提升应用稳定性',
       '安全增强: 新增 AI Proxy Edge Function，实现 API Key 的服务端加密存储',
@@ -177,22 +192,22 @@ export function ChangelogView() {
       t('changelog.features.visuals')
     ];
     if (version === 'v3.3.0') return [
-      t('changelog.features.milestones'),
-      t('changelog.features.smartGallery'),
-      t('changelog.features.smartTags')
+      t('changelog.features.milestones', '里程碑'),
+      t('changelog.features.smartGallery', '智能图库'),
+      t('changelog.features.smartTags', '智能标签')
     ];
     if (version === 'v3.1.0') return [
       '3D 花园模式支持显示回忆的日期与地点信息',
       '优化场景交互体验'
     ];
     if (version === 'v3.0.0') return [
-      t('changelog.features.garden3d'),
-      t('changelog.features.weather'),
-      t('changelog.features.models')
+      t('changelog.features.garden3d', '3D 花园'),
+      t('changelog.features.weather', '实时天气'),
+      t('changelog.features.models', '3D 模型')
     ];
     if (version === 'v2.6.0') return [
-      t('changelog.features.colorDna'),
-      t('changelog.features.planetUI')
+      t('changelog.features.colorDna', '色彩基因'),
+      t('changelog.features.planetUI', '星球 UI')
     ];
     if (version === 'v2.5.0') return [
       '新增多语言支持（中文/英文）',
@@ -204,41 +219,41 @@ export function ChangelogView() {
       '支持修改头像与昵称'
     ];
     if (version === 'v2.3.0') return [
-      t('changelog.features.shareCard'),
-      t('changelog.features.qr'),
-      t('changelog.features.download')
+      t('changelog.features.shareCard', '分享卡片'),
+      t('changelog.features.qr', '二维码'),
+      t('changelog.features.download', '下载')
     ];
     if (version === 'v2.2.0') return [
-      t('changelog.features.darkMode'),
-      t('changelog.features.theme'),
-      t('changelog.features.ui'),
-      t('changelog.features.readability')
+      t('changelog.features.darkMode', '深色模式'),
+      t('changelog.features.theme', '主题'),
+      t('changelog.features.ui', 'UI 优化'),
+      t('changelog.features.readability', '可读性')
     ];
     if (version === 'v2.1.0') return [
-      t('changelog.features.vision'),
-      t('changelog.features.analysis')
+      t('changelog.features.vision', '视觉识别'),
+      t('changelog.features.analysis', '智能分析')
     ];
     if (version === 'v2.0.0') return [
-      t('changelog.features.coupleSync'),
-      t('changelog.features.coupleShare')
+      t('changelog.features.coupleSync', '情侣同步'),
+      t('changelog.features.coupleShare', '情侣共享')
     ];
     if (version === 'v1.9.0') return [
-      t('changelog.features.insightsCharts'),
-      t('changelog.features.insightsStreak')
+      t('changelog.features.insightsCharts', '图表洞察'),
+      t('changelog.features.insightsStreak', '连击统计')
     ];
     if (version === 'v1.8.0') return [
-      t('changelog.features.mapView'),
-      t('changelog.features.mapInteraction')
+      t('changelog.features.mapView', '地图视图'),
+      t('changelog.features.mapInteraction', '地图交互')
     ];
     if (version === 'v1.7.0') return [
-      t('changelog.features.printShop'),
-      t('changelog.features.printCart')
+      t('changelog.features.printShop', '打印店'),
+      t('changelog.features.printCart', '购物车')
     ];
     if (version === 'v1.0.0') return [
-      t('changelog.features.init'),
-      t('changelog.features.basic'),
-      t('changelog.features.responsive'),
-      t('changelog.features.pwa')
+      t('changelog.features.init', '初始化'),
+      t('changelog.features.basic', '基础功能'),
+      t('changelog.features.responsive', '响应式设计'),
+      t('changelog.features.pwa', 'PWA 支持')
     ];
     return [];
   };

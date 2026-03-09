@@ -29,6 +29,7 @@ export interface DiaryEntry {
   date: string;
   photo: string;
   caption: string;
+  content?: string; // Extended text content for long-form entries
   mood: string;
   location?: {
     lat: number;

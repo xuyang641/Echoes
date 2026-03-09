@@ -15,16 +15,31 @@ export function AISummaryCard({ entries, date }: AISummaryCardProps) {
   const { t } = useTranslation();
   const [summary, setSummary] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Filter entries for the specific date
-  const todayEntries = entries.filter(e => e.date.startsWith(date.split('T')[0]));
+  // FIXED: Logic relaxed to show summary for the latest available date if today is empty
+  // or just show summary for "today" but handle empty case with a placeholder
+  
+  // Strategy: 
+  // 1. Try to find entries for "date" (today)
+  // 2. If none, look for the most recent date in entries
+  let targetDate = date.split('T')[0];
+  let displayEntries = entries.filter(e => e.date.startsWith(targetDate));
+  let isToday = true;
+
+  if (displayEntries.length === 0 && entries.length > 0) {
+      // Find the most recent entry date
+      const sortedEntries = [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const latestEntry = sortedEntries[0];
+      targetDate = latestEntry.date.split('T')[0];
+      displayEntries = sortedEntries.filter(e => e.date.startsWith(targetDate));
+      isToday = false;
+  }
 
   const handleGenerateSummary = async () => {
-    if (todayEntries.length === 0) return;
+    if (displayEntries.length === 0) return;
     
     setIsLoading(true);
-    setError(null);
 
     try {
       if (!aiService.isConfigured()) {
@@ -32,39 +47,36 @@ export function AISummaryCard({ entries, date }: AISummaryCardProps) {
       }
 
       // Construct a specific prompt for daily summary
-      const context = todayEntries.map(e => 
+      const context = displayEntries.map(e => 
         `[${new Date(e.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}] ${e.mood}: ${e.caption}`
       ).join('\n');
 
+      const dateStr = isToday ? '今天' : targetDate;
+
       const prompt = `
-        请阅读我今天的几条日记，为我生成一段温暖、有洞察力的“今日总结”。
+        请阅读我(${dateStr})的几条日记，为我生成一段温暖、有洞察力的“日记回顾”。
         
-        [今日日记]
+        [日记内容]
         ${context}
 
         要求：
         1. 语气像一位老朋友，温柔且富有哲理。
-        2. 不要只是罗列发生了什么，要提炼出今天的情绪主线或生活的小确幸。
+        2. 提炼出情绪主线或生活的小确幸。
         3. 篇幅控制在 100 字左右。
-        4. 可以适当引用日记中的细节（如特定的食物、风景）。
-        5. 结尾给一句简短的鼓励或晚安语。
+        4. 结尾给一句简短的鼓励。
       `;
-
-      // We use a "hack" to bypass the generateResponse structure which is chat-oriented
-      // Ideally AIService should expose a raw method, but generateResponse is fine if we frame the query right.
-      // We'll just pass the prompt as the "query"
       
       const response = await aiService.generateResponse(prompt, [], 'Neutral');
       setSummary(response);
     } catch (err) {
       console.error(err);
-      setError(t('ai.error', 'Failed to generate summary'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (todayEntries.length === 0) return null;
+  // If absolutely no entries in the whole app, hide card
+  if (entries.length === 0) return null;
 
   return (
     <div className="mb-6">
@@ -83,10 +95,12 @@ export function AISummaryCard({ entries, date }: AISummaryCardProps) {
               </div>
               <div className="text-left">
                 <div className="font-bold text-violet-900 dark:text-violet-100">
-                  {t('ai.generate_summary', '生成今日回顾')}
+                  {isToday ? t('ai.generate_summary', '生成今日回顾') : t('ai.generate_past_summary', '生成最近回顾')}
                 </div>
                 <div className="text-xs text-violet-700 dark:text-violet-300/80">
-                  {t('ai.summary_desc', '让 AI 为你的一天写下注脚')}
+                  {isToday 
+                    ? t('ai.summary_desc', '让 AI 为你的一天写下注脚') 
+                    : t('ai.summary_desc_past', `回顾 ${targetDate} 的记忆`)}
                 </div>
               </div>
             </div>
