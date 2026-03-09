@@ -58,33 +58,83 @@ serve(async (req) => {
       })
     } 
     
-    // Handle Image Generation (Hugging Face)
+    // Handle Image Generation (Wanx)
     if (type === 'image') {
-      const HF_TOKEN = Deno.env.get('HF_TOKEN')
-      if (!HF_TOKEN) throw new Error('HF_TOKEN not set')
+      const QWEN_API_KEY = Deno.env.get('QWEN_API_KEY')
+      if (!QWEN_API_KEY) throw new Error('QWEN_API_KEY not set')
 
-      const response = await fetch(
-        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-        {
-          headers: {
-            Authorization: `Bearer ${HF_TOKEN}`,
-            "Content-Type": "application/json",
+      // 1. Submit Task
+      const submitResponse = await fetch("https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${QWEN_API_KEY}`,
+          "Content-Type": "application/json",
+          "X-DashScope-Async": "enable"
+        },
+        body: JSON.stringify({
+          model: 'wanx-v1',
+          input: {
+            prompt: payload.inputs
           },
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
-      )
+          parameters: {
+            style: '<auto>',
+            size: '1024*1024',
+            n: 1
+          }
+        })
+      })
 
-      if (!response.ok) {
-        const errText = await response.text()
-        throw new Error(`HF API Error: ${errText}`)
+      if (!submitResponse.ok) {
+        const errText = await submitResponse.text()
+        throw new Error(`Wanx Submit Failed: ${errText}`)
       }
 
-      // Proxy the image blob back
-      const blob = await response.blob()
-      return new Response(blob, {
-        headers: { ...corsHeaders, 'Content-Type': 'image/jpeg' },
-      })
+      const submitData = await submitResponse.json()
+      const taskId = submitData.output.task_id
+
+      // 2. Poll for Result (Simple loop in Edge Function)
+      // Note: Edge Functions have execution time limits (usually 10s-60s). 
+      // Wanx might take longer. If it timeouts, client should handle polling.
+      // But for simplicity, we'll try polling here for a bit.
+      
+      let attempts = 0;
+      const maxAttempts = 20; // 40s max
+      
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
+        
+        const checkResponse = await fetch(`https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`, {
+           headers: { 'Authorization': `Bearer ${QWEN_API_KEY}` }
+        });
+
+        if (!checkResponse.ok) continue;
+        
+        const checkData = await checkResponse.json();
+        const status = checkData.output.task_status;
+
+        if (status === 'SUCCEEDED') {
+           if (checkData.output.results && checkData.output.results.length > 0) {
+              const imageUrl = checkData.output.results[0].url;
+              
+              // Fetch the image and return blob to avoid CORS on the image URL itself if needed
+              // But usually image URLs are accessible. Let's return the URL JSON for client to load.
+              // Wait, previous implementation expected a blob. Let's fetch it.
+              
+              const imgRes = await fetch(imageUrl);
+              const blob = await imgRes.blob();
+              return new Response(blob, {
+                headers: { ...corsHeaders, 'Content-Type': 'image/png' },
+              })
+           }
+           break;
+        } else if (status === 'FAILED' || status === 'CANCELED') {
+           throw new Error(`Wanx Task Failed: ${JSON.stringify(checkData.output)}`);
+        }
+        
+        attempts++;
+      }
+      
+      throw new Error('Wanx Task Timeout in Edge Function');
     }
 
     return new Response(JSON.stringify({ error: 'Invalid type' }), {

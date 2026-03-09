@@ -55,7 +55,8 @@ export function MoodPlaylist({ mood, caption, tags }: MoodPlaylistProps) {
         title: result.title,
         artist: result.artist,
         reason: result.reason,
-        searchUrl: `https://open.spotify.com/search/${encodeURIComponent(result.title + ' ' + result.artist)}`
+        // Switch to Netease Cloud Music for better accessibility in China
+        searchUrl: `https://music.163.com/#/search/m/?s=${encodeURIComponent(result.title + ' ' + result.artist)}`
       });
       setHasGenerated(true);
     } catch (error) {
@@ -65,7 +66,7 @@ export function MoodPlaylist({ mood, caption, tags }: MoodPlaylistProps) {
         title: "Weightless",
         artist: "Marconi Union",
         reason: "Sometimes silence is the best music.",
-        searchUrl: "https://open.spotify.com/search/Weightless%20Marconi%20Union"
+        searchUrl: "https://music.163.com/#/search/m/?s=Weightless%20Marconi%20Union"
       });
     } finally {
       setLoading(false);
