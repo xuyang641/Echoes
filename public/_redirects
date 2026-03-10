@@ -1,1 +1,7 @@
-/* /index.html 200
+# Single Page Application (SPA) fallback
+# Redirect all requests to index.html with a 200 OK status
+# The "splat" (*) matches everything
+# The /index.html is the destination
+# The 200 is the status code
+
+/*  /index.html  200
