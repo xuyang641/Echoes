@@ -4,17 +4,32 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    })
   }
 
   try {
-    // Verify User
+    // Verify User (Relaxed for OPTIONS/CORS, Strict for others)
+    // IMPORTANT: For development/testing, we might want to relax this if the token handling on client is tricky.
+    // But for production, this should be strict.
+    
+    // Check if we are receiving the anon key correctly.
+    // Supabase automatically validates the Authorization header if it's a valid JWT.
+    // However, we are manually creating a client.
+    
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+        // Allow anonymous access if using anon key (which is common for client-side calls)
+        // But we want to ensure only authenticated users can use AI to save costs.
+        // Let's check for anon key at least.
         return new Response(JSON.stringify({ error: 'No authorization header' }), {
             status: 401,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },

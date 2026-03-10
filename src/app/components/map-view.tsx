@@ -5,6 +5,14 @@ import 'leaflet/dist/leaflet.css';
 import { DiaryEntry } from './diary-entry-form';
 import L from 'leaflet';
 import 'leaflet.heat'; // Import heatmap plugin
+
+// Fix for leaflet.heat missing types in L
+declare module 'leaflet' {
+  export function heatLayer(
+    latlngs: (L.LatLng | [number, number, number])[],
+    options?: any
+  ): L.Layer;
+}
 import { useNavigate } from 'react-router-dom';
 import { format, isSameDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { Filter, User, Play, Pause, Flame, Heart, MessageCircle, Send } from 'lucide-react';
@@ -42,7 +50,6 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
   useEffect(() => {
     if (!map) return;
 
-    // @ts-ignore - leaflet.heat adds 'heatLayer' to L
     if (!L.heatLayer) return;
 
     if (heatLayerRef.current) {
@@ -50,7 +57,6 @@ function HeatmapLayer({ points }: { points: [number, number, number][] }) {
     }
 
     if (points.length > 0) {
-      // @ts-ignore
       heatLayerRef.current = L.heatLayer(points, {
         radius: 25,
         blur: 15,

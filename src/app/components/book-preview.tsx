@@ -6,8 +6,28 @@ import HTMLFlipBook from 'react-pageflip';
 import { DiaryEntry } from './diary-entry-form';
 import { BookCustomization, ImageCustomization, PageCustomization, TextConfig } from '../types/book-customization';
 
+interface BookPage {
+  id?: string;
+  type: 'cover' | 'intro' | 'entry' | 'grid' | 'grid-2x2' | 'collage' | 'photo-full' | 'photo-left' | 'photo-right' | 'outro';
+  title?: string;
+  subtitle?: string;
+  coverPhoto?: string;
+  content?: string;
+  text?: string;
+  year?: string;
+  date?: string;
+  location?: string;
+  photo?: string;
+  caption?: string;
+  mood?: string;
+  photos?: string[];
+  captions?: string[];
+  entries?: DiaryEntry[];
+  layout?: string;
+}
+
 interface MockBookPreviewProps {
-  pages: any[];
+  pages: BookPage[];
   onClose: () => void;
   customization?: BookCustomization;
   onCustomizationChange?: (customization: BookCustomization) => void;
@@ -293,7 +313,7 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isEditMode]);
 
-  const renderPageContent = (page: any, index: number) => {
+  const renderPageContent = (page: BookPage, index: number) => {
     // Add null check for page
     if (!page) return <div className="w-full h-full bg-white"></div>;
     const pageId = page.id || `page-${index}`;

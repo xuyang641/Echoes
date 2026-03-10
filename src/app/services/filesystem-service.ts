@@ -72,17 +72,35 @@ export async function loadPictureAsBase64(filePath: string): Promise<string> {
  * Delete a picture from filesystem
  */
 export async function deletePicture(filePath: string): Promise<void> {
-  if (!Capacitor.isNativePlatform() || filePath.startsWith('data:') || filePath.startsWith('http')) {
+  // If not native or not a local file, nothing to delete
+  if (!Capacitor.isNativePlatform() || filePath.startsWith('data:')) {
     return;
   }
 
   try {
-    // Extract relative path if possible, or use full URI?
-    // Filesystem.deleteFile usually needs path relative to directory if directory is specified
-    // But our saved path is a converted URI. This is tricky.
-    // For now, let's just log. Deletion is "nice to have".
-    console.log('TODO: Implement robust delete for:', filePath);
+    // If it's a converted web URI, we need to extract the original path or use the URI if it's file://
+    let pathToDelete = filePath;
+
+    // Capacitor.convertFileSrc on Android/iOS usually results in http://localhost/_capacitor_file_/ or capacitor://localhost/_capacitor_file_/
+    if (filePath.includes('_capacitor_file_')) {
+      // Extract the actual path after _capacitor_file_
+      // This is a bit hacky but works for standard Capacitor behavior
+      const parts = filePath.split('_capacitor_file_');
+      if (parts.length > 1) {
+        pathToDelete = decodeURIComponent(parts[1]);
+        // Remove leading slash if it exists and we're on Android (which sometimes adds it)
+        if (pathToDelete.startsWith('/') && Capacitor.getPlatform() === 'android') {
+          // Keep it as is, Filesystem.deleteFile handles absolute paths if they start with /
+        }
+      }
+    }
+
+    await Filesystem.deleteFile({
+      path: pathToDelete
+    });
+    console.log('Successfully deleted file:', pathToDelete);
   } catch (err) {
-    console.error('Error deleting file:', err);
+    // It's okay if the file doesn't exist
+    console.warn('Error deleting file (it might not exist):', err);
   }
 }

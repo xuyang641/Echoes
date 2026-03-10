@@ -171,13 +171,22 @@ function AppContent() {
           {/* Background Video */}
           {backgroundVideo !== 'none' && (
             <>
-              <video
+              {/* <video
                 autoPlay
                 loop
                 muted
                 playsInline
                 className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
                 src={backgroundVideo === 'rain' ? '/videos/backgrounds/rain_window.mp4' : '/videos/backgrounds/forest.mp4'}
+              /> */}
+              {/* Fallback to static image or gradient for now to reduce build size for Cloudflare Pages */}
+              <div 
+                className="fixed inset-0 w-full h-full bg-cover bg-center z-0 pointer-events-none"
+                style={{
+                    backgroundImage: backgroundVideo === 'rain' 
+                        ? 'url(/images/backgrounds/ocean-sunset.jpg)' 
+                        : 'url(/images/backgrounds/forest-morning.jpg)'
+                }}
               />
               <div className="fixed inset-0 bg-white/40 dark:bg-black/60 backdrop-blur-[2px] z-0 pointer-events-none" />
             </>

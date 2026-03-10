@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import { fetchEntries, createEntry, deleteEntry, updateEntry } from '../utils/api';
 import { offlineStorage } from '../services/offline-storage';
 import { supabase } from '../utils/supabaseClient';
-import { savePicture } from '../services/filesystem-service';
+import { savePicture, deletePicture } from '../services/filesystem-service';
 import type { DiaryEntry } from '../components/diary-entry-form';
 import type { User } from '@supabase/supabase-js';
 
@@ -269,9 +269,19 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
   },
 
   deleteEntry: async (id) => {
-    const { updatePendingCount } = get();
+    const { updatePendingCount, entries } = get();
+    const entryToDelete = entries.find(e => e.id === id);
+    
     try {
+      // Delete from local memory state first (optimistic)
       set(state => ({ entries: state.entries.filter(e => e.id !== id) }));
+      
+      // 1. Delete the physical file from filesystem if on native
+      if (entryToDelete && entryToDelete.photo) {
+        await deletePicture(entryToDelete.photo);
+      }
+
+      // 2. Delete from offline storage (IndexedDB)
       await offlineStorage.deleteEntry(id);
 
       if (!navigator.onLine) {
@@ -286,6 +296,7 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
         return;
       }
 
+      // 3. Delete from cloud (Supabase)
       await deleteEntry(id);
       toast.success('Memory deleted.');
     } catch (error) {
