@@ -1,3 +1,4 @@
+// Photo Diary Store - State Management
 import { create } from 'zustand';
 import { toast } from 'react-hot-toast';
 import { fetchEntries, createEntry, deleteEntry, updateEntry } from '../utils/api';
@@ -7,6 +8,7 @@ import { savePicture, deletePicture } from '../services/filesystem-service';
 import type { DiaryEntry } from '../components/diary-entry-form';
 import type { User } from '@supabase/supabase-js';
 
+// Define the store state interface
 interface DiaryState {
   entries: DiaryEntry[];
   loading: boolean;
@@ -73,7 +75,9 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
             try {
               const parsed = JSON.parse(stored);
               // Ensure we only load entries for current user if userId exists
-              const userEntries = parsed ? parsed.filter((e: any) => !e.userId || e.userId === user.id) : [];
+              const userEntries = (Array.isArray(parsed) ? parsed : [])
+                .filter((e: any) => !e.userId || e.userId === user.id);
+                
               if (userEntries.length > 0) {
                  set({ entries: userEntries });
                  // Update offline storage with userId
@@ -130,7 +134,7 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
     }
   },
 
-  addEntry: async (entry, targetGroups = ['private']) => {
+  addEntry: async (entry: DiaryEntry, targetGroups: string[] = ['private']) => {
     const { user, updatePendingCount } = get();
     set({ saving: true });
     try {
@@ -216,8 +220,8 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
     }
   },
 
-  updateEntry: async (entry, targetGroups) => {
-    const { updatePendingCount } = get();
+  updateEntry: async (entry: DiaryEntry, targetGroups: string[]) => {
+    const { user, updatePendingCount } = get();
     set({ saving: true });
     try {
       const payload = {
@@ -268,7 +272,7 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
     }
   },
 
-  deleteEntry: async (id) => {
+  deleteEntry: async (id: string) => {
     const { updatePendingCount, entries } = get();
     const entryToDelete = entries.find(e => e.id === id);
     

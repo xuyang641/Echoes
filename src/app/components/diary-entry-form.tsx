@@ -15,6 +15,7 @@ import { wgs84ToGcj02, gcj02ToWgs84 } from '../utils/coord-transform';
 import { AmapLocationPicker } from './amap-location-picker';
 import { haptics } from '../utils/haptics';
 import { DreamPainter } from './dream-painter';
+import { RichTextEditor } from './ui/rich-text-editor';
 
 interface DiaryEntryFormProps {
   onAddEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
@@ -22,6 +23,7 @@ interface DiaryEntryFormProps {
   saving?: boolean;
   initialData?: DiaryEntry;
   isEdit?: boolean;
+  initialCaption?: string;
 }
 
 export interface DiaryEntry {
@@ -56,11 +58,11 @@ export interface Comment {
   date: string;
 }
 
-export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData, isEdit = false }: DiaryEntryFormProps) {
+export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData, isEdit = false, initialCaption }: DiaryEntryFormProps) {
   const { groups } = useGroup();
   const { t } = useTranslation();
   const [photo, setPhoto] = useState<string>('');
-  const [caption, setCaption] = useState('');
+  const [caption, setCaption] = useState(initialCaption || '');
   const [selectedMood, setSelectedMood] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [compressing, setCompressing] = useState(false);
@@ -110,8 +112,10 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       setDate(initialData.date);
       // If editing, we might need to load groupIds. For now default to private if not present
       setSelectedGroups(initialData.groupIds && initialData.groupIds.length > 0 ? initialData.groupIds : ['private']);
+    } else if (initialCaption) {
+      setCaption(initialCaption);
     }
-  }, [initialData]);
+  }, [initialData, initialCaption]);
 
   const toggleGroupSelection = (groupId: string) => {
     setSelectedGroups(prev => {
@@ -176,8 +180,29 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     if (file) {
       try {
         setCompressing(true);
+
+        // Check if it's a video
+        if (file.type.startsWith('video/')) {
+          // For video, we might want to check size (e.g. max 50MB)
+          if (file.size > 50 * 1024 * 1024) {
+            alert('视频大小不能超过 50MB');
+            setCompressing(false);
+            return;
+          }
+          
+          // Read video as data URL for preview and saving (temporary solution for local, later should upload to storage)
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            setPhoto(result); // Storing video dataURL in photo field
+            setPreviewUrl(result);
+            setCompressing(false);
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
         
-        // Use the new optimization utility
+        // Use the new optimization utility for images
         const compressedFile = await optimizeImage(file, {
           maxSizeMB: 0.8, // Slightly higher quality for main image
           maxWidthOrHeight: 1920,
@@ -479,17 +504,25 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         {compressing ? (
           <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
-            <span className="text-sm text-gray-500">正在压缩图片...</span>
+            <span className="text-sm text-gray-500">处理中...</span>
           </div>
         ) : previewUrl ? (
           <div className="relative">
-            <img 
-              ref={imgRef}
-              src={previewUrl} 
-              alt="Preview" 
-              className="w-full h-64 object-cover rounded-xl"
-              crossOrigin="anonymous" 
-            />
+            {previewUrl.startsWith('data:video/') || previewUrl.endsWith('.mp4') ? (
+              <video 
+                src={previewUrl} 
+                controls
+                className="w-full h-64 object-cover rounded-xl bg-black"
+              />
+            ) : (
+              <img 
+                ref={imgRef}
+                src={previewUrl} 
+                alt="Preview" 
+                className="w-full h-64 object-cover rounded-xl"
+                crossOrigin="anonymous" 
+              />
+            )}
             <button
               type="button"
               onClick={() => {
@@ -526,16 +559,16 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
               </div>
             ) : (
               <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-                <Camera className="w-12 h-12 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-500">{t('form.upload')}</span>
-                <input
-                  id="photo-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                />
-              </label>
+          <Camera className="w-12 h-12 text-gray-400 mb-2" />
+          <span className="text-sm text-gray-500">{t('form.upload', '上传照片或视频')}</span>
+          <input
+            id="photo-input"
+            type="file"
+            accept="image/*,video/mp4,video/quicktime,video/webm"
+            onChange={handlePhotoChange}
+            className="hidden"
+          />
+        </label>
             )}
           </div>
         )}
@@ -676,15 +709,13 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         )}
       </div>
 
-      {/* Caption */}
+      {/* Caption / Content Editor */}
       <div>
-        <label className="block text-sm mb-2 text-gray-700">{t('form.captionPlaceholder')}</label>
-        <textarea
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          placeholder={t('form.captionPlaceholder')}
-          rows={4}
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        <label className="block text-sm mb-2 text-gray-700">{t('form.captionPlaceholder', '日记内容')}</label>
+        <RichTextEditor 
+          content={caption}
+          onChange={(newContent) => setCaption(newContent)}
+          placeholder={t('form.captionPlaceholder', '记录此刻...')}
         />
       </div>
 

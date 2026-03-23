@@ -22,16 +22,20 @@ export function DesktopHeader({ entries, isAddOrEdit, isOffline = false, pending
   return (
     <header className="hidden md:block bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 sticky top-0 z-30 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-              <BookOpen className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
+                <img src="/icons/icon-192.webp" alt="Echoes Logo" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+                  Echoes
+                </span>
+                <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase -mt-1 font-handwriting" style={{ fontFamily: 'var(--font-handwriting)' }}>
+                  Capture your daily moments
+                </span>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white transition-colors tracking-tight font-serif" style={{ fontFamily: 'var(--font-serif)' }}>Echoes</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block font-handwriting" style={{ fontFamily: 'var(--font-handwriting)' }}>Capture your daily moments</p>
-            </div>
-          </div>
 
           <div className="flex items-center gap-3 flex-1 justify-end">
             <div className="flex items-center gap-3 shrink-0">

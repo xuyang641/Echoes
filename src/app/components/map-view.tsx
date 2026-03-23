@@ -768,19 +768,10 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
           zoom={filteredEntries.length > 0 ? 5 : 4} 
           style={{ height: '100%', width: '100%' }}
         >
-          {import.meta.env.VITE_MAPBOX_TOKEN ? (
-            <TileLayer
-              attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url={`https://api.mapbox.com/styles/v1/${import.meta.env.VITE_MAPBOX_STYLE || 'mapbox/streets-v11'}/tiles/{z}/{x}/{y}?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
-              tileSize={512}
-              zoomOffset={-1}
-            />
-          ) : (
-            <TileLayer
-              attribution='Map data &copy; <a href="https://www.amap.com/">Gaode</a> contributors'
-              url="https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"
-            />
-          )}
+          <TileLayer
+            attribution='Map data &copy; <a href="https://www.amap.com/">Gaode</a> contributors'
+            url="https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"
+          />
           
           {/* Heatmap Layer */}
           {showHeatmap && (

@@ -176,7 +176,11 @@ export function AppRoutes({ entries, loading, saving, onDeleteEntry, onAddEntry,
           <Route path="/add" element={
             <PageTransition>
               <div className="max-w-2xl mx-auto">
-                <DiaryEntryForm onSave={handleAddEntry} saving={saving} />
+                <DiaryEntryForm 
+                  onSave={handleAddEntry} 
+                  saving={saving} 
+                  initialCaption={new URLSearchParams(location.search).get('prompt') || undefined}
+                />
               </div>
             </PageTransition>
           } />

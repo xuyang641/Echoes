@@ -76,6 +76,11 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
   };
 
   const handleImageClick = () => {
+    // If it's a video, don't open image preview modal
+    if (entry.photo.startsWith('data:video/') || entry.photo.endsWith('.mp4')) {
+      return;
+    }
+
     const now = Date.now();
     const DOUBLE_CLICK_DELAY = 300;
     
@@ -129,11 +134,21 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
             <CloudOff className="w-4 h-4" />
           </div>
         )}
-        <LazyImage 
-          src={entry.photo} 
-          alt={entry.caption}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+        {(entry.photo.startsWith('data:video/') || entry.photo.endsWith('.mp4')) ? (
+          <video 
+            src={entry.photo}
+            controls
+            preload="metadata"
+            className="w-full h-full object-cover bg-black cursor-default"
+            onClick={(e) => e.stopPropagation()} // Prevent card double click logic when interacting with video controls
+          />
+        ) : (
+          <LazyImage 
+            src={entry.photo} 
+            alt={entry.caption}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        )}
         
         {/* Like Button (Micro-interaction) */}
         <motion.button
@@ -245,9 +260,11 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
         </div>
 
         {/* Caption */}
-        <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-serif tracking-wide line-clamp-3" style={{ fontFamily: '"Noto Serif", "Noto Serif SC", serif' }}>
-          {entry.caption}
-        </p>
+        <div 
+          className="text-gray-700 dark:text-gray-300 leading-relaxed font-serif tracking-wide line-clamp-3 prose dark:prose-invert prose-sm max-w-none" 
+          style={{ fontFamily: '"Noto Serif", "Noto Serif SC", serif' }}
+          dangerouslySetInnerHTML={{ __html: entry.caption }}
+        />
 
         {/* Tags */}
         {((entry.tags && entry.tags.length > 0) || (entry.aiTags && entry.aiTags.length > 0)) && (

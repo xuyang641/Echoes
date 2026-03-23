@@ -11,6 +11,15 @@ interface Release {
 }
 
 const releases: Release[] = [
+  // Mar 23
+  {
+    version: 'v4.2.0',
+    date: '2026-03-23',
+    titleKey: '排版布局升级与回忆盘点重构',
+    icon: Sparkles,
+    color: 'bg-indigo-100 text-indigo-700',
+    changesKey: 'changelog.features.v4.2.0'
+  },
   // Mar 09
   {
     version: 'v4.1.0',
@@ -163,6 +172,12 @@ export function ChangelogView() {
 
   // Helper to get changes array based on version
   const getChanges = (version: string) => {
+    if (version === 'v4.2.0') return [
+      '布局升级: 桌面端引入全新的三栏式沉浸布局，提供更宽广的视觉空间与更优雅的阅读体验',
+      '互动小组件: 右侧边栏新增「每日灵感盲盒」与「环境白噪音播放器」，为您营造充满温度的书写氛围',
+      '回忆盘点重构: 抛弃冷冰冰的数据图表，引入 Apple Journal 风格的“叙事化排版”与“年度高光相册”',
+      '记忆关键词云: 新增动态呼吸效果的多彩标签云，点击即可穿梭回包含特定记忆的瞬间'
+    ];
     if (version === 'v4.1.0') return [
       '打印店升级: 新增三个全新版式模组与示例模板，优化自定义排版体验，支持更灵活的日记布局',
       'Web 端体验: 全新设计的 Web 端介绍页，提供更直观的功能展示与引导',

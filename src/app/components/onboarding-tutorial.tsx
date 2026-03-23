@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Camera, Map, Sparkles, Shield, ChevronRight, Check } from 'lucide-react';
@@ -76,7 +76,7 @@ export function OnboardingTutorial({ onComplete, isOpen }: OnboardingTutorialPro
   const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
-  const containerRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -110,7 +110,7 @@ export function OnboardingTutorial({ onComplete, isOpen }: OnboardingTutorialPro
   };
 
   // Swipe logic
-  const handleDragEnd = (e: any, { offset, velocity }: any) => {
+  const handleDragEnd = (_e: any, { offset, velocity }: any) => {
     const swipe = Math.abs(offset.x) * velocity.x;
 
     if (swipe < -10000) {

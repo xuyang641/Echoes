@@ -1,14 +1,9 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { BookOpen, Camera, Map, Sparkles, Download, ArrowRight, Shield, Heart, Lock, Smartphone, Globe, Cloud, Palette, Star, MessageCircle, Printer, Image as ImageIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Camera, Map, Sparkles, Download, ArrowRight, Shield, Heart, Lock, Smartphone, Globe, Palette, Star, MessageCircle, Printer, Image as ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useRef } from 'react';
+
 
 export function LandingPage() {
-  const targetRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start end", "end start"]
-  });
 
   const features = [
     {

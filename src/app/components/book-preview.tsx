@@ -340,7 +340,7 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
              </div>
              <div>
                  <EditableText 
-                    initialContent={page.title}
+                initialContent={page.title || ''}
                     field="title"
                     customization={pageCustomization}
                     onUpdate={isEditMode && onCustomizationChange ? (field, update) => updateTextCustomization(index, field, update) : undefined}
@@ -351,7 +351,7 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
                  <div className="h-1 w-20 bg-pink-400 mx-auto rounded-full"></div>
              </div>
              <EditableText 
-                initialContent={page.subtitle}
+                initialContent={page.subtitle || ''}
                 field="subtitle"
                 customization={pageCustomization}
                 onUpdate={isEditMode && onCustomizationChange ? (field, update) => updateTextCustomization(index, field, update) : undefined}
@@ -396,14 +396,14 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
            </div>
            <div className="w-full aspect-video bg-gray-100 mb-6 rounded-lg overflow-hidden shadow-sm relative">
              <EditableImage 
-               src={page.photo} 
+               src={page.photo || ''} 
                customization={imgConfig}
                onUpdate={isEditMode && onCustomizationChange ? (update) => updateImageCustomization(index, 0, update) : undefined}
                isEditMode={isEditMode}
              />
            </div>
            <EditableText 
-             initialContent={page.caption}
+             initialContent={page.caption || ''}
              field="caption"
              customization={pageCustomization}
              onUpdate={isEditMode && onCustomizationChange ? (field, update) => updateTextCustomization(index, field, update) : undefined}
@@ -412,7 +412,7 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
              style={{ fontFamily: '"Noto Serif SC", "Songti SC", "SimSun", serif', textAlign: 'justify' }}
            />
            <div className="mt-auto pt-4 flex justify-between items-center">
-             <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-500">心情: {moodMap[page.mood] || page.mood}</span>
+             <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-500">心情: {page.mood ? (moodMap[page.mood] || page.mood) : '未知'}</span>
              <span className="text-xs text-gray-400">{index + 1}</span>
            </div>
         </div>
@@ -480,7 +480,7 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
           <div className="flex-1 p-8 flex gap-6">
              <div className="flex-1 space-y-4">
                 <EditableText 
-                    initialContent={page.caption}
+                    initialContent={page.caption || ''}
                     field="caption"
                     customization={pageCustomization}
                     onUpdate={isEditMode && onCustomizationChange ? (field, update) => updateTextCustomization(index, field, update) : undefined}
@@ -530,7 +530,7 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
               <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">{page.date}</div>
               {page.caption && (
                   <EditableText 
-                    initialContent={page.caption}
+                    initialContent={page.caption || ''}
                     field="caption"
                     customization={pageCustomization}
                     onUpdate={isEditMode && onCustomizationChange ? (field, update) => updateTextCustomization(index, field, update) : undefined}
@@ -541,7 +541,7 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
               )}
               {page.content && (
                   <EditableText 
-                    initialContent={page.content}
+                    initialContent={page.content || ''}
                     field="content"
                     customization={pageCustomization}
                     onUpdate={isEditMode && onCustomizationChange ? (field, update) => updateTextCustomization(index, field, update) : undefined}
@@ -564,7 +564,7 @@ export function MockBookPreview({ pages, onClose, customization, onCustomization
         return (
             <div className="w-full h-full bg-[#fdfbf7] p-12 flex flex-col items-center justify-center text-center">
               <EditableText 
-                initialContent={page.text}
+                initialContent={page.text || ''}
                 field="text"
                 customization={pageCustomization}
                 onUpdate={isEditMode && onCustomizationChange ? (field, update) => updateTextCustomization(index, field, update) : undefined}

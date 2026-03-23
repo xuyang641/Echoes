@@ -6,9 +6,8 @@ export class AIService {
   private openai: OpenAI | null = null;
 
   constructor(apiKey?: string) {
-    // Qwen API (Aliyun Bailian) Endpoint
-    // Base URL: https://dashscope.aliyuncs.com/compatible-mode/v1
-    const key = apiKey || import.meta.env.VITE_QWEN_API_KEY;
+    // Configurable AI API Endpoint (Defaults to Aliyun Bailian / Qwen)
+    const key = apiKey || import.meta.env.VITE_AI_API_KEY || import.meta.env.VITE_QWEN_API_KEY;
     if (key) {
       this.init(key);
     }
@@ -18,7 +17,7 @@ export class AIService {
     try {
       this.openai = new OpenAI({
         apiKey: apiKey,
-        baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        baseURL: import.meta.env.VITE_AI_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1",
         dangerouslyAllowBrowser: true // Allowed for this client-side demo, ideally use backend proxy
       });
     } catch (error) {
@@ -32,7 +31,7 @@ export class AIService {
   }
   
   hasGlobalKey(): boolean {
-    return !!import.meta.env.VITE_QWEN_API_KEY || import.meta.env.VITE_USE_EDGE_FUNCTION === 'true';
+    return !!(import.meta.env.VITE_AI_API_KEY || import.meta.env.VITE_QWEN_API_KEY) || import.meta.env.VITE_USE_EDGE_FUNCTION === 'true';
   }
 
   private buildContext(query: string, entries: DiaryEntry[], mood?: string) {
@@ -97,9 +96,10 @@ export class AIService {
     const { systemPrompt, userContext } = this.buildContext(query, entries, mood);
 
     try {
-      console.log('Calling Qwen API (Client-side)...');
+      console.log('Calling AI API (Client-side)...');
+      const model = import.meta.env.VITE_AI_MODEL || "qwen-plus";
       const completion = await this.openai.chat.completions.create({
-        model: "qwen-plus", // Upgraded to Plus for better reasoning
+        model: model, // Configurable, default to qwen-plus
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContext }

@@ -1,14 +1,10 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { DiaryEntry } from './diary-entry-form';
-import { format, startOfToday, subDays, getDay } from 'date-fns';
+import { format, startOfToday, subDays } from 'date-fns';
 import { 
-  BarChart, Bar, XAxis, Tooltip as RechartsTooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell
-} from 'recharts';
-import { 
-  Calendar, Map as MapIcon, Smile, 
-  TrendingUp, Activity, Disc, Play, X, Quote, 
-  Camera, RefreshCw, Hash
+  Map as MapIcon, Smile, 
+  Play, X, Quote, Hash,
+  Camera, RefreshCw
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -88,40 +84,22 @@ function calculateStats(entries: DiaryEntry[]) {
   return { total, streak, topMood, topLocation };
 }
 
-function getChartData(entries: DiaryEntry[]) {
-  // Mood Distribution
-  const moodCounts: Record<string, number> = {};
-  entries.forEach(e => {
-    moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1;
-  });
-  const moodData = Object.entries(moodCounts)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-
-  // Activity by Day of Week
-  const dayCounts = Array(7).fill(0).map((_, i) => ({ name: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][i], value: 0 }));
-  entries.forEach(e => {
-    const day = getDay(new Date(e.date));
-    dayCounts[day].value++;
-  });
-
-  return { moodData, dayData: dayCounts };
-}
-
 // --- Components ---
 
-function BentoCard({ children, className = "", delay = 0, title, icon: Icon }: { children: React.ReactNode, className?: string, delay?: number, title?: string, icon?: any }) {
+function BentoCard({ children, className = "", delay = 0, title, icon: Icon }: { children: React.ReactNode, className?: string, delay?: number, title?: string, icon?: React.ElementType }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      className={`bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col ${className}`}
+      transition={{ duration: 0.6, delay, type: "spring", stiffness: 100, damping: 20 }}
+      className={`bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] transition-all duration-500 flex flex-col group ${className}`}
     >
       {title && (
-        <div className="flex items-center gap-2 mb-4 text-zinc-500 dark:text-zinc-400">
-          {Icon && <Icon className="w-4 h-4" />}
-          <h3 className="text-xs font-bold uppercase tracking-wider">{title}</h3>
+        <div className="flex items-center gap-2.5 mb-6 text-zinc-600 dark:text-zinc-300">
+          <div className="p-2 bg-white/50 dark:bg-black/20 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800/50 group-hover:scale-110 transition-transform duration-300">
+            {Icon && <Icon className="w-4 h-4" />}
+          </div>
+          <h3 className="text-[13px] font-bold tracking-widest text-zinc-800 dark:text-zinc-200">{title}</h3>
         </div>
       )}
       <div className="flex-1 min-h-0 relative">
@@ -131,14 +109,16 @@ function BentoCard({ children, className = "", delay = 0, title, icon: Icon }: {
   );
 }
 
-function StatItem({ icon: Icon, label, value, color }: any) {
+function StatItem({ icon: Icon, label, value, color }: { icon: React.ElementType, label: string, value: string | number, color: string }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-        <Icon className="w-4 h-4" />
-        <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
+        <div className="p-1.5 bg-white/50 dark:bg-black/20 rounded-lg shadow-sm">
+          <Icon className="w-4 h-4" />
+        </div>
+        <span className="text-[11px] font-bold uppercase tracking-widest">{label}</span>
       </div>
-      <div className={`text-3xl font-bold ${color.replace('bg-', 'text-')} font-serif tracking-tight`}>
+      <div className={`text-4xl font-bold ${color.replace('bg-', 'text-')} font-serif tracking-tight drop-shadow-sm`}>
         {value}
       </div>
     </div>
@@ -269,7 +249,7 @@ function StoryOverlay({ entry, onClose }: { entry: DiaryEntry, onClose: () => vo
           
           <div className="pt-6 mt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500">
             <MapIcon className="w-4 h-4" />
-            <span>{typeof entry.location === 'object' ? entry.location.name : (entry.location || '未知位置')}</span>
+            <span>{typeof entry.location === 'object' ? (entry.location?.name || '未知位置') : (entry.location || '未知位置')}</span>
           </div>
         </div>
       </motion.div>
@@ -277,16 +257,134 @@ function StoryOverlay({ entry, onClose }: { entry: DiaryEntry, onClose: () => vo
   );
 }
 
+function TagCloud({ entries, onTagClick }: { entries: DiaryEntry[], onTagClick: (tag: string) => void }) {
+  // Extract and count all tags
+  const tags = useMemo(() => {
+    const counts: Record<string, number> = {};
+    entries.forEach(entry => {
+      // Combine manual tags and AI tags
+      const allTags = [...(entry.tags || []), ...(entry.aiTags || [])];
+      allTags.forEach(tag => {
+        if (!tag) return;
+        const lowerTag = tag.toLowerCase();
+        counts[lowerTag] = (counts[lowerTag] || 0) + 1;
+      });
+    });
+
+    // Sort by frequency and take top 20
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20);
+
+    // Calculate min/max for scaling
+    const maxCount = sorted[0]?.[1] || 1;
+    const minCount = sorted[sorted.length - 1]?.[1] || 1;
+
+    // Map to objects with size and random position/delay properties
+    return sorted.map(([text, count], index) => {
+      // Calculate font size (e.g., between 0.8rem and 2.5rem)
+      const scale = maxCount === minCount ? 1 : (count - minCount) / (maxCount - minCount);
+      const fontSize = 0.8 + (scale * 1.7);
+      
+      // Randomize opacity a bit for depth
+      const opacity = 0.6 + (scale * 0.4);
+
+      // Randomize colors to be more vibrant
+      const vibrantColors = [
+        'text-blue-500 dark:text-blue-400',
+        'text-emerald-500 dark:text-emerald-400',
+        'text-amber-500 dark:text-amber-400',
+        'text-rose-500 dark:text-rose-400',
+        'text-fuchsia-500 dark:text-fuchsia-400',
+        'text-cyan-500 dark:text-cyan-400',
+        'text-violet-500 dark:text-violet-400'
+      ];
+      
+      const isTopTier = scale > 0.7;
+      // Top tier gets primary vibrant colors, others get random vibrant colors or neutral
+      let colorClass = isTopTier 
+        ? vibrantColors[index % vibrantColors.length] 
+        : (Math.random() > 0.3 
+            ? vibrantColors[Math.floor(Math.random() * vibrantColors.length)] 
+            : 'text-zinc-500 dark:text-zinc-400');
+            
+      // Calculate random animation values for the floating effect
+      const yOffset = (Math.random() * 8) - 4; // -4px to 4px
+      const animationDuration = 3 + Math.random() * 2; // 3-5 seconds
+      const animationDelay = Math.random() * 2; // 0-2 seconds delay
+
+      return {
+        text,
+        count,
+        fontSize,
+        opacity,
+        colorClass,
+        delay: index * 0.05,
+        yOffset,
+        animationDuration,
+        animationDelay
+      };
+    });
+  }, [entries]);
+
+  if (tags.length === 0) {
+    return (
+      <div className="w-full h-full min-h-[200px] flex items-center justify-center text-zinc-400 text-sm font-serif">
+        <Hash className="w-4 h-4 mr-2 opacity-50" />
+        暂无记忆关键词
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full min-h-[250px] flex flex-wrap items-center justify-center gap-x-6 gap-y-4 py-8 px-4 content-center">
+      {tags.map((tag) => (
+        <motion.div
+          key={tag.text}
+          animate={{
+            y: [tag.yOffset, -tag.yOffset, tag.yOffset],
+          }}
+          transition={{
+            duration: tag.animationDuration,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: tag.animationDelay
+          }}
+          className="inline-block"
+        >
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: tag.opacity, scale: 1 }}
+            whileHover={{ 
+              scale: 1.15, 
+              opacity: 1, 
+              textShadow: "0px 0px 12px currentColor",
+              transition: { duration: 0.2 }
+            }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ delay: tag.delay, duration: 0.5, type: "spring" }}
+            onClick={() => {
+              haptics.light();
+              onTagClick(tag.text);
+            }}
+            className={`font-serif tracking-wide transition-colors font-medium ${tag.colorClass}`}
+            style={{ fontSize: `${tag.fontSize}rem` }}
+          >
+            {tag.text}
+          </motion.button>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 export function InsightsView({ entries }: InsightsViewProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
 
   const stats = useMemo(() => calculateStats(entries), [entries]);
-  const { moodData, dayData } = useMemo(() => getChartData(entries), [entries]);
-  
-  // Memoize the MoodPixelGrid entries to prevent re-renders unless entries actually change
-  const pixelGridEntries = useMemo(() => entries, [entries]);
 
   if (!entries.length) {
     return (
@@ -304,130 +402,85 @@ export function InsightsView({ entries }: InsightsViewProps) {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2"
+        className="flex flex-col gap-6 px-4"
       >
-        <div>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white mb-2 tracking-tight">
-            回忆盘点
+        <div className="max-w-2xl">
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-zinc-900 dark:text-white mb-4 tracking-tight leading-tight">
+            在这里，你已经留下了 <span className="text-blue-600 dark:text-blue-400">{stats.total}</span> 个闪光的瞬间，最长坚持了 <span className="text-emerald-500">{stats.streak}</span> 天。
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 text-lg">
-            你的生活足迹与情感分析
+          <p className="text-zinc-500 dark:text-zinc-400 text-lg leading-relaxed font-serif italic">
+            "记忆不是用来被统计的，而是用来被重新感受的。这是你的生活长卷。"
           </p>
-        </div>
-        <div className="flex gap-4">
-          <div className="text-right">
-            <div className="text-3xl font-bold text-zinc-900 dark:text-white font-mono">{stats.total}</div>
-            <div className="text-xs text-zinc-500 uppercase tracking-wider">累计回忆</div>
-          </div>
-          <div className="w-px bg-zinc-200 dark:bg-zinc-800 h-12" />
-          <div className="text-right">
-            <div className="text-3xl font-bold text-green-500 font-mono">{stats.streak}</div>
-            <div className="text-xs text-zinc-500 uppercase tracking-wider">连续记录</div>
-          </div>
         </div>
       </motion.div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         
-        {/* Left Column: Flashback & Stats (8 cols) */}
-        <div className="md:col-span-8 space-y-6">
+        {/* Left Column: Flashback & Highlights (8 cols) */}
+        <div className="md:col-span-8 space-y-8">
           {/* Flashback Card */}
-          <BentoCard className="h-[300px] md:h-[400px] !p-0 overflow-hidden relative border-none ring-1 ring-black/5" delay={0.1}>
+          <BentoCard className="h-[400px] md:h-[500px] !p-0 overflow-hidden relative border-none ring-1 ring-black/5 shadow-2xl shadow-black/10" delay={0.1}>
             <FlashbackCard entries={entries} onPlay={setSelectedEntry} />
           </BentoCard>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <BentoCard className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800" delay={0.2}>
-              <StatItem icon={Calendar} label="活跃天数" value={stats.total} color="text-blue-600" />
-            </BentoCard>
-            <BentoCard className="bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-800" delay={0.25}>
-              <StatItem icon={TrendingUp} label="最长连续" value={stats.streak} color="text-green-600" />
-            </BentoCard>
-            <BentoCard className="bg-yellow-50/50 dark:bg-yellow-900/10 border-yellow-100 dark:border-yellow-800" delay={0.3}>
-              <StatItem icon={Smile} label="年度心情" value={stats.topMood === '无数据' ? stats.topMood : t(`moods.${stats.topMood.toLowerCase()}`)} color="text-yellow-600" />
-            </BentoCard>
-            <BentoCard className="bg-purple-50/50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-800" delay={0.35}>
-              <StatItem icon={MapIcon} label="常驻地点" value={stats.topLocation} color="text-purple-600" />
-            </BentoCard>
-          </div>
-
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Mood Distribution */}
-            <BentoCard title="心情光谱" icon={Disc} delay={0.4}>
-              <div className="h-[200px] w-full relative flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={moodData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                      stroke="none"
-                    >
-                      {moodData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={MOOD_COLORS[entry.name] || '#9CA3AF'} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip 
-                      contentStyle={{ backgroundColor: '#18181b', borderRadius: '12px', border: 'none', color: 'white', fontSize: '12px', padding: '8px 12px' }}
-                      itemStyle={{ color: 'white' }}
-                      formatter={(value, name) => [value, t(`moods.${String(name).toLowerCase()}`)]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                {/* Center Stats */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ transform: 'translateY(5px)' }}>
-                  <span className="text-3xl font-bold text-zinc-800 dark:text-zinc-200">{stats.total}</span>
-                  <span className="text-xs text-zinc-400 uppercase tracking-widest">条回忆</span>
-                </div>
-              </div>
-            </BentoCard>
-
-            {/* Weekly Activity */}
-            <BentoCard title="写作节奏" icon={Activity} delay={0.45}>
-              <div className="h-[200px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dayData}>
-                    <Bar 
-                      dataKey="value" 
-                      fill="#3B82F6" 
-                      radius={[6, 6, 6, 6]} 
-                      barSize={12}
-                      fillOpacity={0.8}
-                    />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#71717a', fontSize: 11 }} 
-                      dy={10}
-                      interval={0}
-                    />
-                    <RechartsTooltip
-                      cursor={{ fill: 'transparent' }}
-                      contentStyle={{ backgroundColor: '#18181b', borderRadius: '12px', border: 'none', color: 'white', fontSize: '12px' }}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </BentoCard>
+          {/* Tag Cloud Row */}
+          <div className="grid grid-cols-1 gap-8">
+             <BentoCard title="记忆关键词" icon={Hash} delay={0.4} className="bg-white/40 dark:bg-zinc-900/40 border-white/20 dark:border-white/5">
+               <TagCloud 
+                 entries={entries} 
+                 onTagClick={(tag) => {
+                   // For now, just navigate to home with the tag as a search query
+                   navigate(`/?q=${encodeURIComponent(tag)}`);
+                 }} 
+               />
+             </BentoCard>
           </div>
         </div>
 
-        {/* Right Column: Pixel Grid (4 cols) */}
-        <div className="md:col-span-4 space-y-6">
+        {/* Right Column: Narrative & Mood (4 cols) */}
+        <div className="md:col-span-4 space-y-8">
           
-          {/* Pixel Grid */}
-          <BentoCard title="心情格子" icon={Hash} delay={0.6}>
-            <div className="overflow-hidden">
-               {/* Use memoized entries */}
-               <MoodPixelGrid entries={pixelGridEntries} />
+          {/* Narrative Card */}
+          <BentoCard delay={0.2} className="bg-white/60 dark:bg-zinc-900/60 shadow-lg">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="text-sm text-zinc-500 font-medium tracking-widest uppercase">最常记录的心情</div>
+                <div className="text-3xl font-serif text-zinc-900 dark:text-white flex items-center gap-3">
+                  <span className="text-4xl">{t(`moods.${stats.topMood.toLowerCase()}`)}</span>
+                </div>
+              </div>
+              
+              <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800" />
+              
+              <div className="space-y-2">
+                <div className="text-sm text-zinc-500 font-medium tracking-widest uppercase">灵魂常驻地</div>
+                <div className="text-2xl font-serif text-zinc-900 dark:text-white flex items-center gap-2">
+                  <MapIcon className="w-5 h-5 text-fuchsia-500" />
+                  {stats.topLocation}
+                </div>
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* Emotional Resonance (Replacing Pixel Grid) */}
+          <BentoCard title="情绪共振" icon={Smile} delay={0.6} className="bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/10 dark:to-purple-900/10 border-indigo-100/50 dark:border-indigo-800/30">
+            <div className="space-y-4">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                过去的一段时间里，你的情绪像是一首跌宕起伏的歌。有 <span className="font-bold text-yellow-500">阳光明媚</span> 的时刻，也有 <span className="font-bold text-blue-500">偶尔的低谷</span>。但最重要的是，你把它们都真实地记录了下来。
+              </p>
+              
+              {/* Abstract visual representation instead of a rigid grid */}
+              <div className="w-full h-32 relative rounded-2xl overflow-hidden bg-white/40 dark:bg-black/20 flex items-center justify-center border border-white/20">
+                <div className="absolute inset-0 opacity-50 mix-blend-multiply dark:mix-blend-screen" style={{
+                  background: 'radial-gradient(circle at 30% 50%, rgba(250, 204, 21, 0.4) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(99, 102, 241, 0.4) 0%, transparent 50%), radial-gradient(circle at 50% 20%, rgba(236, 72, 153, 0.4) 0%, transparent 50%)',
+                  filter: 'blur(20px)'
+                }} />
+                <div className="relative z-10 text-center">
+                  <div className="text-2xl mb-1">✨</div>
+                  <div className="text-xs font-medium text-zinc-500 uppercase tracking-widest">保持真实</div>
+                </div>
+              </div>
             </div>
           </BentoCard>
 

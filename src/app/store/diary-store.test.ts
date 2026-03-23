@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useDiaryStore } from '../store/diaryStore';
+import { useDiaryStore } from '../store/diary-store';
 import { offlineStorage } from '../services/offline-storage';
 import { fetchEntries } from '../utils/api';
 

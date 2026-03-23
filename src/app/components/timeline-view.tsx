@@ -54,14 +54,14 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 w-full max-w-full">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <Skeleton className="h-8 w-48 bg-gray-200 dark:bg-gray-700" />
           <Skeleton className="h-6 w-24 bg-gray-200 dark:bg-gray-700" />
         </div>
         <Skeleton className="h-16 w-full rounded-2xl bg-gray-200 dark:bg-gray-700" />
         <Skeleton className="h-12 w-full rounded-xl bg-gray-200 dark:bg-gray-700" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden h-full">
               <Skeleton className="aspect-[4/3] w-full bg-gray-200 dark:bg-gray-700" />
@@ -108,12 +108,12 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
   };
 
   return (
-    <motion.div 
-      className="space-y-6 h-full flex flex-col"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
+        <motion.div 
+          className="space-y-6 flex-1 flex flex-col w-full max-w-full"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center justify-between flex-wrap gap-4 shrink-0">
         <div className="flex items-center gap-2">
@@ -125,18 +125,18 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
         </div>
       </motion.div>
 
-      {/* AI Daily Summary */}
+      {/* AI Daily Summary - Make it wider */}
       <motion.div variants={itemVariants}>
         <AISummaryCard entries={entries} date={new Date().toISOString()} />
       </motion.div>
 
       {/* Mood Filter */}
-      <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 border border-gray-100 dark:border-gray-700 transition-colors shrink-0">
+      <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 border border-gray-100 dark:border-gray-700 transition-colors shrink-0 max-w-full overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-gray-600 dark:text-gray-300" />
           <span className="text-sm text-gray-700 dark:text-gray-200">{t('timeline.filter')}</span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap md:flex-nowrap gap-2 overflow-x-auto no-scrollbar pb-1">
           {allMoods.map(mood => (
             <motion.button
               key={mood}
@@ -146,7 +146,7 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
                 setSelectedMood(mood);
                 haptics.light();
               }}
-              className={`px-4 py-2 rounded-full text-sm transition-all ${
+              className={`px-4 py-2 rounded-full text-sm transition-all whitespace-nowrap shrink-0 ${
                 selectedMood === mood
                   ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-sm'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -169,12 +169,12 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
       {filteredEntries.length > 0 ? (
         <motion.div 
             variants={itemVariants}
-            className="flex-1 min-h-[500px] -mx-4 px-4"
+            className="flex-1 w-full min-h-[500px] pb-4"
         >
           <VirtuosoGrid
-            useWindowScroll
+            customScrollParent={document.getElementById('main-scroll-container') || undefined}
             data={filteredEntries}
-            listClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 pb-20"
+            listClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 pb-6"
             itemClassName="h-full"
             itemContent={(_index, entry) => (
               <div className="h-full pb-4">

@@ -4,6 +4,10 @@ import App from "./app/app";
 import { AuthProvider } from "./app/context/AuthContext";
 import "./styles/index.css";
 import React from "react";
+import { initAnalytics } from "./app/utils/analytics";
+
+// Initialize Analytics before rendering
+initAnalytics();
 
 // Register Service Worker
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

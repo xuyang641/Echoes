@@ -8,8 +8,8 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="hidden md:block bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 mt-auto transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="hidden md:block bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-700/50 py-4 mt-auto transition-colors w-full z-20 rounded-xl mb-4 shadow-sm">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
             <span className="font-semibold text-gray-800 dark:text-gray-200">{t('footer.rights')}</span>

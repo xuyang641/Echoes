@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useDiaryStore } from '../store/diaryStore';
+import { useDiaryStore } from '../store/diary-store';
 import { useAuth } from '../context/AuthContext';
 import { offlineStorage } from '../services/offline-storage';
 

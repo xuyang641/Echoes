@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../utils/supabaseClient';
-import { Loader2, Mail, Lock, BookOpen, Github } from 'lucide-react';
+import { Loader2, Mail, Lock, BookOpen } from 'lucide-react';
 import { Captcha } from './captcha';
 import { toast } from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
@@ -76,27 +76,6 @@ export function LoginForm() {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOAuthLogin = async (provider: 'google' | 'github') => {
-    // Determine Redirect URL based on platform
-    const redirectUrl = Capacitor.isNativePlatform() 
-        ? 'com.echoes.app://login-callback' 
-        : window.location.origin;
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: redirectUrl, 
-          skipBrowserRedirect: false, 
-        },
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(err.message);
     }
   };
 
@@ -183,27 +162,6 @@ export function LoginForm() {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isSignUp ? '创建账号' : '登录')}
           </button>
         </form>
-
-        <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">或者通过以下方式继续</span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-3">
-              <button
-                onClick={() => handleOAuthLogin('github')}
-                className="w-full inline-flex justify-center items-center px-4 py-2.5 border border-gray-300 shadow-sm bg-white text-sm font-medium rounded-xl text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <Github className="w-5 h-5 mr-2" />
-                <span>GitHub</span>
-              </button>
-            </div>
-          </div>
       </div>
     </div>
   );

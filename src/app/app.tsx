@@ -18,7 +18,8 @@ import { ReloadPrompt } from './components/reload-prompt';
 import { App as CapacitorApp } from '@capacitor/app';
 
 // Layout Components
-import { DesktopHeader } from './components/layout/desktop-header';
+import { DesktopSidebar } from './components/layout/desktop-sidebar';
+import { DesktopRightPanel } from './components/layout/desktop-right-panel';
 import { MobileHeader } from './components/layout/mobile-header';
 import { MobileNavigation } from './components/layout/mobile-navigation';
 
@@ -27,7 +28,7 @@ import { InteractionManager } from './components/managers/interaction-manager';
 import { NotificationManager } from './components/managers/notification-manager';
 import { MigrationManager } from './components/managers/migration-manager'; // New import
 import { AppRoutes } from './routes/app-routes';
-import { useDiaryStore } from './store/diaryStore';
+import { useDiaryStore } from './store/diary-store';
 import { useDiarySync } from './hooks/useDiarySync';
 
 export default function App() {
@@ -58,7 +59,6 @@ function AppContent() {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const isAddOrEdit = location.pathname === '/add' || location.pathname.startsWith('/edit');
 
   // Ensure hooks are called before any conditional returns
   useDiarySync();
@@ -162,7 +162,7 @@ function AppContent() {
   return (
     <InteractionManager onAIChatOpen={() => setIsAIChatOpen(true)}>
       {({ onTouchStart, onTouchMove, onTouchEnd }) => (
-        <div className={`min-h-screen transition-colors duration-300 pb-20 md:pb-0 relative overflow-hidden ${
+        <div className={`min-h-screen md:h-screen transition-colors duration-300 relative overflow-hidden ${
             backgroundVideo === 'none' 
               ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900' 
               : 'bg-black/20'
@@ -171,15 +171,6 @@ function AppContent() {
           {/* Background Video */}
           {backgroundVideo !== 'none' && (
             <>
-              {/* <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
-                src={backgroundVideo === 'rain' ? '/videos/backgrounds/rain_window.mp4' : '/videos/backgrounds/forest.mp4'}
-              /> */}
-              {/* Fallback to static image or gradient for now to reduce build size for Cloudflare Pages */}
               <div 
                 className="fixed inset-0 w-full h-full bg-cover bg-center z-0 pointer-events-none"
                 style={{
@@ -193,27 +184,44 @@ function AppContent() {
           )}
 
           {/* Content Wrapper */}
-          <div className="relative z-10 flex flex-col min-h-screen">
-            <DesktopHeader entries={entries} isAddOrEdit={isAddOrEdit} />
-            <MobileHeader user={user} />
+          <div className="relative z-10 flex flex-col md:flex-row h-full">
+            
+            {/* Desktop Left Sidebar */}
+            <DesktopSidebar entries={entries} />
 
-            {/* Main Content */}
+            {/* Mobile Header (Hidden on Desktop) */}
+            <div className="md:hidden">
+              <MobileHeader user={user} />
+            </div>
+
+            {/* Main Content Area */}
             <main 
-              className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 flex-1 w-full"
+              className="flex-1 overflow-y-auto no-scrollbar relative w-full h-full pb-20 md:pb-0 bg-white/30 dark:bg-gray-900/30"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
+              id="main-scroll-container"
             >
-              <AppRoutes 
-                entries={entries} 
-                loading={loading} 
-                saving={saving} 
-                onDeleteEntry={deleteEntry} 
-                onAddEntry={addEntry} 
-                onUpdateEntry={updateEntry} 
-                onRefresh={refresh}
-              />
+              <div className="w-full min-h-full px-4 sm:px-6 lg:px-8 py-4 md:py-8 max-w-[1600px] mx-auto flex flex-col relative pb-0 md:pb-0">
+                <div className="flex-1 pb-4">
+                  <AppRoutes 
+                    entries={entries} 
+                    loading={loading} 
+                    saving={saving} 
+                    onDeleteEntry={deleteEntry} 
+                    onAddEntry={addEntry} 
+                    onUpdateEntry={updateEntry} 
+                    onRefresh={refresh}
+                  />
+                </div>
+                <div className="shrink-0 w-full mt-auto">
+                  <Footer />
+                </div>
+              </div>
             </main>
+
+            {/* Desktop Right Panel */}
+            <DesktopRightPanel entries={entries} />
 
             <AIChatView  
               entries={entries}
@@ -223,8 +231,8 @@ function AppContent() {
 
             <WelcomeModal onComplete={handleWelcomeComplete} />
             <OnboardingTutorial isOpen={showTutorial} onComplete={handleTutorialComplete} />
-            <Footer />
             
+            {/* Mobile Navigation (Hidden on Desktop) */}
             <MobileNavigation />
           </div>
         </div>
