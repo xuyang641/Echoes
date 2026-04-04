@@ -1,51 +1,34 @@
-# 网站性能改进与优化方案
+# 网站性能改进与优化方案 (明日计划)
 
-基于目前项目的构建分析（Vite 打包日志），以下是针对提高网站运行速度和加载速度的高价值优化策略，计划于后续（明天）逐步实施。
+基于目前项目的构建分析（Vite 打包日志）和加载速度评估，以下是针对提高网站运行速度和加载速度的高价值优化策略，计划于明日逐步实施。
 
-## 1. 核心问题：代码分割与巨型 JS 文件拆分 (Code Splitting)
-当前问题：`vendor-tf.js` (1.87MB), `index.js` (1.45MB), `vendor-ui.js` (805KB) 体积过大，阻塞首屏渲染。
-
-**执行计划：**
-- [ ] **路由级懒加载 (Route-based Lazy Loading)**：
-  - 使用 `React.lazy()` 和 `<Suspense>` 重构 `App.tsx` 中的路由。
-  - 将非首屏核心页面（如 `print-shop-view`, `account-view`, `timeline-view` 等）进行按需加载。
-- [ ] **组件级动态导入 (Dynamic Import)**：
-  - 将 TensorFlow (`@tensorflow-models/mobilenet`, `@tensorflow/tfjs`) 改为仅在用户点击“AI 识别”时动态加载：`const mobilenet = await import('@tensorflow-models/mobilenet')`。
-  - 将 `html2canvas`、`jspdf` (用于生成海报/PDF) 改为动态加载。
-  - 将地图组件 (`react-leaflet` / 高德地图) 在地图视图挂载时才加载。
-
-## 2. 图片与媒体优化 (Image Optimization)
-作为一个照片日记应用，图片是性能消耗的大头。
+## 1. 🖼️ 图片加载与压缩（最高优先级）
+作为一个照片日记应用，图片是性能消耗的大头，最容易阻塞瀑布流的首屏渲染。
 
 **执行计划：**
-- [ ] **完善懒加载**：确保现有的 `LazyImage` 组件使用了 `IntersectionObserver`，实现真正的滚动可视区域加载。
-- [ ] **缩略图策略 (Thumbnails)**：
-  - 改造图片保存逻辑：在保存原图的同时，生成一张低分辨率（如宽 400px）的缩略图。
-  - 在瀑布流（Timeline）等列表页仅加载缩略图，点击进入详情或预览时再加载原图。
-- [ ] **格式检查**：确认图片在压缩时已全部稳定转换为 `webp` 格式。
+- [ ] **前端上传前强制压缩**：在 `diary-entry-form.tsx` 用户选完图后，立刻调用 `browser-image-compression` 把图片压到 1MB 以内再传给 Supabase。
+- [ ] **双轨制（原图+缩略图）**：改造图片保存逻辑，在保存原图的同时，生成一张低分辨率（如宽 400px）的缩略图存到 `thumbnail_url` 字段。
+- [ ] **按需加载高清图**：在瀑布流（Timeline）等列表页仅加载几十 KB 的缩略图，点击放大（ImagePreviewModal）时再加载原图。
 
-## 3. 渲染性能优化 (Rendering Performance)
-防止日记数量增多后导致的页面卡顿。
+## 2. 📜 列表渲染虚拟化 (Virtual List)
+防止日记数量增多（如达到 500+ 篇）后导致的 DOM 节点爆炸和页面滑动卡顿。
 
 **执行计划：**
-- [ ] **引入虚拟列表 (Virtualization)**：
-  - 在日记列表页（Timeline）和回忆画廊中引入 `react-virtuoso` 或 `react-window`。
-  - 只渲染当前屏幕可见的 DOM 节点，大幅减少浏览器内存占用和渲染压力。
-- [ ] **组件级渲染优化**：
-  - 审查 `milestones-view`、日记卡片等复杂组件。
-  - 合理补充 `React.memo`、`useMemo` 和 `useCallback`，避免父组件状态变更引起不必要的子组件全量重绘。
+- [ ] **重构时光轴**：在 `timeline-view.tsx` 和回忆画廊中引入 `react-virtuoso` 替换原有的 `.map()` 渲染。
+- [ ] **按需渲染**：确保无论有多少篇日记，浏览器在任何时刻都只渲染当前屏幕可见的十几篇日记的 DOM。
 
-## 4. 依赖瘦身 (Tree Shaking)
-**执行计划：**
-- [ ] **按需引入检查**：
-  - 检查 `@mui/material` 和 `lucide-react` 的引入方式，确保未将整个库打包。
-  - 检查 `date-fns`，确保没有引入无用的语言包/时区包。
-- [ ] **包体积分析**：使用 `rollup-plugin-visualizer` 生成可视化的包体积依赖图，精准剔除无用依赖。
+## 3. 🧩 更彻底的路由级代码分割 (Code Splitting)
+当前问题：虽然绝大多数页面已使用 `React.lazy()`，但包含极重富文本编辑器（`@tiptap`）的 `DiaryEntryForm` 仍然是同步引入的，导致首屏加载缓慢。
 
-## 5. 缓存与离线策略 (PWA & Caching)
 **执行计划：**
-- [ ] **强化 PWA 缓存**：优化 `vite-plugin-pwa` 的 Workbox 配置，将核心静态资源（字体、关键 CSS/JS）进行强缓存。
-- [ ] **数据请求优化**：考虑为 API 请求引入 SWR (Stale-While-Revalidate) 模式，优先展示本地缓存数据，后台静默更新，消除网络等待感。
+- [ ] **路由级懒加载**：在 `app-routes.tsx` 中，将 `/add` 和 `/edit/:id` 路由对应的组件（包括 `DiaryEntryForm`）改为 `React.lazy()` 动态加载。
+
+## 4. 🤖 AI 模型的按需加载 (Dynamic Import)
+当前问题：`@tensorflow-models/mobilenet` 和 `@tensorflow/tfjs` 两个包打包后体积在 1.5MB 以上，拖慢全局加载速度。
+
+**执行计划：**
+- [ ] **移除同步引用**：排查并移除全局所有对 TensorFlow 的同步 `import * as tf from ...`。
+- [ ] **点击时加载**：将 TensorFlow 改为仅在用户点击发日记页面的“AI 识别”按钮时，在函数内执行 `const tf = await import('@tensorflow/tfjs')` 动态拉取。
 
 ---
-*注：本方案将根据实际业务优先级和实施成本，由高到低逐步推进。建议首选 **路由级懒加载** 和 **TensorFlow 动态加载**，能立即获得肉眼可见的性能提升。*
+*注：建议明天开发时，按照上述 1 到 4 的优先级顺序推进，图片压缩和虚拟列表的体验提升最为明显。*
