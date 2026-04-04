@@ -44,6 +44,12 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    if (user.id === 'mock-user-123') {
+      // Mock data for local development to prevent network errors
+      setGroups([]);
+      return;
+    }
+
     const fetchGroups = async () => {
       // 1. Get groups I belong to
       const { data: memberships, error } = await supabase

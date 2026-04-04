@@ -196,32 +196,53 @@ function AppContent() {
 
             {/* Main Content Area */}
             <main 
-              className="flex-1 overflow-y-auto no-scrollbar relative w-full h-full pb-20 md:pb-0 bg-white/30 dark:bg-gray-900/30"
+              className="flex-1 overflow-y-auto overflow-x-hidden relative w-full h-[100vh] bg-[#F9FAFB] dark:bg-[#0A0A0A]"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
               id="main-scroll-container"
             >
-              <div className="w-full min-h-full px-4 sm:px-6 lg:px-8 py-4 md:py-8 max-w-[1600px] mx-auto flex flex-col relative pb-0 md:pb-0">
-                <div className="flex-1 pb-4">
-                  <AppRoutes 
-                    entries={entries} 
-                    loading={loading} 
-                    saving={saving} 
-                    onDeleteEntry={deleteEntry} 
-                    onAddEntry={addEntry} 
-                    onUpdateEntry={updateEntry} 
-                    onRefresh={refresh}
-                  />
-                </div>
-                <div className="shrink-0 w-full mt-auto">
-                  <Footer />
-                </div>
+              <div className="w-full h-full min-h-full max-w-[1600px] mx-auto flex flex-col relative px-4 sm:px-6 lg:px-8">
+                {(() => {
+                  const deleteEntrySafe = async (id: string): Promise<void> => {
+                    await deleteEntry(id);
+                  };
+                  const addEntrySafe = async (entry: any, targetGroups: string[]): Promise<void> => {
+                    await addEntry(entry, targetGroups);
+                  };
+                  const updateEntrySafe = async (entry: any, targetGroups: string[]): Promise<void> => {
+                    await updateEntry(entry, targetGroups);
+                  };
+
+                  return (
+                    <>
+                      <div className={`w-full relative z-10 ${location.pathname === '/' || location.pathname === '/map' ? 'h-full flex-1 overflow-hidden py-4 md:py-8' : 'flex-1 pb-16 py-4 md:py-8'}`}>
+                        <AppRoutes 
+                          entries={entries} 
+                          loading={loading} 
+                          saving={saving} 
+                          onDeleteEntry={deleteEntrySafe} 
+                          onAddEntry={addEntrySafe} 
+                          onUpdateEntry={updateEntrySafe} 
+                          onRefresh={refresh}
+                        />
+                      </div>
+                      {/* Only show Footer on non-timeline pages */}
+                      {location.pathname !== '/' && location.pathname !== '/map' && (
+                        <div className="w-full shrink-0 relative z-20">
+                          <Footer />
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </main>
 
-            {/* Desktop Right Panel */}
-            <DesktopRightPanel entries={entries} />
+            {/* Desktop Right Panel (Only show on Add/Edit routes or Insights) */}
+            {(location.pathname === '/add' || location.pathname.startsWith('/edit')) && (
+              <DesktopRightPanel entries={entries} />
+            )}
 
             <AIChatView  
               entries={entries}

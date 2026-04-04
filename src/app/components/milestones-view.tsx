@@ -1,9 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trophy, Target, Camera, Dumbbell, Book, Star, CheckCircle2, Circle, X } from 'lucide-react';
+import { Trophy, Camera, Dumbbell, Book, Star, X, Plus, Target } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { DiaryEntry } from './diary-entry-form';
 import { LazyImage } from './ui/lazy-image';
 import { format } from 'date-fns';
+import { useBucketListStore } from '../store/bucket-list-store';
+import { AddWishDialog } from './add-wish-dialog';
+import { Button } from './ui/button';
 
 interface MilestonesViewProps {
   entries: DiaryEntry[];
@@ -18,14 +22,102 @@ interface Milestone {
   tags: string[]; // Entries with ANY of these tags count towards progress
   category: 'skill' | 'life' | 'health';
   color: string;
+  state?: 'someday' | 'in_progress' | 'achieved';
+  current?: number;
+  progress?: number;
+  completed?: boolean;
 }
+
+// Milestone Card Component
+const MilestoneCard = ({ milestone, onClick, t }: { milestone: Milestone, onClick: () => void, t: any }) => (
+  <div 
+    onClick={onClick}
+    className={`group relative bg-white dark:bg-gray-800 rounded-3xl p-6 border-2 transition-all duration-300 cursor-pointer ${
+      milestone.completed 
+        ? 'border-amber-400/50 shadow-lg shadow-amber-100 dark:shadow-none' 
+        : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700 shadow-sm'
+    }`}
+  >
+    {milestone.completed && (
+      <div className="absolute -top-3 -right-3 bg-amber-500 text-white p-2 rounded-full shadow-md animate-bounce">
+        <Trophy className="w-5 h-5" />
+      </div>
+    )}
+
+    <div className="flex items-start justify-between mb-6">
+      <div className="flex items-center gap-4">
+        <div className={`p-3 rounded-2xl ${milestone.completed ? 'bg-amber-100 text-amber-500 dark:bg-amber-900/30' : milestone.color}`}>
+          <milestone.icon className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">
+            {milestone.id.startsWith('photo_') || milestone.id.startsWith('fitness_') || milestone.id.startsWith('reading_') 
+              ? t(milestone.titleKey) 
+              : milestone.titleKey}
+          </h3>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase tracking-wide">
+              {milestone.category}
+            </span>
+            {milestone.state !== 'someday' && (
+              <span className="text-xs text-gray-400">
+                {t('milestones.target')}: {milestone.target}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="text-right">
+        {milestone.state !== 'someday' ? (
+          <>
+            <span className={`text-2xl font-bold ${milestone.completed ? 'text-amber-500' : 'text-gray-900 dark:text-white'}`}>
+              {milestone.current}
+            </span>
+            <span className="text-gray-400 text-sm"> / {milestone.target}</span>
+          </>
+        ) : (
+          <span className="text-2xl font-bold text-gray-900 dark:text-white">
+            {milestone.current}
+          </span>
+        )}
+      </div>
+    </div>
+
+    {milestone.state !== 'someday' && (
+      <div className="mb-4">
+        <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div 
+            className={`h-full rounded-full transition-all duration-1000 ease-out ${
+              milestone.completed ? 'bg-amber-500' : 'bg-blue-500'
+            }`}
+            style={{ width: `${milestone.progress}%` }}
+          />
+        </div>
+      </div>
+    )}
+
+    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+      {milestone.id.startsWith('photo_') || milestone.id.startsWith('fitness_') || milestone.id.startsWith('reading_')
+        ? t(milestone.descKey)
+        : t('bucketList.customDesc', '自定义人生愿望清单')}
+    </p>
+
+    <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+        <span>{t('milestones.viewGallery', 'View Gallery')}</span>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+    </div>
+  </div>
+);
 
 export function MilestonesView({ entries }: MilestonesViewProps) {
   const { t } = useTranslation();
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
+  const [isAddWishOpen, setIsAddWishOpen] = useState(false);
+  
+  const bucketList = useBucketListStore(state => state.bucketList);
 
-  // Define Milestones
-  const milestones: Milestone[] = [
+  // Define System Milestones
+  const systemMilestones: Milestone[] = [
     {
       id: 'photo_beginner',
       titleKey: 'milestones.photo.beginner',
@@ -80,6 +172,20 @@ export function MilestonesView({ entries }: MilestonesViewProps) {
     }
   ];
 
+  const milestones: Milestone[] = useMemo(() => {
+    const customMilestones = bucketList.map(item => ({
+      id: item.id,
+      titleKey: item.title, // use title directly for custom
+      descKey: 'bucketList.customDesc', // fallback or static desc
+      icon: (LucideIcons as any)[item.iconName || 'Star'] || Star,
+      target: item.target,
+      tags: item.tags,
+      category: 'life' as const,
+      color: item.color || 'text-blue-500 bg-blue-100 dark:bg-blue-900/30'
+    }));
+    return [...customMilestones, ...systemMilestones];
+  }, [bucketList]);
+
   // Helper to check if an entry matches a milestone
   const isEntryMatch = (entry: DiaryEntry, milestone: Milestone) => {
     const entryTags = entry.tags?.map(t => t.toLowerCase()) || [];
@@ -100,18 +206,37 @@ export function MilestonesView({ entries }: MilestonesViewProps) {
     return milestones.map(m => {
       const matchingEntries = entries.filter(e => isEntryMatch(e, m));
       const count = matchingEntries.length;
+      
+      // Determine state
+      let state: 'someday' | 'in_progress' | 'achieved' = 'in_progress';
+      if (m.target === 0) {
+        state = 'someday';
+      } else if (count >= m.target) {
+        state = 'achieved';
+      }
+
       return {
         ...m,
         current: count,
-        progress: Math.min(100, (count / m.target) * 100),
-        completed: count >= m.target,
+        progress: m.target > 0 ? Math.min(100, (count / m.target) * 100) : 0,
+        completed: count >= m.target && m.target > 0,
+        state,
         entries: matchingEntries
       };
     });
-  }, [entries]);
+  }, [entries, milestones]);
 
-  const totalCompleted = progressData.filter(m => m.completed).length;
-  const totalProgress = progressData.reduce((acc, curr) => acc + curr.progress, 0) / milestones.length;
+  // Group by state
+  const somedayList = progressData.filter(m => m.state === 'someday');
+  const inProgressList = progressData.filter(m => m.state === 'in_progress');
+  const achievedList = progressData.filter(m => m.state === 'achieved');
+
+  const totalCompleted = achievedList.length;
+  // Calculate progress only for non-someday items
+  const trackableItems = progressData.filter(m => m.target > 0);
+  const totalProgress = trackableItems.length > 0 
+    ? trackableItems.reduce((acc, curr) => acc + curr.progress, 0) / trackableItems.length 
+    : 0;
 
   const selectedMilestoneData = selectedMilestone ? progressData.find(p => p.id === selectedMilestone.id) : null;
 
@@ -146,7 +271,18 @@ export function MilestonesView({ entries }: MilestonesViewProps) {
             <Trophy className="w-10 h-10 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('milestones.title')}</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('milestones.title')}</h1>
+              <Button 
+                onClick={() => setIsAddWishOpen(true)}
+                variant="outline" 
+                size="sm"
+                className="rounded-full flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                {t('bucketList.addWish', '添加愿望')}
+              </Button>
+            </div>
             <p className="text-gray-500 dark:text-gray-400 mt-1">{t('milestones.subtitle')}</p>
           </div>
         </div>
@@ -190,73 +326,70 @@ export function MilestonesView({ entries }: MilestonesViewProps) {
         </div>
       </div>
 
-      {/* Milestones Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {progressData.map(milestone => (
-          <div 
-            key={milestone.id}
-            onClick={() => setSelectedMilestone(milestone)}
-            className={`group relative bg-white dark:bg-gray-800 rounded-3xl p-6 border-2 transition-all duration-300 cursor-pointer ${
-              milestone.completed 
-                ? 'border-amber-400/50 shadow-lg shadow-amber-100 dark:shadow-none' 
-                : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700 shadow-sm'
-            }`}
-          >
-            {milestone.completed && (
-              <div className="absolute -top-3 -right-3 bg-amber-500 text-white p-2 rounded-full shadow-md animate-bounce">
-                <Trophy className="w-5 h-5" />
-              </div>
-            )}
-
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-2xl ${milestone.color}`}>
-                  <milestone.icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">
-                    {t(milestone.titleKey)}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase tracking-wide">
-                      {milestone.category}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {t('milestones.target')}: {milestone.target}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className={`text-2xl font-bold ${milestone.completed ? 'text-amber-500' : 'text-gray-900 dark:text-white'}`}>
-                  {milestone.current}
-                </span>
-                <span className="text-gray-400 text-sm"> / {milestone.target}</span>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-1000 ease-out ${
-                    milestone.completed ? 'bg-amber-500' : 'bg-blue-500'
-                  }`}
-                  style={{ width: `${milestone.progress}%` }}
-                />
-              </div>
-            </div>
-
-            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-              {t(milestone.descKey)}
-            </p>
-
-            <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                <span>{t('milestones.viewGallery', 'View Gallery')}</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </div>
+      {/* In Progress Section */}
+      {inProgressList.length > 0 && (
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <Target className="w-6 h-6 text-blue-500" />
+            {t('bucketList.inProgress', '进行中')}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {inProgressList.map(milestone => (
+              <MilestoneCard 
+                key={milestone.id} 
+                milestone={milestone} 
+                onClick={() => setSelectedMilestone(milestone)} 
+                t={t}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Someday Section */}
+      {somedayList.length > 0 && (
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2 opacity-80">
+            <Star className="w-6 h-6 text-purple-500" />
+            {t('bucketList.someday', '随便想想')}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-80 hover:opacity-100 transition-opacity">
+            {somedayList.map(milestone => (
+              <MilestoneCard 
+                key={milestone.id} 
+                milestone={milestone} 
+                onClick={() => setSelectedMilestone(milestone)} 
+                t={t}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Achieved Section */}
+      {achievedList.length > 0 && (
+        <div className="mb-12">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <Trophy className="w-6 h-6 text-amber-500" />
+            {t('bucketList.achieved', '已达成')}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {achievedList.map(milestone => (
+              <MilestoneCard 
+                key={milestone.id} 
+                milestone={milestone} 
+                onClick={() => setSelectedMilestone(milestone)} 
+                t={t}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <AddWishDialog 
+        open={isAddWishOpen} 
+        onOpenChange={setIsAddWishOpen} 
+      />
 
       {/* Gallery Modal */}
       {selectedMilestoneData && (
@@ -270,7 +403,9 @@ export function MilestonesView({ entries }: MilestonesViewProps) {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                      {t(selectedMilestoneData.titleKey)}
+                      {selectedMilestoneData.id.startsWith('photo_') || selectedMilestoneData.id.startsWith('fitness_') || selectedMilestoneData.id.startsWith('reading_')
+                        ? t(selectedMilestoneData.titleKey)
+                        : selectedMilestoneData.titleKey}
                     </h2>
                     <p className="text-sm text-gray-500">
                         {selectedMilestoneData.current} / {selectedMilestoneData.target} {t('milestones.memories')}

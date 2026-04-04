@@ -50,15 +50,18 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
     onClick, 
     isActive = false, 
     disabled = false, 
-    children 
+    children,
+    title
   }: { 
     onClick: () => void, 
     isActive?: boolean, 
     disabled?: boolean, 
-    children: React.ReactNode 
+    children: React.ReactNode,
+    title?: string
   }) => (
     <button
       type="button"
+      title={title}
       onClick={() => {
         onClick();
         haptics.light();
@@ -82,6 +85,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
         isActive={editor.isActive('bold')}
+        title="加粗 (Ctrl+B)"
       >
         <Bold className="w-4 h-4" />
       </ToolbarButton>
@@ -89,6 +93,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         onClick={() => editor.chain().focus().toggleItalic().run()}
         disabled={!editor.can().chain().focus().toggleItalic().run()}
         isActive={editor.isActive('italic')}
+        title="斜体 (Ctrl+I)"
       >
         <Italic className="w-4 h-4" />
       </ToolbarButton>
@@ -98,34 +103,38 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         isActive={editor.isActive('heading', { level: 2 })}
+        title="标题"
       >
         <Heading2 className="w-4 h-4" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         isActive={editor.isActive('bulletList')}
+        title="无序列表"
       >
         <List className="w-4 h-4" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         isActive={editor.isActive('orderedList')}
+        title="有序列表"
       >
         <ListOrdered className="w-4 h-4" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         isActive={editor.isActive('blockquote')}
+        title="引用"
       >
         <Quote className="w-4 h-4" />
       </ToolbarButton>
 
       <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
 
-      <ToolbarButton onClick={addImage}>
+      <ToolbarButton onClick={addImage} title="插入图片链接">
         <ImageIcon className="w-4 h-4" />
       </ToolbarButton>
-      <ToolbarButton onClick={setLink} isActive={editor.isActive('link')}>
+      <ToolbarButton onClick={setLink} isActive={editor.isActive('link')} title="插入链接">
         <LinkIcon className="w-4 h-4" />
       </ToolbarButton>
 
@@ -134,12 +143,14 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       <ToolbarButton
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().chain().focus().undo().run()}
+        title="撤销 (Ctrl+Z)"
       >
         <Undo className="w-4 h-4" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().chain().focus().redo().run()}
+        title="重做 (Ctrl+Y)"
       >
         <Redo className="w-4 h-4" />
       </ToolbarButton>

@@ -105,11 +105,14 @@ export function EntryCard({ entry, onDelete, onImageClick, onLike, isPendingSync
   return (
     <>
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -5 }}
-      transition={{ duration: 0.3 }}
-      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden group hover:shadow-xl transition-all duration-300 ease-out border border-gray-100 dark:border-gray-700 ${isPendingSync ? 'opacity-90' : ''}`}
+      transition={{ 
+        duration: 0.15, // Extremely fast
+        ease: "easeOut" 
+      }}
+      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden group hover:shadow-xl transition-all duration-200 ease-out border border-gray-100 dark:border-gray-700 ${isPendingSync ? 'opacity-90' : ''}`}
     >
       {/* Photo */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 cursor-zoom-in" onClick={handleImageClick}>

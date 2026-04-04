@@ -31,8 +31,8 @@ export function LazyImage({
         });
       },
       {
-        rootMargin: '50px', // Start loading 50px before it comes into view
-        threshold: 0.1,
+        rootMargin: '1000px', // Pre-load 1000px ahead to ensure it's loaded before user scrolls
+        threshold: 0, 
       }
     );
 
@@ -76,8 +76,8 @@ export function LazyImage({
     >
       {/* BlurHash Placeholder (Simple CSS Blur) */}
       {!isLoaded && (
-        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center">
-           <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 opacity-50 blur-xl scale-110" />
+        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+           <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 opacity-50" />
         </div>
       )}
 
@@ -88,9 +88,10 @@ export function LazyImage({
           alt={alt}
           onLoad={handleLoad}
           onError={handleError}
+          decoding="async" // Removed loading="lazy" since we handle lazy loading via IntersectionObserver
           className={cn(
-            "w-full h-full object-cover transition-all duration-700 ease-in-out",
-            isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105",
+            "w-full h-full object-cover transition-opacity duration-200 ease-in-out",
+            isLoaded ? "opacity-100" : "opacity-0",
             className
           )}
           {...props}

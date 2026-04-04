@@ -1,31 +1,25 @@
-// Photo Diary Store - State Management
+// Photo Diary Store - State Management (Refactored)
 import { create } from 'zustand';
-import { toast } from 'react-hot-toast';
 import { fetchEntries, createEntry, deleteEntry, updateEntry } from '../utils/api';
 import { offlineStorage } from '../services/offline-storage';
 import { supabase } from '../utils/supabaseClient';
 import { savePicture, deletePicture } from '../services/filesystem-service';
+import { useSyncStore } from './sync-store';
 import type { DiaryEntry } from '../components/diary-entry-form';
 import type { User } from '@supabase/supabase-js';
 
-// Define the store state interface
 interface DiaryState {
   entries: DiaryEntry[];
   loading: boolean;
   saving: boolean;
-  isOffline: boolean;
-  pendingSyncCount: number;
   user: User | null;
 
   setUser: (user: User | null) => void;
   loadEntries: () => Promise<void>;
-  addEntry: (entry: DiaryEntry, targetGroups: string[]) => Promise<void>;
-  updateEntry: (entry: DiaryEntry, targetGroups: string[]) => Promise<void>;
-  deleteEntry: (id: string) => Promise<void>;
+  addEntry: (entry: DiaryEntry, targetGroups: string[]) => Promise<{ offline: boolean }>;
+  updateEntry: (entry: DiaryEntry, targetGroups: string[]) => Promise<{ offline: boolean }>;
+  deleteEntry: (id: string) => Promise<{ offline: boolean }>;
   refresh: () => Promise<void>;
-  syncPendingActions: () => Promise<void>;
-  setOfflineStatus: (status: boolean) => void;
-  updatePendingCount: () => Promise<void>;
   clearStore: () => Promise<void>;
 }
 
@@ -33,8 +27,6 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
   entries: [],
   loading: false,
   saving: false,
-  isOffline: !navigator.onLine,
-  pendingSyncCount: 0,
   user: null,
 
   setUser: (user) => {
@@ -44,21 +36,14 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
     }
   },
 
-  setOfflineStatus: (status) => set({ isOffline: status }),
-
-  updatePendingCount: async () => {
-    const count = await offlineStorage.getPendingCount();
-    set({ pendingSyncCount: count });
-  },
-
   clearStore: async () => {
-    set({ entries: [], user: null, pendingSyncCount: 0 });
+    set({ entries: [], user: null });
     localStorage.removeItem('photo-diary-entries');
     await offlineStorage.clear();
   },
 
   loadEntries: async () => {
-    const { user, updatePendingCount } = get();
+    const { user } = get();
     if (!user) return;
 
     set({ loading: true });
@@ -93,7 +78,7 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
         console.error('Failed to load from offline storage:', dbError);
       }
 
-      await updatePendingCount();
+      await useSyncStore.getState().updatePendingCount();
 
       // 2. Fetch from API (Network)
       if (navigator.onLine) {
@@ -102,17 +87,20 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
             const sortedData = data.sort((a: DiaryEntry, b: DiaryEntry) => new Date(b.date).getTime() - new Date(a.date).getTime());
             set({ entries: sortedData });
             await offlineStorage.saveEntries(sortedData);
-            set({ isOffline: false });
-        } catch (fetchErr) {
-            console.error('Network fetch failed:', fetchErr);
-            set({ isOffline: true }); // Fallback to offline mode if fetch fails
+            useSyncStore.getState().setOfflineStatus(false);
+        } catch (fetchErr: any) {
+            if (fetchErr.message !== 'User not authenticated') {
+              console.error('Network fetch failed:', fetchErr);
+            }
+            useSyncStore.getState().setOfflineStatus(true);
         }
       } else {
-        console.log('App is offline');
-        set({ isOffline: true });
+        useSyncStore.getState().setOfflineStatus(true);
       }
-    } catch (err) {
-      console.error('Error fetching entries:', err);
+    } catch (err: any) {
+      if (err.message !== 'User not authenticated') {
+        console.error('Error fetching entries:', err);
+      }
     } finally {
       set({ loading: false });
     }
@@ -120,22 +108,23 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
 
   refresh: async () => {
     if (!navigator.onLine) {
-      toast.error('You are offline. Cannot refresh.');
-      return;
+      throw new Error('You are offline. Cannot refresh.');
     }
     try {
       const data = await fetchEntries();
       const sortedData = data.sort((a: DiaryEntry, b: DiaryEntry) => new Date(b.date).getTime() - new Date(a.date).getTime());
       set({ entries: sortedData });
       await offlineStorage.saveEntries(sortedData);
-    } catch (error) {
-      console.error('Refresh failed:', error);
+    } catch (error: any) {
+      if (error.message !== 'User not authenticated') {
+        console.error('Refresh failed:', error);
+      }
       throw error;
     }
   },
 
   addEntry: async (entry: DiaryEntry, targetGroups: string[] = ['private']) => {
-    const { user, updatePendingCount } = get();
+    const { user } = get();
     set({ saving: true });
     try {
       let photoPath = entry.photo;
@@ -155,8 +144,6 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
         date: entry.date,
         location: entry.location,
         tags: entry.tags || [],
-        // Removed aiTags temporarily to fix 400 error if schema sync fails
-        // aiTags: entry.aiTags || [], 
         palette: entry.palette,
         likes: entry.likes || [],
         comments: entry.comments || [],
@@ -176,9 +163,8 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
           targetGroups,
           timestamp: Date.now()
         });
-        await updatePendingCount();
-        toast.success('Saved offline. Will sync when online.', { icon: '📡' });
-        return;
+        await useSyncStore.getState().updatePendingCount();
+        return { offline: true };
       }
 
       const promises = [];
@@ -204,24 +190,27 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
       }
 
       await Promise.all(promises);
-      toast.success('Memory saved successfully!');
-    } catch (error) {
-      console.error('Failed to create entry:', error);
-      toast.error('Network error. Saved offline.');
+      return { offline: false };
+    } catch (error: any) {
+      if (error.message !== 'User not authenticated') {
+        console.error('Failed to create entry:', error);
+      }
+      // Save to pending sync queue on error
       await offlineStorage.addPendingAction({
           type: 'create',
-          payload: { entry: { ...entry, tags: entry.tags || [], aiTags: entry.aiTags || [] }, targetGroups },
+          payload: { entry: { ...entry, tags: entry.tags || [] }, targetGroups },
           targetGroups,
           timestamp: Date.now()
       });
-      await updatePendingCount();
+      await useSyncStore.getState().updatePendingCount();
+      return { offline: true };
     } finally {
       set({ saving: false });
     }
   },
 
   updateEntry: async (entry: DiaryEntry, targetGroups: string[]) => {
-    const { user, updatePendingCount } = get();
+    const { user } = get();
     set({ saving: true });
     try {
       const payload = {
@@ -231,8 +220,6 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
         date: entry.date,
         location: entry.location,
         tags: entry.tags || [],
-        // Removed aiTags temporarily
-        // aiTags: entry.aiTags || [],
         palette: entry.palette,
         likes: entry.likes || [],
         comments: entry.comments || [],
@@ -250,30 +237,31 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
           targetGroups,
           timestamp: Date.now()
         });
-        await updatePendingCount();
-        toast.success('Updated offline. Will sync when online.', { icon: '📡' });
-        return;
+        await useSyncStore.getState().updatePendingCount();
+        return { offline: true };
       }
 
       await updateEntry(entry.id, payload);
-      toast.success('Memory updated successfully!');
-    } catch (error) {
-      console.error('Failed to update entry:', error);
-      toast.error('Network error. Saved offline.');
+      return { offline: false };
+    } catch (error: any) {
+      if (error.message !== 'User not authenticated') {
+        console.error('Failed to update entry:', error);
+      }
       await offlineStorage.addPendingAction({
           type: 'update',
           payload: { id: entry.id, payload: { ...entry }, targetGroups },
           targetGroups,
           timestamp: Date.now()
       });
-      await updatePendingCount();
+      await useSyncStore.getState().updatePendingCount();
+      return { offline: true };
     } finally {
       set({ saving: false });
     }
   },
 
   deleteEntry: async (id: string) => {
-    const { updatePendingCount, entries } = get();
+    const { entries } = get();
     const entryToDelete = entries.find(e => e.id === id);
     
     try {
@@ -295,74 +283,25 @@ export const useDiaryStore = create<DiaryState>((set, get) => ({
           targetGroups: ['private'],
           timestamp: Date.now()
         });
-        await updatePendingCount();
-        toast.success('Deleted locally. Will sync when online.', { icon: '🗑️' });
-        return;
+        await useSyncStore.getState().updatePendingCount();
+        return { offline: true };
       }
 
       // 3. Delete from cloud (Supabase)
       await deleteEntry(id);
-      toast.success('Memory deleted.');
-    } catch (error) {
-      console.error('Failed to delete entry:', error);
-      toast.error('Network error. Queued for deletion.');
+      return { offline: false };
+    } catch (error: any) {
+      if (error.message !== 'User not authenticated') {
+        console.error('Failed to delete entry:', error);
+      }
       await offlineStorage.addPendingAction({
           type: 'delete',
           payload: { id },
           targetGroups: ['private'],
           timestamp: Date.now()
       });
-      await updatePendingCount();
+      await useSyncStore.getState().updatePendingCount();
+      return { offline: true };
     }
-  },
-
-  syncPendingActions: async () => {
-    const { user, loadEntries, updatePendingCount } = get();
-    if (!navigator.onLine) return;
-    
-    const actions = await offlineStorage.getPendingActions();
-    if (actions.length === 0) return;
-
-    toast.loading(`Syncing ${actions.length} pending changes...`, { id: 'sync-toast' });
-
-    for (const action of actions) {
-      try {
-        if (action.type === 'create') {
-          const { entry, targetGroups } = action.payload;
-          if (targetGroups.includes('private')) {
-             await createEntry(entry);
-          }
-          const groupIds = targetGroups.filter((id: string) => id !== 'private');
-          if (groupIds.length > 0 && user) {
-              await Promise.all(groupIds.map((groupId: string) => 
-                  supabase.from('diary_entries').insert({
-                      user_id: user.id,
-                      group_id: groupId,
-                      photo_url: entry.photo,
-                      caption: entry.caption,
-                      mood: entry.mood,
-                      location: entry.location,
-                      date: entry.date,
-                      likes: entry.likes || [],
-                      comments: entry.comments || []
-                  })
-              ));
-          }
-        } else if (action.type === 'update') {
-           const { id, payload } = action.payload;
-           await updateEntry(id, payload);
-        } else if (action.type === 'delete') {
-           const { id } = action.payload;
-           await deleteEntry(id);
-        }
-        
-        if (action.id) await offlineStorage.removePendingAction(action.id);
-      } catch (err) {
-        console.error('Sync failed for action:', action, err);
-      }
-    }
-    await updatePendingCount();
-    toast.success('Sync complete!', { id: 'sync-toast' });
-    loadEntries();
   }
 }));

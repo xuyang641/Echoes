@@ -1,11 +1,33 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useDiaryStore } from '../store/diary-store';
+import { useSyncStore } from '../store/sync-store';
 import { useAuth } from '../context/AuthContext';
 import { offlineStorage } from '../services/offline-storage';
+import { toast } from 'react-hot-toast';
 
 export function useDiarySync() {
   const { user } = useAuth();
-  const { setUser, setOfflineStatus, syncPendingActions, addEntry } = useDiaryStore();
+  const { setUser, addEntry, loadEntries } = useDiaryStore();
+  const { setOfflineStatus, syncPendingActions, isSyncing } = useSyncStore();
+
+  const handleSync = useCallback(async () => {
+    if (!navigator.onLine || isSyncing) return;
+    
+    await syncPendingActions(
+      user?.id,
+      (count) => {
+        toast.loading(`Syncing ${count} pending changes...`, { id: 'sync-toast' });
+      },
+      () => {
+        toast.success('Sync complete!', { id: 'sync-toast' });
+        loadEntries();
+      },
+      (err) => {
+        console.error('Sync failed', err);
+        toast.dismiss('sync-toast');
+      }
+    );
+  }, [user?.id, syncPendingActions, loadEntries, isSyncing]);
 
   useEffect(() => {
     setUser(user);
@@ -14,7 +36,7 @@ export function useDiarySync() {
   useEffect(() => {
     const handleOnline = () => {
       setOfflineStatus(false);
-      syncPendingActions();
+      handleSync();
     };
     const handleOffline = () => setOfflineStatus(true);
 
@@ -25,7 +47,7 @@ export function useDiarySync() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [setOfflineStatus, syncPendingActions]);
+  }, [setOfflineStatus, handleSync]);
 
   // Welcome Entry Listener
   useEffect(() => {

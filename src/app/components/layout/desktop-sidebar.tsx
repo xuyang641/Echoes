@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Calendar, Map as MapIcon, Heart, Target, Sparkles, Printer, GitCommit, PlusCircle, Settings, UserCircle } from 'lucide-react';
+import { BookOpen, Calendar, Map as MapIcon, Heart, Target, Sparkles, Printer, GitCommit, PlusCircle, Settings, UserCircle, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InstallButton } from '../install-button';
 import { ThemeSelector } from '../theme-selector';
@@ -20,6 +20,7 @@ export function DesktopSidebar({ entries = [] }: { entries?: DiaryEntry[] }) {
     { path: '/map', icon: MapIcon, label: 'nav.map' },
     { path: '/couple', icon: Heart, label: 'nav.couple', color: 'text-pink-600 dark:text-pink-400' },
     { path: '/insights', icon: Sparkles, label: 'nav.insights' },
+    { path: '/notifications', icon: Bell, label: 'nav.notifications', color: 'text-blue-600 dark:text-blue-400' },
   ];
 
   const secondaryNavItems = [

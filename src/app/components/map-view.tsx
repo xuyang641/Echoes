@@ -1,6 +1,5 @@
-// Clean up imports and comments
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, useMapEvents } from 'react-leaflet';
+import { useMap, Marker, Popup, TileLayer, MapContainer, useMapEvents, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { DiaryEntry } from './diary-entry-form';
 import L from 'leaflet';
@@ -257,10 +256,41 @@ function MapViewportManager({ entries, onBoundsChange }: { entries: DiaryEntry[]
   return null;
 }
 
+// Component to expose map instance to window for custom controls
+function MapRefSetter() {
+  const map = useMap();
+  useEffect(() => {
+    (window as any)._leaflet_map = map;
+    return () => {
+      delete (window as any)._leaflet_map;
+    };
+  }, [map]);
+  return null;
+}
+
 interface MapViewProps {
   entries: DiaryEntry[];
   onUpdateEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
 }
+
+interface TileSource {
+  url: string;
+  attribution: string;
+  subdomains?: string | string[];
+}
+
+const TILE_SOURCES: TileSource[] = [
+  {
+    url: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+    attribution: 'Map data &copy; <a href="https://www.amap.com/">Gaode</a> contributors',
+    subdomains: '1234'
+  },
+  {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    subdomains: 'abc'
+  }
+];
 
 function MapEntryPopup({ entry, onUpdateEntry, onImageClick }: { entry: DiaryEntry, onUpdateEntry?: (entry: DiaryEntry, targetGroups: string[]) => void, onImageClick: (url: string) => void }) {
   const { user } = useAuth();
@@ -677,6 +707,8 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
 
   // Visible entries in viewport
   const [visibleMarkers, setVisibleMarkers] = useState<DiaryEntry[]>([]);
+  const [tileSourceIndex, setTileSourceIndex] = useState(0);
+  const [tileErrorCount, setTileErrorCount] = useState(0);
 
   // Combine entries based on group selection
   const allEntries = useMemo(() => {
@@ -752,26 +784,54 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
     canPlayRoute: filteredEntries.length >= 2
   };
 
+  const activeTileSource = TILE_SOURCES[Math.min(tileSourceIndex, TILE_SOURCES.length - 1)];
+
+  const handleTileError = useCallback(() => {
+    setTileErrorCount(prev => {
+      const next = prev + 1;
+      if (tileSourceIndex < TILE_SOURCES.length - 1 && next >= 2) {
+        setTileSourceIndex(tileSourceIndex + 1);
+        return 0;
+      }
+      return next;
+    });
+  }, [tileSourceIndex]);
+
+  useEffect(() => {
+    setTileErrorCount(0);
+  }, [tileSourceIndex]);
+
   return (
-    <div className="relative h-[calc(100vh-140px)] md:h-[calc(100vh-140px)] lg:grid lg:grid-cols-4 lg:gap-6 overflow-hidden">
+    <div className="flex h-full w-full bg-white dark:bg-[#111111] overflow-hidden rounded-2xl shadow-sm border border-gray-200/50 dark:border-gray-800/50 relative">
       
       {/* Sidebar Controls - Desktop Only */}
-      <div className="hidden lg:block lg:col-span-1 lg:h-full lg:overflow-y-auto lg:pr-2 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+      <div className="hidden lg:flex w-[280px] xl:w-[340px] flex-shrink-0 border-r border-gray-100 dark:border-gray-800/60 flex-col bg-gray-50/30 dark:bg-gray-900/30 h-full overflow-y-auto no-scrollbar p-6">
         <MapControlsContent {...controlsProps} />
       </div>
 
-      {/* Map Area - Mobile: Full Screen Absolute; Desktop: Col-span-3 */}
-      <div className="absolute inset-0 lg:static lg:col-span-3 lg:h-full rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 z-0">
+      {/* Map Area - Mobile: Full Screen Absolute; Desktop: Flex-1 */}
+      <div className="absolute inset-0 lg:static lg:flex-1 h-full w-full z-0 bg-[#e5e3df] dark:bg-gray-800">
         <MapContainer 
           key={`${defaultCenter[0]}-${defaultCenter[1]}`} 
           center={defaultCenter} 
           zoom={filteredEntries.length > 0 ? 5 : 4} 
           style={{ height: '100%', width: '100%' }}
+          zoomControl={false}
         >
           <TileLayer
-            attribution='Map data &copy; <a href="https://www.amap.com/">Gaode</a> contributors'
-            url="https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"
+            key={`${tileSourceIndex}-${activeTileSource.url}`}
+            attribution={activeTileSource.attribution}
+            url={activeTileSource.url}
+            subdomains={activeTileSource.subdomains}
+            eventHandlers={{
+              tileerror: handleTileError
+            }}
           />
+          {tileSourceIndex === TILE_SOURCES.length - 1 && tileErrorCount > 0 && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] rounded-full bg-white/95 px-3 py-1 text-xs text-amber-700 shadow">
+              地图底图服务异常，已切换备用地图
+            </div>
+          )}
           
           {/* Heatmap Layer */}
           {showHeatmap && (
@@ -785,6 +845,14 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
               />
           )}
 
+          {/* Map Controls */}
+          <div className="leaflet-top leaflet-right mt-4 mr-4">
+            <div className="leaflet-control leaflet-bar border-none shadow-md rounded-xl overflow-hidden bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+               <a className="leaflet-control-zoom-in text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors !border-gray-100 dark:!border-gray-700" href="#" title="Zoom in" role="button" aria-label="Zoom in" onClick={(e) => { e.preventDefault(); const map = (window as any)._leaflet_map; if(map) map.zoomIn(); }}>+</a>
+               <a className="leaflet-control-zoom-out text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors !border-gray-100 dark:!border-gray-700" href="#" title="Zoom out" role="button" aria-label="Zoom out" onClick={(e) => { e.preventDefault(); const map = (window as any)._leaflet_map; if(map) map.zoomOut(); }}>−</a>
+            </div>
+          </div>
+
           {/* Viewport Manager */}
           {!showHeatmap && !isPlayingRoute && (
             <MapViewportManager 
@@ -792,6 +860,9 @@ export function MapView({ entries, onUpdateEntry }: MapViewProps) {
                 onBoundsChange={setVisibleMarkers} 
             />
           )}
+
+          {/* Setup Global Map Ref for Zoom Controls */}
+          <MapRefSetter />
 
           {/* Route Playback */}
           <RoutePlayback 

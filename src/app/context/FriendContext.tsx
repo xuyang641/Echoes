@@ -38,9 +38,16 @@ export function FriendProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
+    if (user.id === 'mock-user-123') {
+      // Mock data for local development to prevent network errors
+      setFriends([]);
+      setFriendRequests([]);
+      return;
+    }
+
     const fetchData = async () => {
       // 1. Fetch Requests (received)
-      const { data: requests, error: reqError } = await supabase
+      const { data: requests } = await supabase
         .from('friend_requests')
         .select(`
           id,
@@ -69,7 +76,7 @@ export function FriendProvider({ children }: { children: React.ReactNode }) {
       // 2. Fetch Friends (accepted requests sent OR received)
       // Supabase query for OR is tricky in one go if we need joins on different columns
       // Simplest: Get all accepted requests involving me
-      const { data: accepted, error: friendError } = await supabase
+      const { data: accepted } = await supabase
         .from('friend_requests')
         .select(`
           sender_id,
@@ -116,7 +123,7 @@ export function FriendProvider({ children }: { children: React.ReactNode }) {
     if (!user) return false;
 
     // 1. Find User by Email
-    const { data: users, error: searchError } = await supabase
+    const { data: users } = await supabase
       .from('profiles')
       .select('id')
       .ilike('email', email)

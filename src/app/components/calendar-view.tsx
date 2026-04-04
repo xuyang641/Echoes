@@ -98,24 +98,53 @@ export function CalendarView({ entries, onDeleteEntry }: CalendarViewProps) {
               <button
                 key={day.toISOString()}
                 onClick={() => setSelectedDate(day)}
-                className={`aspect-square p-2 rounded-lg border transition-all ${
+                className={`relative aspect-square rounded-xl border transition-all overflow-hidden group ${
                   isSelected
-                    ? 'border-blue-600 bg-blue-50'
+                    ? 'border-blue-600 ring-2 ring-blue-600/20 z-10'
                     : hasEntries
-                    ? 'border-purple-200 bg-purple-50 hover:bg-purple-100'
+                    ? 'border-transparent hover:ring-2 hover:ring-blue-500/30'
                     : isCurrentMonth
-                    ? 'border-gray-200 hover:bg-gray-50'
-                    : 'border-transparent text-gray-300'
-                } ${isCurrentMonth ? '' : 'opacity-50'}`}
+                    ? 'border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                    : 'border-transparent opacity-30'
+                }`}
               >
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <span className="text-sm">{format(day, 'd')}</span>
+                {/* Background Image for the day */}
+                {hasEntries && dayEntries.some(e => e.photo && !e.photo.startsWith('data:video/') && !e.photo.endsWith('.mp4')) && (
+                  <div className="absolute inset-0 z-0">
+                    <img 
+                      src={dayEntries.find(e => e.photo && !e.photo.startsWith('data:video/') && !e.photo.endsWith('.mp4'))?.photo} 
+                      alt="" 
+                      className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity group-hover:scale-105 duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-70" />
+                  </div>
+                )}
+                
+                {/* Solid color for entries without photo or if it's a video */}
+                {hasEntries && !dayEntries.some(e => e.photo && !e.photo.startsWith('data:video/') && !e.photo.endsWith('.mp4')) && (
+                   <div className="absolute inset-0 z-0 bg-blue-50 dark:bg-blue-900/30" />
+                )}
+
+                <div className={`relative z-10 w-full h-full flex flex-col items-center justify-between p-1 sm:p-2 ${
+                  hasEntries && dayEntries.some(e => e.photo && !e.photo.startsWith('data:video/') && !e.photo.endsWith('.mp4'))
+                    ? 'text-white' 
+                    : isCurrentMonth
+                      ? 'text-gray-900 dark:text-gray-100'
+                      : 'text-gray-400 dark:text-gray-600'
+                }`}>
+                  <span className={`text-sm font-semibold ${isSelected && !hasEntries ? 'text-blue-600 dark:text-blue-400' : ''}`}>
+                    {format(day, 'd')}
+                  </span>
+                  
+                  {/* Indicators for multiple entries */}
                   {hasEntries && (
-                    <div className="flex gap-1 mt-1">
+                    <div className="flex gap-0.5 sm:gap-1 mb-0.5">
                       {dayEntries.slice(0, 3).map((_, i) => (
                         <div
                           key={i}
-                          className="w-1.5 h-1.5 rounded-full bg-purple-600"
+                          className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${
+                            dayEntries[0].photo ? 'bg-white' : 'bg-blue-500'
+                          }`}
                         />
                       ))}
                     </div>

@@ -23,6 +23,11 @@ export function EditProfileModal({ isOpen, onClose, onProfileUpdate }: EditProfi
 
   useEffect(() => {
     if (user && isOpen) {
+      if (user.id === 'mock-user-123') {
+        setUsername('mockuser');
+        setFullName('Test User');
+        return;
+      }
       fetchProfile();
     }
   }, [user, isOpen]);

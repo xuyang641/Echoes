@@ -16,7 +16,8 @@ const resources = {
         print: 'Print Shop',
         logs: 'Logs',
         add: 'New',
-        account: 'Profile'
+        account: 'Profile',
+        notifications: 'Inbox'
       },
       map: {
         features: 'Map Features',
@@ -490,12 +491,14 @@ const resources = {
         calendar: '日历',
         map: '足迹',
         couple: '甜蜜空间',
-        milestones: '人生清单',
         insights: '回忆盘点',
+        milestones: '人生清单',
         print: '冲印店',
         logs: '更新日志',
         add: '记一笔',
-        account: '我的'
+        account: '我的',
+        theme: '外观设置',
+        notifications: '收件箱',
       },
       map: {
         features: '地图功能',
@@ -1021,7 +1024,9 @@ const resources = {
         calm: '平静',
         inspired: '灵感',
         stressed: '压力',
-        energetic: '活力'
+        energetic: '活力',
+        peaceful: '宁静',
+        hopeful: '充满希望'
       }
     }
   },

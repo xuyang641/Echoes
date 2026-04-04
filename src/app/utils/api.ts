@@ -13,7 +13,6 @@ export async function fetchEntries(): Promise<DiaryEntry[]> {
       .order('date', { ascending: false });
 
     if (error) {
-      console.error('Error fetching entries:', error);
       throw new Error('Failed to fetch entries');
     }
 
@@ -25,7 +24,9 @@ export async function fetchEntries(): Promise<DiaryEntry[]> {
       photo: entry.photo_url || entry.photo, // Map photo_url to photo
     }));
   } catch (error: any) {
-    console.error('Error fetching entries:', error);
+    if (error.message !== 'User not authenticated') {
+      console.error('Error fetching entries:', error);
+    }
     throw error;
   }
 }
@@ -53,7 +54,6 @@ export async function createEntry(entry: Omit<DiaryEntry, 'id'>): Promise<DiaryE
       .single();
 
     if (error) {
-      console.error('Error creating entry:', error);
       throw new Error('Failed to create entry');
     }
 
@@ -65,7 +65,9 @@ export async function createEntry(entry: Omit<DiaryEntry, 'id'>): Promise<DiaryE
         photo: data.photo_url 
     };
   } catch (error: any) {
-    console.error('Error creating entry:', error);
+    if (error.message !== 'User not authenticated') {
+      console.error('Error creating entry:', error);
+    }
     throw error;
   }
 }
@@ -93,7 +95,6 @@ export async function updateEntry(id: string, entry: Omit<DiaryEntry, 'id'>): Pr
       .single();
 
     if (error) {
-      console.error('Error updating entry:', error);
       throw new Error('Failed to update entry');
     }
 
@@ -104,7 +105,9 @@ export async function updateEntry(id: string, entry: Omit<DiaryEntry, 'id'>): Pr
         photo: data.photo_url 
     };
   } catch (error: any) {
-    console.error('Error updating entry:', error);
+    if (error.message !== 'User not authenticated') {
+      console.error('Error updating entry:', error);
+    }
     throw error;
   }
 }
@@ -121,11 +124,12 @@ export async function deleteEntry(id: string): Promise<void> {
       .eq('user_id', user.id);
 
     if (error) {
-      console.error('Error deleting entry:', error);
       throw new Error('Failed to delete entry');
     }
   } catch (error: any) {
-    console.error('Error deleting entry:', error);
+    if (error.message !== 'User not authenticated') {
+      console.error('Error deleting entry:', error);
+    }
     throw error;
   }
 }

@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Camera, Loader2, MapPin, Tag, X, Wand2, Users, Check, Lock, Sparkles, Calendar as CalendarIcon, Map as MapIcon, Clock, Image as ImageIcon } from 'lucide-react';
+import { Camera, Loader2, MapPin, Tag, X, Wand2, Users, Check, Lock, Sparkles, Calendar as CalendarIcon, Map as MapIcon, Clock, Image as ImageIcon, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { optimizeImage } from '../utils/image-utils';
 import { useCamera } from '../hooks/useCamera';
 import { Capacitor } from '@capacitor/core';
-import * as mobilenet from '@tensorflow-models/mobilenet';
-import '@tensorflow/tfjs';
+import type * as mobilenetType from '@tensorflow-models/mobilenet';
 import { useGroup } from '../context/GroupContext';
-import { MOODS } from '../utils/mood-constants';
+import { MOODS, Mood } from '../utils/mood-constants';
 import { useTranslation } from 'react-i18next';
 import { extractPalette, ColorPalette } from '../utils/color-extractor';
 import { format } from 'date-fns';
@@ -16,6 +15,9 @@ import { AmapLocationPicker } from './amap-location-picker';
 import { haptics } from '../utils/haptics';
 import { DreamPainter } from './dream-painter';
 import { RichTextEditor } from './ui/rich-text-editor';
+import confetti from 'canvas-confetti';
+import { useDiaryStore } from '../store/diary-store';
+import { useBucketListStore } from '../store/bucket-list-store';
 
 interface DiaryEntryFormProps {
   onAddEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
@@ -64,6 +66,9 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
   const [photo, setPhoto] = useState<string>('');
   const [caption, setCaption] = useState(initialCaption || '');
   const [selectedMood, setSelectedMood] = useState('');
+  const [customMoods, setCustomMoods] = useState<Mood[]>([]);
+  const [isAddingMood, setIsAddingMood] = useState(false);
+  const [newMoodName, setNewMoodName] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [compressing, setCompressing] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number; name?: string } | undefined>();
@@ -73,7 +78,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
   const [palette, setPalette] = useState<ColorPalette | undefined>();
   const [tagInput, setTagInput] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [model, setModel] = useState<mobilenet.MobileNet | null>(null);
+  const [model, setModel] = useState<mobilenetType.MobileNet | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const { takePhoto, pickFromGallery } = useCamera();
   
@@ -87,16 +92,34 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
   // New: Group Selection State
   const [selectedGroups, setSelectedGroups] = useState<string[]>(['private']); // Default to private
 
+  // New: Celebration state
+  const [celebratingWish, setCelebratingWish] = useState<{ title: string } | null>(null);
+  const bucketList = useBucketListStore(state => state.bucketList);
+  const entries = useDiaryStore(state => state.entries);
+
   useEffect(() => {
-    async function loadModel() {
+    // Load custom moods from localStorage
+    const savedCustomMoods = localStorage.getItem('customMoods');
+    if (savedCustomMoods) {
       try {
-        const loadedModel = await mobilenet.load();
-        setModel(loadedModel);
-      } catch (error) {
-        console.error('Failed to load MobileNet model:', error);
+        const parsed = JSON.parse(savedCustomMoods);
+        // Map string icon names back to Lucide components if needed, 
+        // for simplicity we'll just use a generic icon for custom moods
+        const loadedMoods = parsed.map((m: any) => ({
+          ...m,
+          icon: Sparkles, // Default icon for custom moods
+          isCustom: true
+        }));
+        setCustomMoods(loadedMoods);
+      } catch (e) {
+        console.error('Failed to load custom moods');
       }
     }
-    loadModel();
+  }, []);
+
+  useEffect(() => {
+    // Only load model when component mounts and it might be needed, or delay it.
+    // We'll move the loading to the analyze button click to save initial load time.
   }, []);
 
   useEffect(() => {
@@ -303,11 +326,6 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       return;
     }
 
-    if (!model && photo) {
-      alert('AI模型仍在加载中，请稍候...');
-      return;
-    }
-
     setIsAnalyzing(true);
     
     try {
@@ -333,8 +351,17 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         });
       }
 
-      if (photo && model && imgRef.current) {
-        const predictions = await model.classify(imgRef.current);
+      if (photo && imgRef.current) {
+        let currentModel = model;
+        if (!currentModel) {
+            // Dynamically import tfjs and mobilenet only when needed
+            await import('@tensorflow/tfjs');
+            const mobilenet = await import('@tensorflow-models/mobilenet');
+            currentModel = await mobilenet.load();
+            setModel(currentModel);
+        }
+
+        const predictions = await currentModel.classify(imgRef.current);
         console.log('AI Predictions:', predictions);
         
         predictions.forEach(prediction => {
@@ -358,8 +385,8 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!photo || !caption || !selectedMood) {
-      alert('请填写所有必填项（照片、描述、心情）');
+    if (!caption || !selectedMood) {
+      alert('请填写所有必填项（描述、心情）');
       haptics.error();
       return;
     }
@@ -379,7 +406,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     const entry: DiaryEntry = {
       id: initialData?.id || Date.now().toString(),
       date: date, // Use the state date
-      photo,
+      photo: photo || '', // Allow empty photo
       caption,
       mood: selectedMood,
       location,
@@ -389,11 +416,83 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       groupIds: selectedGroups
     };
 
-    if (onSave) {
-      onSave(entry, selectedGroups);
-    } else if (onAddEntry) {
-      onAddEntry(entry, selectedGroups);
+    // Check for achieved wishes before saving
+    let newlyAchievedWishTitle: string | null = null;
+    
+    if (!isEdit && bucketList.length > 0) {
+      // Create a temporary entries array including the new entry to calculate progress
+      const allEntries = [entry, ...entries];
+      
+      for (const wish of bucketList) {
+        if (wish.target > 0) {
+          // Check progress before this entry
+          const oldMatchingCount = entries.filter(e => {
+            const eTags = e.tags?.map((t: string) => t.toLowerCase()) || [];
+            const cLower = e.caption?.toLowerCase() || '';
+            return eTags.some((tag: string) => wish.tags.includes(tag)) || wish.tags.some((tag: string) => cLower.includes(tag));
+          }).length;
+          
+          // Check progress after this entry
+          const newMatchingCount = allEntries.filter(e => {
+            const eTags = e.tags?.map((t: string) => t.toLowerCase()) || [];
+            const cLower = e.caption?.toLowerCase() || '';
+            return eTags.some((tag: string) => wish.tags.includes(tag)) || wish.tags.some((tag: string) => cLower.includes(tag));
+          }).length;
+
+          // If it just reached the target
+          if (oldMatchingCount < wish.target && newMatchingCount >= wish.target) {
+            newlyAchievedWishTitle = wish.title;
+            break; // Only celebrate one at a time to avoid overwhelming
+          }
+        }
+      }
     }
+
+    if (newlyAchievedWishTitle) {
+      setCelebratingWish({ title: newlyAchievedWishTitle });
+      triggerConfetti();
+      
+      // Delay saving slightly to allow user to see the celebration
+      setTimeout(() => {
+        if (onSave) {
+          onSave(entry, selectedGroups);
+        } else if (onAddEntry) {
+          onAddEntry(entry, selectedGroups);
+        }
+      }, 3500);
+    } else {
+      if (onSave) {
+        onSave(entry, selectedGroups);
+      } else if (onAddEntry) {
+        onAddEntry(entry, selectedGroups);
+      }
+    }
+  };
+
+  const triggerConfetti = () => {
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval: any = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      confetti({
+        ...defaults, particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+      });
+      confetti({
+        ...defaults, particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+      });
+    }, 250);
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -411,6 +510,46 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     newDate.setSeconds(current.getSeconds());
     
     setDate(newDate.toISOString());
+  };
+
+  const handleAddCustomMood = () => {
+    if (!newMoodName.trim()) {
+      setIsAddingMood(false);
+      return;
+    }
+
+    const newMood: Mood = {
+      name: newMoodName.trim(),
+      icon: Sparkles, // Default icon for custom
+      color: 'bg-purple-100 text-purple-700', // Default color for custom
+      hex: '#a855f7',
+      isCustom: true
+    };
+
+    const updatedMoods = [...customMoods, newMood];
+    setCustomMoods(updatedMoods);
+    setSelectedMood(newMood.name);
+    
+    // Save to localStorage (omitting icon component)
+    localStorage.setItem('customMoods', JSON.stringify(
+      updatedMoods.map(m => ({ name: m.name, color: m.color, hex: m.hex }))
+    ));
+
+    setNewMoodName('');
+    setIsAddingMood(false);
+    haptics.success();
+  };
+
+  const handleDeleteCustomMood = (e: React.MouseEvent, moodName: string) => {
+    e.stopPropagation();
+    const updatedMoods = customMoods.filter(m => m.name !== moodName);
+    setCustomMoods(updatedMoods);
+    localStorage.setItem('customMoods', JSON.stringify(
+      updatedMoods.map(m => ({ name: m.name, color: m.color, hex: m.hex }))
+    ));
+    if (selectedMood === moodName) {
+      setSelectedMood('');
+    }
   };
 
   return (
@@ -585,31 +724,65 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
 
       {/* Mood Selection */}
       <div>
-        <label className="block text-sm mb-3 text-gray-700">{t('form.moodLabel')}</label>
-        <div className="grid grid-cols-4 gap-2">
-          {MOODS.map((mood) => {
+        <label className="block text-sm mb-3 text-gray-700">{t('form.moodLabel', '今天心情怎么样？')}</label>
+        <div className="flex flex-wrap gap-3">
+          {[...MOODS, ...customMoods].map((mood) => {
             const Icon = mood.icon;
+            const isSelected = selectedMood === mood.name;
             return (
-              <motion.button
+              <button
                 type="button"
                 key={mood.name}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setSelectedMood(mood.name);
                   haptics.light();
                 }}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all ${
-                  selectedMood === mood.name
-                    ? `${mood.color} ring-2 ring-offset-2 ring-current shadow-md`
-                    : `${mood.color} opacity-60 hover:opacity-80`
+                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-200 border group ${
+                  isSelected
+                    ? `${mood.color} ring-2 ring-offset-1 ring-blue-500/20 shadow-sm border-transparent`
+                    : `bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300`
                 }`}
               >
-                <Icon className="w-5 h-5 mb-1" />
-                <span className="text-xs font-medium">{t(`moods.${mood.name.toLowerCase()}`, mood.name)}</span>
-              </motion.button>
+                <Icon className={`w-4 h-4 ${isSelected ? '' : 'text-gray-400 dark:text-gray-500'}`} />
+                <span className={`text-sm font-medium ${isSelected ? '' : 'text-gray-600 dark:text-gray-300'}`}>
+                  {mood.isCustom ? mood.name : t(`moods.${mood.name.toLowerCase()}`, mood.name)}
+                </span>
+                {mood.isCustom && (
+                  <span 
+                    onClick={(e) => handleDeleteCustomMood(e, mood.name)}
+                    className="absolute -top-1 -right-1 bg-red-100 text-red-600 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200"
+                  >
+                    <X className="w-3 h-3" />
+                  </span>
+                )}
+              </button>
             );
           })}
+          
+          {isAddingMood ? (
+            <div className="flex items-center gap-2 px-3 py-1 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded-full shadow-sm">
+              <input 
+                type="text" 
+                value={newMoodName}
+                onChange={(e) => setNewMoodName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomMood())}
+                placeholder="输入心情..."
+                className="w-20 bg-transparent text-sm outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400"
+                autoFocus
+                onBlur={handleAddCustomMood}
+                maxLength={8}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsAddingMood(true)}
+              className="flex items-center gap-1 px-4 py-2.5 rounded-full transition-all duration-200 border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="text-sm font-medium">自定义</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -770,6 +943,48 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
             </motion.div>
         </motion.div>
     )}
+    </AnimatePresence>
+
+    {/* Celebration Modal */}
+    <AnimatePresence>
+      {celebratingWish && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 50 }}
+            transition={{ type: "spring", bounce: 0.5 }}
+            className="bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900 dark:to-orange-900 p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border border-amber-200/50"
+          >
+            <motion.div
+              animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
+              transition={{ duration: 0.5, delay: 0.2, repeat: 2 }}
+              className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"
+            >
+              <span className="text-4xl">🏆</span>
+            </motion.div>
+            <h2 className="text-3xl font-bold text-amber-800 dark:text-amber-200 mb-2">
+              {t('bucketList.congrats', '恭喜！')}
+            </h2>
+            <p className="text-lg text-amber-700 dark:text-amber-300/80 mb-6">
+              {t('bucketList.achievedText', '你刚刚完成了人生愿望：')}
+            </p>
+            <div className="bg-white/60 dark:bg-black/20 p-4 rounded-2xl mb-6">
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                「{celebratingWish.title}」
+              </span>
+            </div>
+            <p className="text-sm text-amber-600 dark:text-amber-400/60">
+              {t('bucketList.savingMemory', '这篇日记已被永远镌刻在你的成就墙上...')}
+            </p>
+          </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
     </>
   );

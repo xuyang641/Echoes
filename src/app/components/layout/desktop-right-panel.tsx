@@ -124,7 +124,7 @@ export function DesktopRightPanel({ entries }: DesktopRightPanelProps) {
 
   if (isCollapsed) {
     return (
-      <aside className="hidden lg:flex flex-col w-16 h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-800/50 shrink-0 z-30 transition-all duration-300 relative items-center py-6">
+      <aside className="hidden xl:flex flex-col w-16 h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-800/50 shrink-0 z-30 transition-all duration-300 relative items-center py-6">
         <button 
           onClick={() => setIsCollapsed(false)}
           className="absolute top-1/2 -left-3.5 w-7 h-14 bg-white dark:bg-gray-800 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-l-xl flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 z-40 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
@@ -165,7 +165,7 @@ export function DesktopRightPanel({ entries }: DesktopRightPanelProps) {
   }
 
   return (
-    <aside className="hidden lg:flex flex-col w-[300px] h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-800/50 shrink-0 z-30 transition-all duration-300 overflow-y-auto no-scrollbar p-6 relative">
+    <aside className="hidden xl:flex flex-col w-[300px] h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border-l border-gray-200/50 dark:border-gray-800/50 shrink-0 z-30 transition-all duration-300 overflow-y-auto no-scrollbar p-6 relative">
       <button 
         onClick={() => setIsCollapsed(true)}
         className="absolute top-1/2 -left-3.5 w-7 h-14 bg-white dark:bg-gray-800 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-l-xl flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 z-40 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
