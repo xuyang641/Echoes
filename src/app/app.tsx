@@ -10,7 +10,7 @@ import { FriendProvider } from './context/FriendContext';
 import { OnboardingTutorial } from './components/onboarding-tutorial';
 import { WelcomeModal } from './components/welcome-modal';
 import { Footer } from './components/footer';
-import { useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { supabase } from './utils/supabaseClient';
 import { LoginForm } from './components/auth/login-form';
 import { LandingPage } from './components/landing-page';
@@ -34,19 +34,21 @@ import { useDiarySync } from './hooks/useDiarySync';
 export default function App() {
   return (
     <ThemeProvider>
-      <GroupProvider>
-        <FriendProvider>
-          <Toaster position="top-center" reverseOrder={false} />
-          <NotificationManager>
-            {() => (
-              <MigrationManager>
-                <AppContent />
-              </MigrationManager>
-            )}
-          </NotificationManager>
-          <ReloadPrompt />
-        </FriendProvider>
-      </GroupProvider>
+      <AuthProvider>
+        <GroupProvider>
+          <FriendProvider>
+            <Toaster position="top-center" reverseOrder={false} />
+            <NotificationManager>
+              {() => (
+                <MigrationManager>
+                  <AppContent />
+                </MigrationManager>
+              )}
+            </NotificationManager>
+            <ReloadPrompt />
+          </FriendProvider>
+        </GroupProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

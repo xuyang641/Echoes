@@ -55,7 +55,7 @@ export function LazyImage({
 
   // Fallback image for errors
   const finalSrc = error || !src
-    ? 'https://via.placeholder.com/400x300?text=Image+Error' 
+    ? '/images/backgrounds/forest-morning.jpg' 
     : (isInView ? src : '');
 
   const aspectRatioClass = {

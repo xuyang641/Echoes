@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../utils/supabaseClient';
-import { Loader2, Mail, Lock, BookOpen } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
 import { Captcha } from './captcha';
 import { toast } from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
@@ -55,7 +55,7 @@ export function LoginForm() {
         if (error) throw error;
       }
     } catch (err: any) {
-      console.error('Auth error:', err);
+      console.error('Auth error detail:', JSON.stringify(err, null, 2));
       let message = err.message || 'Authentication failed';
       
       // Handle email not confirmed
@@ -83,8 +83,8 @@ export function LoginForm() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <BookOpen className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg overflow-hidden bg-white">
+            <img src="/logo.webp" alt="Echoes Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 font-display">Echoes</h1>
           <p className="text-gray-500 mt-2">登录以保存您的回忆</p>
@@ -161,6 +161,41 @@ export function LoginForm() {
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isSignUp ? '创建账号' : '登录')}
           </button>
+
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  // Simulate local login with a test account
+                  const { error } = await supabase.auth.signInWithPassword({
+                    email: 'test@example.com',
+                    password: 'password123',
+                  });
+                  
+                  // If test account doesn't exist, create it on the fly
+                  if (error?.message.includes('Invalid login credentials')) {
+                    const { error: signUpError } = await supabase.auth.signUp({
+                      email: 'test@example.com',
+                      password: 'password123',
+                    });
+                    if (signUpError) throw signUpError;
+                    toast.success('Test account created and logged in!');
+                  } else if (error) {
+                    throw error;
+                  }
+                } catch (err: any) {
+                  toast.error(`Test login failed: ${err.message}`);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="w-full mt-4 bg-gray-100 text-gray-700 py-2.5 rounded-xl hover:bg-gray-200 transition-all font-medium border border-gray-300"
+            >
+              🛠️ 一键测试登录 (本地开发专用)
+            </button>
+          )}
         </form>
       </div>
     </div>

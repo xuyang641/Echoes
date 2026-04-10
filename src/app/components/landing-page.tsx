@@ -81,6 +81,36 @@ export function LandingPage() {
         <div className="flex items-center gap-4">
             <a href="#features" className="hidden md:block text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">特性</a>
             <a href="#reviews" className="hidden md:block text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">评价</a>
+            {import.meta.env.DEV && (
+              <button 
+                onClick={async () => {
+                  const { supabase } = await import('../utils/supabaseClient');
+                  const { toast } = await import('react-hot-toast');
+                  try {
+                    const { error } = await supabase.auth.signInWithPassword({
+                      email: 'test@example.com',
+                      password: 'password123',
+                    });
+                    
+                    if (error?.message.includes('Invalid login credentials')) {
+                      const { error: signUpError } = await supabase.auth.signUp({
+                        email: 'test@example.com',
+                        password: 'password123',
+                      });
+                      if (signUpError) throw signUpError;
+                      toast.success('Test account created and logged in!');
+                    } else if (error) {
+                      throw error;
+                    }
+                  } catch (err: any) {
+                    toast.error(`Test login failed: ${err.message}`);
+                  }
+                }}
+                className="px-6 py-2 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white font-medium hover:opacity-90 transition-opacity"
+              >
+                🛠️ 测试登录
+              </button>
+            )}
             <Link 
             to="/login" 
             className="px-6 py-2 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20"

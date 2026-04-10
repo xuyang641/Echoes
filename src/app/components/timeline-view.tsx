@@ -257,7 +257,17 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
                                   <ImageIcon className="w-6 h-6 opacity-50" />
                                 </div>
                               ) : (
-                                <img src={entry.photo} alt="" className="w-full h-full object-cover" />
+                                <img 
+                                  src={entry.photo} 
+                                  alt="" 
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    if (!target.src.includes('/images/backgrounds/forest-morning.jpg')) {
+                                      target.src = '/images/backgrounds/forest-morning.jpg';
+                                    }
+                                  }}
+                                  className="w-full h-full object-cover" 
+                                />
                               )}
                             </div>
                           )}
@@ -338,6 +348,12 @@ export function TimelineView({ entries, onDeleteEntry, loading = false }: Timeli
                       <img 
                         src={selectedEntry.photo} 
                         alt="Diary visual" 
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (!target.src.includes('/images/backgrounds/forest-morning.jpg')) {
+                            target.src = '/images/backgrounds/forest-morning.jpg';
+                          }
+                        }}
                         className="w-full h-auto object-cover max-h-[70vh] group-hover:scale-[1.02] transition-transform duration-700" 
                       />
                     )}

@@ -37,8 +37,8 @@ export function MobileHeader({ user, isOffline = false, pendingSyncCount = 0 }: 
 
         {/* Search Bar (Center) */}
         <div className="flex-1 flex justify-center items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
-            <UserCircle className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm overflow-hidden bg-white">
+            <img src="/logo.webp" alt="Echoes Logo" className="w-full h-full object-cover" />
           </div>
         </div>
 

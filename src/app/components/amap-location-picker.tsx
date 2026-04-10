@@ -31,6 +31,16 @@ export function AmapLocationPicker({ initialLocation, onConfirm, onCancel }: Ama
 
     const initMap = async () => {
       try {
+        // === LOCAL BYPASS FOR MISSING API KEY ===
+        const apiKey = import.meta.env.VITE_AMAP_KEY;
+        if (!apiKey && import.meta.env.DEV) {
+           console.warn('Map API Key is missing in local development. Bypassing map load to prevent crash.');
+           setError('本地开发未配置高德地图 API Key，地图功能已禁用。');
+           setLoading(false);
+           return;
+        }
+        // ==========================================
+
         // Set security code if provided
         if (import.meta.env.VITE_AMAP_SECURITY_CODE) {
           (window as any)._AMapSecurityConfig = {
