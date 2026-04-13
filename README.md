@@ -207,23 +207,6 @@ cd android
 ```
 构建成功后，APK 文件将位于：`android/app/build/outputs/apk/release/app-release.apk`。
 
-<br />
-
-## 🇨🇳 国内环境部署指南 (Domestic Deployment Guide)
-
-为了解决国内网络访问 Supabase 和 Vercel 缓慢或被墙的问题，Echoes 提供了多套国内化部署方案：
-
-### 1. 初期免费白嫖方案 (推荐测试与初期使用)
-如果您目前处于项目验证阶段，或者只是想给少数朋友使用，完全可以做到 **0 元/月**（仅需几块钱买个域名）。
-- **详情请参考初期免费部署文档**：👉 [**国内初期免费/极低成本部署指南 (DEPLOY_FREE_TIER.md)**](./DEPLOY_FREE_TIER.md)
-- 包含方案：MemFire 免费版数据库 + 阿里云百炼大模型免费额度 + Vercel 绑定国内直连域名。
-
-### 2. 国内 AI 模型支持 (可选)
-默认的 AI 模型可能在国内无法访问，可以通过修改环境变量无缝切换到国内模型（如 DeepSeek 或 阿里云百炼）：
-- 配置 `VITE_AI_BASE_URL`（如 `https://api.deepseek.com/v1`）和 `VITE_AI_API_KEY`。
-
-<br />
-
 ## 📮 联系我们 (Contact Us)
 
 如果你有任何问题、建议，或者发现了 Bug，欢迎随时联系我们！也欢迎加入我们的社区参与讨论。
