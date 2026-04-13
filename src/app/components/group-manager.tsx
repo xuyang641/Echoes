@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Plus, Users, Copy, Check, ArrowRight, MoreVertical, LogOut, Trash2 } from 'lucide-react';
+import { Users, Copy, Check, MoreVertical, LogOut, Trash2, UserPlus } from 'lucide-react';
 import { useGroup } from '../context/GroupContext';
+import { useFriend } from '../context/FriendContext';
+import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
@@ -17,12 +19,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "../components/ui/alert-dialog";
 
 export function GroupManager() {
   const { t } = useTranslation();
-  const { groups, createGroup, joinGroup, deleteGroup, leaveGroup } = useGroup();
+  const { user } = useAuth();
+  const { groups, createGroup, joinGroup, deleteGroup, leaveGroup, inviteFriend } = useGroup();
+  const { friends } = useFriend();
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [inputName, setInputName] = useState('');
@@ -30,6 +33,8 @@ export function GroupManager() {
   const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [actionGroup, setActionGroup] = useState<{id: string, name: string, type: 'delete' | 'leave'} | null>(null);
+  
+  const [invitingGroupId, setInvitingGroupId] = useState<string | null>(null);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,9 +111,7 @@ export function GroupManager() {
         </button>
 
         {groups.map(group => {
-           // Assume current user is 'user-1' (owner) for some groups, member for others
-           // In real app, check auth.user.id
-           const isOwner = group.members.find(m => m.id === 'user-1')?.role === 'owner';
+           const isOwner = group.members.find(m => m.id === user?.id)?.role === 'owner';
 
            return (
             <div
@@ -140,6 +143,16 @@ export function GroupManager() {
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-32">
+                      <DropdownMenuItem 
+                        className="text-xs cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setInvitingGroupId(group.id);
+                        }}
+                      >
+                        <UserPlus className="w-3 h-3 mr-2" />
+                        {t('groups.invite', '邀请好友')}
+                      </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-xs text-red-600 focus:text-red-600 cursor-pointer"
                         onClick={(e) => {
@@ -286,6 +299,54 @@ export function GroupManager() {
             >
               {actionGroup?.type === 'delete' ? t('common.delete') : t('groups.leave')}
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Invite Friend Modal */}
+      <AlertDialog open={!!invitingGroupId} onOpenChange={() => setInvitingGroupId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('groups.inviteFriendTitle', '邀请好友加入群组')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('groups.inviteFriendDesc', '选择你想邀请的好友：')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-60 overflow-y-auto space-y-2 py-4">
+            {friends.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">{t('groups.noFriends', '你还没有好友，先去添加好友吧。')}</p>
+            ) : (
+              friends.map(friend => (
+                <div key={friend.id} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
+                      {friend.avatar ? (
+                        <img src={friend.avatar} alt={friend.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs font-bold">{friend.name[0]}</div>
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{friend.name}</span>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (invitingGroupId) {
+                        const success = await inviteFriend(invitingGroupId, friend.id);
+                        if (success) {
+                          setInvitingGroupId(null);
+                        }
+                      }
+                    }}
+                    className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 text-xs rounded-md transition-colors"
+                  >
+                    {t('groups.inviteBtn', '邀请')}
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.close', '关闭')}</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

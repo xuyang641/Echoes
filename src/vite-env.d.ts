@@ -16,3 +16,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+interface Window {
+  __TAURI__?: boolean;
+  __TAURI_INTERNALS__?: boolean;
+  reminderTimeout?: any;
+}

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Download, FileText, FileJson, Loader2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
-import type { DiaryEntry } from './diary-entry-form';
+import type { DiaryEntry } from '../types/diary';
 
 interface ExportMenuProps {
   entries: DiaryEntry[];
@@ -14,19 +14,28 @@ export function ExportMenu({ entries }: ExportMenuProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  const exportToJSON = () => {
+  const exportToJSON = async () => {
     setIsExporting(true);
     try {
       const dataStr = JSON.stringify(entries, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `photo-diary-backup-${format(new Date(), 'yyyy-MM-dd')}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      
+      await new Promise<void>((resolve, reject) => {
+        try {
+          const url = URL.createObjectURL(dataBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `photo-diary-backup-${format(new Date(), 'yyyy-MM-dd')}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+      
       setShowMenu(false);
     } catch (error) {
       console.error('Export failed:', error);
@@ -91,6 +100,8 @@ export function ExportMenu({ entries }: ExportMenuProps) {
       }
 
       pdf.save(`photo-diary-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      
+      await new Promise<void>(resolve => setTimeout(resolve, 100)); // Small delay to allow save to trigger
       setShowMenu(false);
     } catch (error) {
       console.error('PDF export failed:', error);

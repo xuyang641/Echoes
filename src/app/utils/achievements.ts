@@ -69,46 +69,56 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Post an entry before 8 AM',
     icon: Calendar,
     color: 'text-sky-500 bg-sky-100',
-    condition: (entries) => entries.some(e => new Date(e.date).getHours() < 8),
-    progress: (entries) => entries.some(e => new Date(e.date).getHours() < 8) ? 1 : 0,
+    condition: (entries) => entries.some(e => {
+      const date = new Date(e.date);
+      return date.getHours() >= 4 && date.getHours() < 8;
+    }),
+    progress: (entries) => entries.some(e => {
+      const date = new Date(e.date);
+      return date.getHours() >= 4 && date.getHours() < 8;
+    }) ? 1 : 0,
     maxProgress: 1
   }
 ];
 
 function calculateStreak(entries: DiaryEntry[]): number {
-  if (entries.length === 0) return 0;
+  if (!entries || entries.length === 0) return 0;
   
-  // Sort entries by date descending
-  const sorted = [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Extract unique dates as YYYY-MM-DD strings to ignore time and handle multiple entries per day
+  const uniqueDates = [...new Set(entries.map(e => {
+    const d = new Date(e.date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }))];
+
+  // Sort descending
+  uniqueDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
   
-  let streak = 0;
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   
-  let currentDate = new Date(sorted[0].date);
-  currentDate.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
 
-  // Check if the latest entry is today or yesterday (streak active)
-  const diffTime = Math.abs(today.getTime() - currentDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-  
-  if (diffDays > 1) return 0; // Streak broken
+  // If latest entry is not today and not yesterday, streak is 0
+  if (uniqueDates[0] !== todayStr && uniqueDates[0] !== yesterdayStr) {
+    return 0;
+  }
 
-  streak = 1;
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const d1 = new Date(sorted[i].date);
-    d1.setHours(0, 0, 0, 0);
-    const d2 = new Date(sorted[i+1].date);
-    d2.setHours(0, 0, 0, 0);
+  let streak = 1;
+  for (let i = 0; i < uniqueDates.length - 1; i++) {
+    const current = new Date(uniqueDates[i]);
+    const next = new Date(uniqueDates[i+1]);
     
-    const diff = (d1.getTime() - d2.getTime()) / (1000 * 3600 * 24);
+    // Calculate difference in days
+    const diffTime = current.getTime() - next.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diff === 1) {
+    if (diffDays === 1) {
       streak++;
-    } else if (diff > 1) {
+    } else {
       break;
     }
-    // If diff is 0 (same day), continue
   }
   
   return streak;

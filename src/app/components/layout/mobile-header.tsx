@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { UserCircle, BookOpen, Mail, Grid, X, Calendar, Map as MapIcon, Sparkles, Heart, Target, Printer, GitCommit, WifiOff, CloudUpload } from 'lucide-react';
+import { UserCircle, BookOpen, Mail, Grid, X, Calendar, Map as MapIcon, Sparkles, Heart, Target, Printer, GitCommit, CloudUpload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { User } from '@supabase/supabase-js';
@@ -37,8 +37,17 @@ export function MobileHeader({ user, isOffline = false, pendingSyncCount = 0 }: 
 
         {/* Search Bar (Center) */}
         <div className="flex-1 flex justify-center items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm overflow-hidden bg-white">
-            <img src="/logo.webp" alt="Echoes Logo" className="w-full h-full object-cover" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40 border border-blue-200/50 dark:border-blue-700/50 relative">
+            <img 
+              src="/logo.webp" 
+              alt="Echoes Logo" 
+              className="w-full h-full object-cover absolute inset-0 z-10"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }} 
+            />
+            {/* Fallback Icon */}
+            <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400 z-0" />
           </div>
         </div>
 

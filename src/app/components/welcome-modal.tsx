@@ -50,7 +50,7 @@ export function WelcomeModal({ onComplete }: WelcomeModalProps) {
     const welcomeEntry = {
       id: 'welcome-entry-' + Date.now(),
       date: new Date().toISOString(),
-      photo: '/images/backgrounds/forest-morning.jpg', // Use local asset for reliability
+      photo: '/images/backgrounds/starry-night.jpg', // Use local asset for reliability
       caption: '欢迎来到 Echoes。这是您的第一篇日记。\n\n在这里，您可以：\n✨ 记录生活的点滴\n🗺️ 在地图上留下足迹\n🎵 聆听白噪音放松身心\n\n所有的美好，都值得被铭记。',
       mood: 'happy',
       location: {

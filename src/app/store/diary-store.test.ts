@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useDiaryStore } from '../store/diary-store';
 import { offlineStorage } from '../services/offline-storage';
-import { fetchEntries } from '../utils/api';
+import { fetchEntries } from '../services/diary-api';
 
 // Mock dependencies
 vi.mock('../services/offline-storage', () => ({
@@ -17,7 +17,7 @@ vi.mock('../services/offline-storage', () => ({
   }
 }));
 
-vi.mock('../utils/api', () => ({
+vi.mock('../services/diary-api', () => ({
   fetchEntries: vi.fn(),
   createEntry: vi.fn(),
   updateEntry: vi.fn(),
@@ -57,8 +57,6 @@ describe('DiaryStore', () => {
       entries: [],
       loading: false,
       saving: false,
-      isOffline: false,
-      pendingSyncCount: 0,
       user: { id: 'test-user' } as any,
     });
     vi.clearAllMocks();
@@ -97,7 +95,7 @@ describe('DiaryStore', () => {
     // Simulate add entry while offline
     const newEntry = { id: '3', date: '2023-01-03', caption: 'Offline Entry', mood: 'Happy', photo: 'test.jpg' } as any;
     
-    await useDiaryStore.getState().addEntry(newEntry);
+    await useDiaryStore.getState().addEntry(newEntry, ['private']);
 
     // Should update local state
     expect(useDiaryStore.getState().entries).toContainEqual(expect.objectContaining({ id: '3' }));

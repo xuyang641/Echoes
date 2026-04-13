@@ -2,6 +2,10 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import { useAuth } from './AuthContext';
 
+import { isPermissionGranted, sendNotification } from '@tauri-apps/plugin-notification';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -109,8 +113,44 @@ export function FriendProvider({ children }: { children: React.ReactNode }) {
     // Subscribe to realtime changes
     const subscription = supabase
       .channel('friend_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests' }, async (payload) => {
         fetchData();
+        
+        // Notify on new friend request
+        if (payload.eventType === 'INSERT' && payload.new.receiver_id === user.id) {
+          const title = 'New Friend Request';
+          const body = 'Someone wants to connect with you!';
+          
+          if (!Capacitor.isNativePlatform()) {
+            try {
+              const granted = await isPermissionGranted();
+              if (granted) {
+                sendNotification({ title, body });
+              }
+            } catch (err) {
+               if ('Notification' in window && Notification.permission === 'granted') {
+                 new Notification(title, { body, icon: '/icon.png' });
+               }
+            }
+          } else {
+            try {
+              await LocalNotifications.schedule({
+                notifications: [
+                  {
+                    title,
+                    body,
+                    id: new Date().getTime(),
+                    schedule: { at: new Date(Date.now() + 1000) },
+                    sound: 'rain.mp3',
+                    smallIcon: 'ic_stat_icon_config_sample'
+                  }
+                ]
+              });
+            } catch (e) {
+              console.error('Local notification failed', e);
+            }
+          }
+        }
       })
       .subscribe();
 

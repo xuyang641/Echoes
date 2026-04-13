@@ -4,6 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 export interface BucketListItem {
   id: string;
   title: string;
+  description?: string; // Optional description for the wish
   target: number;
   tags: string[]; // Entries with ANY of these tags count towards progress
   iconName?: string; // name of the lucide icon

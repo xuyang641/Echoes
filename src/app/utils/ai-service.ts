@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { DiaryEntry } from '../components/diary-entry-form';
+import type { DiaryEntry } from '../types/diary';
 import { supabase } from './supabaseClient';
 
 export class AIService {
@@ -137,6 +137,37 @@ export class AIService {
     } catch (error) {
         console.error('AI Proxy Error:', error);
         return "I'm having trouble connecting to the AI service. Please try again later.";
+    }
+  }
+
+  async generateTags(content: string): Promise<string[]> {
+    if (!this.openai) {
+      console.warn("AI Service not configured for smart tags");
+      return [];
+    }
+
+    try {
+      console.log('Generating smart tags...');
+      const model = import.meta.env.VITE_AI_MODEL || "qwen-plus";
+      const completion = await this.openai.chat.completions.create({
+        model: model,
+        messages: [
+          { 
+            role: "system", 
+            content: "你是一个日记标签生成助手。请根据用户提供的日记内容，提取出3到5个最相关的简短标签（例如：旅行、美食、开心、阅读）。直接返回标签词，用逗号分隔，不要包含任何其他解释文字。" 
+          },
+          { role: "user", content: content }
+        ],
+      });
+
+      const result = completion.choices[0].message.content;
+      if (result) {
+        return result.split(/[,，、\s]+/).map(t => t.trim()).filter(t => t.length > 0 && t.length <= 8).slice(0, 5);
+      }
+      return [];
+    } catch (error) {
+      console.error('AI Smart Tags Error:', error);
+      return [];
     }
   }
 

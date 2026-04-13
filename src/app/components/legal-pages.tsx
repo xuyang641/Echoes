@@ -70,9 +70,17 @@ export function PrivacyView() {
           <p>
             {t('legal.privacy.collectionText')}
           </p>
+          <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{t('legal.privacy.storageTitle')}</h3>
+          <p>
+            {t('legal.privacy.storageText')}
+          </p>
           <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{t('legal.privacy.aiTitle')}</h3>
           <p>
             {t('legal.privacy.aiText')}
+          </p>
+          <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{t('legal.privacy.rightsTitle')}</h3>
+          <p>
+            {t('legal.privacy.rightsText')}
           </p>
         </>
       }
@@ -95,6 +103,18 @@ export function TermsView() {
           <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{t('legal.terms.conductTitle')}</h3>
           <p>
             {t('legal.terms.conductText')}
+          </p>
+          <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{t('legal.terms.accountTitle')}</h3>
+          <p>
+            {t('legal.terms.accountText')}
+          </p>
+          <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{t('legal.terms.intellectualTitle')}</h3>
+          <p>
+            {t('legal.terms.intellectualText')}
+          </p>
+          <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">{t('legal.terms.terminationTitle')}</h3>
+          <p>
+            {t('legal.terms.terminationText')}
           </p>
         </>
       }

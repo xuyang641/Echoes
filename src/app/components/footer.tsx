@@ -37,8 +37,7 @@ export function Footer() {
             <button onClick={() => navigate('/terms')} className="hidden md:block hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.terms')}
             </button>
-            <a href="mailto:2311752562@qq.com" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-              {/* Contact Email Link */}
+            <a href="https://space.bilibili.com/23150537" target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.contact')}
             </a>
           </nav>

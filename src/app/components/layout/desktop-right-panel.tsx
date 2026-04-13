@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Sun, Sparkles, Image as ImageIcon, ChevronLeft, ChevronRight, CheckCircle2, Flame } from 'lucide-react';
-import type { DiaryEntry } from '../diary-entry-form';
+import type { DiaryEntry } from '../../types/diary';
 import { format, isSameDay, startOfWeek, differenceInDays } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { DailyPromptWidget } from '../widgets/daily-prompt-widget';

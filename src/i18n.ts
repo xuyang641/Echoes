@@ -84,19 +84,29 @@ const resources = {
         privacy: {
           title: 'Privacy Policy',
           lastUpdated: 'Last updated: January 2026',
-          intro: 'At Echoes, we take your privacy seriously. Your memories are personal, and they should stay that way.',
+          intro: 'At Echoes, we take your privacy seriously. Your memories are personal, and they should stay that way. This Privacy Policy explains how we collect, use, and protect your information.',
           collectionTitle: '1. Data Collection',
-          collectionText: 'We only collect the information necessary to provide our service: your photos, diary entries, and basic account information. We do not sell your personal data to third parties.',
-          aiTitle: '2. AI Features',
-          aiText: 'Our AI features (Smart Tags, Insights) process your data to provide you with better experience. For image recognition, we use local browser-based models where possible to minimize data transmission.'
+          collectionText: 'We only collect the information necessary to provide our service: your photos, diary entries, and basic account information (such as your email and username). We do not collect unnecessary background data or track your activity outside our application. We do not and will never sell your personal data to third parties.',
+          storageTitle: '2. Data Storage & Security',
+          storageText: 'We prioritize a "Local-First" architecture. Your photos and diary entries are primarily stored securely on your own device. When cloud sync is enabled, data is encrypted both in transit and at rest on our secure servers. You retain full ownership and control over your data at all times.',
+          aiTitle: '3. AI Features & Processing',
+          aiText: 'Our AI features (such as Smart Tags and Insights) process your data to provide you with a better, more organized experience. For image recognition and tagging, we use local browser-based models whenever possible to minimize data transmission. Any cloud-based AI processing is strictly ephemeral and your data is not used to train external models.',
+          rightsTitle: '4. Your Rights',
+          rightsText: 'You have the right to access, modify, export, or permanently delete your data at any time. If you choose to delete your account, all associated data on our servers will be permanently removed.'
         },
         terms: {
           title: 'Terms of Service',
           lastUpdated: 'Last updated: January 2026',
           acceptanceTitle: '1. Acceptance of Terms',
-          acceptanceText: 'By accessing and using Echoes, you accept and agree to be bound by the terms and provision of this agreement.',
+          acceptanceText: 'By accessing and using the Echoes application, you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use our service.',
           conductTitle: '2. User Conduct',
-          conductText: 'You agree to use the service only for lawful purposes. You are responsible for all content you post and activity that occurs under your account.'
+          conductText: 'You agree to use the service only for lawful purposes. You are solely responsible for all content you post, upload, or share, and for any activity that occurs under your account. You must not upload any content that is illegal, harmful, threatening, abusive, or infringes on the intellectual property rights of others.',
+          accountTitle: '3. Account Security',
+          accountText: 'You are responsible for maintaining the confidentiality of your account credentials. You agree to notify us immediately of any unauthorized use of your account. Echoes cannot and will not be liable for any loss or damage arising from your failure to comply with this security obligation.',
+          intellectualTitle: '4. Intellectual Property',
+          intellectualText: 'You retain all ownership rights to the content you create and upload to Echoes. By using our service, you grant us a limited license to host, store, and display your content solely for the purpose of operating and improving the application.',
+          terminationTitle: '5. Termination',
+          terminationText: 'We reserve the right to suspend or terminate your access to the service at our sole discretion, without prior notice, for conduct that we believe violates these Terms of Service or is harmful to other users, us, or third parties.'
         }
       },
       welcome: {
@@ -146,6 +156,37 @@ const resources = {
         foundation: 'Foundation',
         mobile: 'Mobile Experience',
         features: {
+          'v4.5.0': [
+            'Automated Testing Suite: Fully integrated vitest framework to ensure stability for production release.',
+            'Core Logic Verification: Added boundary tests for coordinate transformation and image compression utilities.',
+            'Offline Queue Guarantee: Wrote integration tests for IndexedDB and offline states, completely eliminating data loss issues in weak network environments.'
+          ],
+          'v4.4.0': [
+            'Smart Tag Upgrade: Fully integrated large language models to replace simple keyword matching, automatically extracting more precise exclusive tags from diary text.',
+            'Content Display Optimization: Fixed the issue of raw rich text tags being exposed in the "Flashback" carousel and "Map Footprint" popups.',
+            'System Stability: Fixed a white screen issue caused by an import error in the local image recognition module (TensorFlow).'
+          ],
+          'v4.3.0': [
+            'Visual Overhaul: Smooth entrance animations added across all core pages.',
+            'Rich Text Editor: Full support for text styling (bold, italic, color) and list formatting.',
+            'Bug Fix: Resolved an issue where long diary entries could not be scrolled smoothly on mobile.'
+          ],
+          'v4.2.0': [
+            'Layout Engine: Refactored timeline layout for better performance on low-end devices.',
+            'Flashback Reel: Redesigned the memory flashback component with Bento-style grids.'
+          ],
+          'v4.1.0': [
+            'Print Shop: Now supports exporting 3D digital photo books directly to PDF.',
+            'Web Sync: Improved cloud synchronization speed across multiple devices.'
+          ],
+          'v4.0.0': [
+            'AI Dream Painter: Generate unique illustrations based on your diary entries.',
+            'Security Refactor: Rebuilt backend with strict RLS (Row Level Security) and local Biometric Auth.'
+          ],
+          'v3.6.0': [
+            'Performance: Optimized large asset loading and reduced app bundle size by 30%.',
+            'Theme Engine: Immersive video backgrounds (Rain, Forest) now support auto-pause to save battery.'
+          ],
           milestones: 'Life Milestones: Level up your life with achievements',
           smartGallery: 'Specialized Gallery: Auto-organized albums for each milestone',
           smartTags: 'Smart Recognition: Intelligent tagging for fitness, reading, and photography',
@@ -565,19 +606,29 @@ const resources = {
         privacy: {
           title: '隐私政策',
           lastUpdated: '最后更新：2026年1月',
-          intro: '在 Echoes，我们非常重视您的隐私。您的回忆是私密的，理应如此。',
-          collectionTitle: '1. 数据收集',
-          collectionText: '我们只收集提供服务所必需的信息：您的照片、日记内容和基本账户信息。我们绝不会将您的个人数据出售给第三方。',
-          aiTitle: '2. AI 功能',
-          aiText: '我们的 AI 功能（智能标签、回忆盘点）会处理您的数据以提供更好的体验。对于图像识别，我们会尽可能使用本地浏览器模型，以最大限度地减少数据传输。'
+          intro: '在 Echoes，我们非常重视您的隐私。您的回忆是极其私密的，理应得到最严密的保护。本隐私政策旨在向您说明我们如何收集、使用和保护您的个人信息。',
+          collectionTitle: '1. 数据收集与使用',
+          collectionText: '我们坚持“最小化收集”原则，仅收集提供核心服务所必需的信息，包括：您的照片、日记内容以及基础账户信息（如邮箱、昵称）。我们绝不会在后台收集无关数据，也绝不会将您的个人数据出售或共享给任何第三方。',
+          storageTitle: '2. 数据存储与安全',
+          storageText: 'Echoes 采用“本地优先 (Local-First)”架构。您的日记和照片首先安全地存储在您的本地设备中。当开启云端同步时，您的数据在传输过程中和云端服务器上均采用高强度加密。您始终对自己的数据拥有完整的所有权和控制权。',
+          aiTitle: '3. AI 功能与数据处理',
+          aiText: '我们的 AI 功能（如智能标签、回忆盘点、智能配文等）会处理您的数据以提供更优质的体验。对于图像识别等功能，我们会尽可能优先使用本地离线模型，以最大限度减少数据出境。任何云端 AI 处理均为即时处理，您的数据绝不会被用于训练外部公共模型。',
+          rightsTitle: '4. 您的权利',
+          rightsText: '您随时拥有对个人数据的访问、修改、完整导出以及永久删除的权利。如果您选择注销账户，我们在云端服务器上的所有相关数据将被彻底、永久地清除。'
         },
         terms: {
           title: '服务条款',
           lastUpdated: '最后更新：2026年1月',
-          acceptanceTitle: '1. 条款接受',
-          acceptanceText: '访问并使用 Echoes，即表示您接受并同意遵守本协议的条款和规定。',
-          conductTitle: '2. 用户行为',
-          conductText: '您同意仅将本服务用于合法目的。您对在您的账户下发布的所有内容和发生的活动负责。'
+          acceptanceTitle: '1. 协议接受',
+          acceptanceText: '欢迎使用 Echoes！当您访问或使用本软件及相关服务时，即表示您已充分阅读、理解并同意接受本《服务条款》的全部内容。如果您不同意本协议的任何内容，请立即停止使用我们的服务。',
+          conductTitle: '2. 用户行为规范',
+          conductText: '您同意仅将本服务用于合法合规的目的。您需对您账户下发布的所有内容及发生的所有活动承担全部责任。您不得利用本服务上传、发布或传播任何违法、侵权、暴力、色情、仇恨或破坏社区秩序的内容。',
+          accountTitle: '3. 账户安全',
+          accountText: '您有责任妥善保管您的账户及登录凭证的安全。如发现任何未经授权的账户使用异常，您应立即通知我们。因您保管不善导致的任何数据泄露或损失，Echoes 不承担相关责任。',
+          intellectualTitle: '4. 知识产权与内容归属',
+          intellectualText: '您在 Echoes 中创作、上传的所有日记、照片及相关内容的知识产权均归您本人所有。为提供和优化服务，您授予我们在必要范围内（如数据存储、多端同步展示）对该内容的有限使用许可。',
+          terminationTitle: '5. 服务终止',
+          terminationText: '如我们发现您存在严重违反本服务条款的行为，我们保留在不提前通知的情况下，单方面暂停或永久终止您访问服务的权利，并视情况采取相应的法律措施。'
         }
       },
       welcome: {
@@ -630,6 +681,37 @@ const resources = {
         print: '冲印店',
         core: '核心架构',
         features: {
+          'v4.5.0': [
+            '自动化测试套件：全面接入 vitest 测试框架，为项目稳定上线保驾护航',
+            '核心逻辑验证：为坐标转换、图片压缩工具等底层算法补充了边界测试',
+            '离线队列保障：编写了 IndexedDB 与离线状态的集成测试，彻底杜绝弱网环境下的数据丢失问题'
+          ],
+          'v4.4.0': [
+            '智能标签升级：全面接入大模型，取代简单的关键词匹配，自动从日记文本中提取更精准的专属标签',
+            '内容显示优化：修复了在「回忆盘点」闪回轮播图以及「地图足迹」弹窗中，富文本标签代码裸露的问题',
+            '系统稳定性：修复了图片本地识别模块(TensorFlow)导入报错导致的白屏问题'
+          ],
+          'v4.3.0': [
+            '视觉焕新：为所有核心页面增加了平滑的入场动画',
+            '编辑器升级：全面支持富文本编辑（加粗、斜体、颜色、列表）',
+            '修复：解决了移动端长日记无法流畅滑动的问题'
+          ],
+          'v4.2.0': [
+            '排版引擎：重构了时光轴的瀑布流布局，低端设备滑动更流畅',
+            '闪回轮播图：采用全新 Bento（便当盒）风格重绘了回忆盘点模块'
+          ],
+          'v4.1.0': [
+            '打印店：现在支持将你的 3D 电子相册直接导出为无损 PDF',
+            'Web端同步：优化了多设备间的云端同步速度'
+          ],
+          'v4.0.0': [
+            'AI 梦境画师：根据你的日记内容，自动生成独一无二的配图',
+            '安全重构：重构了后端 RLS 隐私策略，并新增本地生物识别锁（FaceID/指纹）'
+          ],
+          'v3.6.0': [
+            '性能优化：优化了大型资源的加载策略，将应用体积缩减了 30%',
+            '主题引擎：沉浸式视频背景（雨天、森林）现在支持省电模式下自动暂停'
+          ],
           milestones: '人生清单：成就系统上线，记录你的每一次成长',
           smartGallery: '专项图库：点击成就卡片，回顾专属的高光时刻',
           smartTags: '智能识别算法：自动归类健身、阅读、摄影等主题日记',
@@ -1097,19 +1179,29 @@ const resources = {
         privacy: {
           title: 'プライバシーポリシー',
           lastUpdated: '最終更新：2026年1月',
-          intro: 'Echoesでは、お客様のプライバシーを真剣に受け止めています。あなたの思い出は個人的なものであり、そうあるべきです。',
-          collectionTitle: '1. データ収集',
-          collectionText: 'サービスの提供に必要な情報（写真、日記、基本的なアカウント情報）のみを収集します。個人データを第三者に販売することはありません。',
-          aiTitle: '2. AI機能',
-          aiText: 'AI機能（スマートタグ、インサイト）は、より良い体験を提供するためにデータを処理します。画像認識には、データ転送を最小限に抑えるため、可能な限りローカルブラウザベースのモデルを使用します。'
+          intro: 'Echoesでは、お客様のプライバシーを真剣に受け止めています。あなたの思い出は個人的なものであり、安全に保護されるべきです。本ポリシーでは、情報の収集・利用・保護方法について説明します。',
+          collectionTitle: '1. データ収集と利用',
+          collectionText: 'サービスの提供に必要な情報（写真、日記、メールアドレスなどの基本アカウント情報）のみを収集します。不要なバックグラウンドデータの収集は行わず、個人データを第三者に販売または共有することは決してありません。',
+          storageTitle: '2. データ保存とセキュリティ',
+          storageText: '「ローカルファースト」のアーキテクチャを採用しています。データはまずデバイス内に安全に保存され、クラウド同期を有効にした場合も、通信時およびサーバー保存時に強力に暗号化されます。',
+          aiTitle: '3. AI機能とデータ処理',
+          aiText: 'スマートタグやインサイトなどのAI機能は、より良い体験を提供するためにデータを処理します。画像認識等には可能な限りローカルモデルを優先し、クラウドでの処理は一時的なものにとどめ、外部モデルの学習には使用しません。',
+          rightsTitle: '4. あなたの権利',
+          rightsText: 'あなたはいつでも自分のデータにアクセス、修正、エクスポート、永久削除する権利を持っています。アカウントを削除すると、サーバー上のすべての関連データも完全に消去されます。'
         },
         terms: {
           title: '利用規約',
           lastUpdated: '最終更新：2026年1月',
           acceptanceTitle: '1. 規約への同意',
-          acceptanceText: 'Echoesにアクセスして使用することにより、本契約の条件に拘束されることに同意したものとみなされます。',
-          conductTitle: '2. ユーザーの行動',
-          conductText: '合法的な目的でのみサービスを使用することに同意します。あなたのアカウントで投稿されたすべてのコンテンツと発生した活動について、あなたが責任を負います。'
+          acceptanceText: 'Echoesにアクセスして使用することにより、本契約の条件に拘束されることに同意したものとみなされます。同意されない場合は、本サービスのご利用をお控えください。',
+          conductTitle: '2. ユーザーの行動規範',
+          conductText: '合法的な目的でのみ本サービスを使用することに同意します。違法、有害、脅迫的、虐待的、または他者の知的財産権を侵害するコンテンツのアップロードは禁止されており、アカウント活動はすべてあなたの責任となります。',
+          accountTitle: '3. アカウントのセキュリティ',
+          accountText: 'アカウント認証情報の機密性を維持する責任はユーザーにあります。不正使用を発見した場合は直ちにご連絡ください。管理不十分によるデータの漏洩や損失について、Echoesは責任を負いません。',
+          intellectualTitle: '4. 知的財産権とコンテンツの帰属',
+          intellectualText: 'あなたがEchoesにアップロードしたすべてのコンテンツの所有権はあなたに帰属します。あなたは、サービスを提供および改善するために必要な範囲内で、コンテンツをホストおよび表示する限定的なライセンスを当社に付与します。',
+          terminationTitle: '5. サービスの終了',
+          terminationText: '利用規約に重大な違反があったと判断した場合、当社は事前の通知なしに、サービスの利用を一時停止または永久に終了する権利を留保します。'
         }
       },
       welcome: {
@@ -1492,19 +1584,29 @@ const resources = {
         privacy: {
           title: '개인정보처리방침',
           lastUpdated: '최종 업데이트: 2026년 1월',
-          intro: 'Echoes는 당신의 개인정보를 매우 중요하게 생각합니다. 당신의 추억은 지극히 개인적인 것이며, 그렇게 유지되어야 합니다.',
-          collectionTitle: '1. 데이터 수집',
-          collectionText: '우리는 서비스 제공에 필요한 최소한의 정보(사진, 일기 내용, 기본 계정 정보)만을 수집합니다. 당신의 개인 데이터를 제3자에게 판매하지 않습니다.',
-          aiTitle: '2. AI 기능',
-          aiText: '우리의 AI 기능(스마트 태그, 인사이트)은 더 나은 경험을 제공하기 위해 당신의 데이터를 처리합니다. 이미지 인식의 경우, 데이터 전송을 최소화하기 위해 가능한 한 로컬 브라우저 기반 모델을 사용합니다.'
+          intro: 'Echoes는 당신의 개인정보를 매우 중요하게 생각합니다. 당신의 추억은 지극히 개인적인 것이며, 안전하게 보호되어야 합니다. 본 방침은 정보를 수집, 사용 및 보호하는 방법을 설명합니다.',
+          collectionTitle: '1. 데이터 수집 및 사용',
+          collectionText: '우리는 서비스 제공에 필요한 최소한의 정보(사진, 일기 내용, 이메일 등 기본 계정 정보)만을 수집합니다. 불필요한 백그라운드 데이터는 수집하지 않으며, 귀하의 개인 데이터를 제3자에게 판매하거나 공유하지 않습니다.',
+          storageTitle: '2. 데이터 저장 및 보안',
+          storageText: '"로컬 퍼스트(Local-First)" 아키텍처를 채택하고 있습니다. 데이터는 먼저 기기 내에 안전하게 저장되며, 클라우드 동기화를 활성화한 경우 통신 및 서버 저장 시 강력하게 암호화됩니다.',
+          aiTitle: '3. AI 기능 및 데이터 처리',
+          aiText: '스마트 태그 및 인사이트 등의 AI 기능은 더 나은 경험을 제공하기 위해 데이터를 처리합니다. 이미지 인식에는 가능한 한 로컬 모델을 우선 사용하며, 클라우드 처리는 일시적이며 외부 모델 학습에 사용되지 않습니다.',
+          rightsTitle: '4. 귀하의 권리',
+          rightsText: '귀하는 언제든지 자신의 데이터에 접근, 수정, 내보내기, 영구 삭제할 권리가 있습니다. 계정을 삭제하면 서버의 모든 관련 데이터도 완전히 지워집니다.'
         },
         terms: {
           title: '이용약관',
           lastUpdated: '최종 업데이트: 2026년 1월',
           acceptanceTitle: '1. 약관 동의',
-          acceptanceText: 'Echoes를 이용함으로써 당신은 본 계약의 약관 및 규정을 준수하는 데 동의하게 됩니다.',
-          conductTitle: '2. 사용자 행동',
-          conductText: '당신은 합법적인 목적으로만 서비스를 이용하는 데 동의합니다. 당신의 계정에서 게시된 모든 콘텐츠와 발생한 활동에 대한 책임은 당신에게 있습니다.'
+          acceptanceText: 'Echoes에 접속하고 사용함으로써 본 계약의 조건에 구속되는 데 동의하는 것으로 간주됩니다. 동의하지 않으시면 서비스 이용을 삼가해 주십시오.',
+          conductTitle: '2. 사용자 행동 규범',
+          conductText: '귀하는 합법적인 목적으로만 서비스를 이용하는 데 동의합니다. 불법적이거나 유해하거나 타인의 지적 재산권을 침해하는 콘텐츠 업로드는 금지되며, 계정 활동에 대한 모든 책임은 귀하에게 있습니다.',
+          accountTitle: '3. 계정 보안',
+          accountText: '계정 인증 정보의 기밀성을 유지할 책임은 사용자에게 있습니다. 무단 사용을 발견한 경우 즉시 당사에 알려야 합니다. 관리 부실로 인한 데이터 유출이나 손실에 대해 Echoes는 책임을 지지 않습니다.',
+          intellectualTitle: '4. 지적 재산권 및 콘텐츠 귀속',
+          intellectualText: 'Echoes에 업로드한 모든 콘텐츠의 소유권은 귀하에게 있습니다. 귀하는 서비스 제공 및 개선을 위해 필요한 범위 내에서 콘텐츠를 호스팅하고 표시할 수 있는 제한적 라이선스를 당사에 부여합니다.',
+          terminationTitle: '5. 서비스 종료',
+          terminationText: '이용약관에 중대한 위반이 있다고 판단되는 경우, 당사는 사전 통지 없이 서비스 이용을 일시 중지하거나 영구적으로 종료할 권리를 보유합니다.'
         }
       },
       welcome: {

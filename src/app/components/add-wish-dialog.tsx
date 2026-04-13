@@ -8,6 +8,7 @@ import {
   DialogFooter 
 } from './ui/dialog';
 import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { useBucketListStore } from '../store/bucket-list-store';
@@ -48,6 +49,7 @@ export function AddWishDialog({ open, onOpenChange }: AddWishDialogProps) {
   const addBucketListItem = useBucketListStore(state => state.addBucketListItem);
 
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [target, setTarget] = useState<number>(1);
   const [tagsInput, setTagsInput] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('Star');
@@ -61,6 +63,7 @@ export function AddWishDialog({ open, onOpenChange }: AddWishDialogProps) {
 
     addBucketListItem({
       title: title.trim(),
+      description: description.trim() || undefined,
       target: target || 0,
       tags,
       iconName: selectedIcon,
@@ -69,6 +72,7 @@ export function AddWishDialog({ open, onOpenChange }: AddWishDialogProps) {
 
     // Reset form
     setTitle('');
+    setDescription('');
     setTarget(1);
     setTagsInput('');
     setSelectedIcon('Star');
@@ -91,6 +95,17 @@ export function AddWishDialog({ open, onOpenChange }: AddWishDialogProps) {
               value={title}
               onChange={e => setTitle(e.target.value)}
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">{t('bucketList.wishDescription', '愿望寄语 / 详情描述')}</Label>
+            <Textarea 
+              id="description" 
+              placeholder={t('bucketList.wishDescriptionPlaceholder', '写给自己的一段话，比如：这是我25岁的目标，带上相机去记录最美的星空...')}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              className="resize-none h-20"
             />
           </div>
 

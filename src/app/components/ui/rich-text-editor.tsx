@@ -5,7 +5,9 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Typography from '@tiptap/extension-typography';
-import { Bold, Italic, List, ListOrdered, Quote, Heading2, ImageIcon, Link as LinkIcon, Undo, Redo } from 'lucide-react';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Bold, Italic, List, ListOrdered, Quote, Heading2, ImageIcon, Link as LinkIcon, Undo, Redo, Palette } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { haptics } from '../../utils/haptics';
 
@@ -131,6 +133,35 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
       <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
 
+      <div className="relative group flex items-center">
+        <ToolbarButton title="文字颜色" onClick={() => {}} isActive={!!editor.getAttributes('textStyle').color}>
+          <div className="relative w-4 h-4 rounded-sm overflow-hidden border border-gray-300 dark:border-gray-600 shadow-sm flex items-center justify-center">
+             <input
+                type="color"
+                onInput={event => {
+                  editor.chain().focus().setColor((event.target as HTMLInputElement).value).run();
+                  haptics.light();
+                }}
+                value={editor.getAttributes('textStyle').color || '#000000'}
+                className="absolute inset-0 w-8 h-8 -top-2 -left-2 cursor-pointer border-0 bg-transparent"
+                title="文字颜色"
+              />
+          </div>
+        </ToolbarButton>
+        <ToolbarButton 
+          title="清除颜色" 
+          onClick={() => {
+            editor.chain().focus().unsetColor().run();
+            haptics.light();
+          }}
+          disabled={!editor.getAttributes('textStyle').color}
+        >
+          <Palette className="w-4 h-4" />
+        </ToolbarButton>
+      </div>
+
+      <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+
       <ToolbarButton onClick={addImage} title="插入图片链接">
         <ImageIcon className="w-4 h-4" />
       </ToolbarButton>
@@ -165,6 +196,8 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     extensions: [
       StarterKit,
       Typography,
+      TextStyle,
+      Color,
       Image.configure({
         inline: true,
         allowBase64: true,

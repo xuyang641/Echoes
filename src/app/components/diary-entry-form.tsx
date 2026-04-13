@@ -18,6 +18,8 @@ import { RichTextEditor } from './ui/rich-text-editor';
 import confetti from 'canvas-confetti';
 import { useDiaryStore } from '../store/diary-store';
 import { useBucketListStore } from '../store/bucket-list-store';
+import { AIService } from '../utils/ai-service';
+import type { DiaryEntry, MediaItem } from '../types/diary';
 
 interface DiaryEntryFormProps {
   onAddEntry?: (entry: DiaryEntry, targetGroups: string[]) => void;
@@ -28,48 +30,16 @@ interface DiaryEntryFormProps {
   initialCaption?: string;
 }
 
-export interface DiaryEntry {
-  id: string;
-  date: string;
-  photo: string;
-  caption: string;
-  content?: string; // Extended text content for long-form entries
-  mood: string;
-  location?: {
-    lat: number;
-    lng: number;
-    name?: string;
-  };
-  tags?: string[];
-  aiTags?: string[];
-  palette?: ColorPalette;
-  userId?: string;
-  userName?: string;
-  userAvatar?: string;
-  groupIds?: string[]; // New: Track which groups this entry belongs to
-  likes?: string[]; // Array of userIds who liked this entry
-  comments?: Comment[];
-}
-
-export interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  text: string;
-  date: string;
-}
-
 export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData, isEdit = false, initialCaption }: DiaryEntryFormProps) {
   const { groups } = useGroup();
   const { t } = useTranslation();
-  const [photo, setPhoto] = useState<string>('');
+  const [photo, setPhoto] = useState<string>(''); // Kept for backward compatibility
+  const [media, setMedia] = useState<MediaItem[]>([]);
   const [caption, setCaption] = useState(initialCaption || '');
   const [selectedMood, setSelectedMood] = useState('');
   const [customMoods, setCustomMoods] = useState<Mood[]>([]);
   const [isAddingMood, setIsAddingMood] = useState(false);
   const [newMoodName, setNewMoodName] = useState('');
-  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [compressing, setCompressing] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number; name?: string } | undefined>();
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -124,8 +94,12 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
 
   useEffect(() => {
     if (initialData) {
-      setPhoto(initialData.photo);
-      setPreviewUrl(initialData.photo);
+      setPhoto(initialData.photo || '');
+      if (initialData.media && initialData.media.length > 0) {
+        setMedia(initialData.media);
+      } else if (initialData.photo) {
+        setMedia([{ type: 'image', url: initialData.photo }]);
+      }
       setCaption(initialData.caption);
       setSelectedMood(initialData.mood);
       setLocation(initialData.location);
@@ -181,7 +155,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       
       if (result) {
         setPhoto(result);
-        setPreviewUrl(result);
+        setMedia([{ type: 'image', url: result }]);
         
         // Extract palette
         try {
@@ -198,64 +172,96 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     }
   };
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const processFile = async (file: File) => {
+    return new Promise<MediaItem | null>(async (resolve) => {
       try {
-        setCompressing(true);
-
-        // Check if it's a video
         if (file.type.startsWith('video/')) {
-          // For video, we might want to check size (e.g. max 50MB)
           if (file.size > 50 * 1024 * 1024) {
-            alert('视频大小不能超过 50MB');
-            setCompressing(false);
+            alert(`视频 ${file.name} 大小不能超过 50MB`);
+            resolve(null);
             return;
           }
           
-          // Read video as data URL for preview and saving (temporary solution for local, later should upload to storage)
           const reader = new FileReader();
           reader.onloadend = () => {
-            const result = reader.result as string;
-            setPhoto(result); // Storing video dataURL in photo field
-            setPreviewUrl(result);
-            setCompressing(false);
+            resolve({ type: 'video', url: reader.result as string });
           };
           reader.readAsDataURL(file);
-          return;
-        }
-        
-        // Use the new optimization utility for images
-        const compressedFile = await optimizeImage(file, {
-          maxSizeMB: 0.8, // Slightly higher quality for main image
-          maxWidthOrHeight: 1920,
-          fileType: 'image/webp'
-        });
-        
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          const result = reader.result as string;
-          setPhoto(result);
-          setPreviewUrl(result);
+        } else if (file.type.startsWith('image/')) {
+          const compressedFile = await optimizeImage(file, {
+            maxSizeMB: 0.8,
+            maxWidthOrHeight: 1920,
+            fileType: 'image/webp'
+          });
           
-          // Extract palette
-          try {
-            const extractedPalette = await extractPalette(result);
-            setPalette(extractedPalette);
-          } catch (err) {
-            console.error('Palette extraction failed:', err);
-          }
-
-          setCompressing(false);
-        };
-        reader.readAsDataURL(compressedFile);
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const url = reader.result as string;
+            // Extract palette from the first image
+            if (media.length === 0) {
+              try {
+                const extractedPalette = await extractPalette(url);
+                setPalette(extractedPalette);
+              } catch (err) {
+                console.error('Palette extraction failed:', err);
+              }
+            }
+            resolve({ type: 'image', url });
+          };
+          reader.readAsDataURL(compressedFile);
+        } else {
+          resolve(null);
+        }
       } catch (error) {
-        console.error('Error compressing image:', error);
-        setCompressing(false);
-        // Fallback to original file if compression fails?
-        // For now, just stop spinner.
+        console.error('Error processing file:', error);
+        resolve(null);
       }
+    });
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setCompressing(true);
+      const processedMedia = await Promise.all(files.map(processFile));
+      const validMedia = processedMedia.filter((m): m is MediaItem => m !== null);
+      
+      if (validMedia.length > 0) {
+        setMedia(prev => [...prev, ...validMedia]);
+        if (!photo) {
+          setPhoto(validMedia[0].url); // Set first as primary photo for backward compatibility
+        }
+      }
+      setCompressing(false);
     }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = Array.from(e.dataTransfer.files).filter(f => 
+      f.type.startsWith('image/') || f.type.startsWith('video/')
+    );
+    
+    if (files.length > 0) {
+      setCompressing(true);
+      const processedMedia = await Promise.all(files.map(processFile));
+      const validMedia = processedMedia.filter((m): m is MediaItem => m !== null);
+      
+      if (validMedia.length > 0) {
+        setMedia(prev => [...prev, ...validMedia]);
+        if (!photo) {
+          setPhoto(validMedia[0].url);
+        }
+      }
+      setCompressing(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   const handleGetLocation = () => {
@@ -331,7 +337,19 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
     try {
       const newAiTags = [...aiTags];
       
-      if (caption) {
+      // Attempt Qwen AI tagging for text first if available
+      const aiService = new AIService();
+      if (aiService.isConfigured() && caption) {
+        const qwenTags = await aiService.generateTags(caption);
+        if (qwenTags && qwenTags.length > 0) {
+          qwenTags.forEach(tag => {
+            if (!newAiTags.includes(tag) && !tags.includes(tag)) {
+              newAiTags.push(tag);
+            }
+          });
+        }
+      } else if (caption) {
+        // Fallback to simple keyword matching
         const words = caption.toLowerCase().split(' ');
         const keywords: Record<string, string[]> = {
           'beach': ['beach', 'sea', 'ocean', 'sand', '海滩', '海', '沙滩'],
@@ -346,7 +364,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
 
         Object.entries(keywords).forEach(([tag, matchWords]) => {
           if (matchWords.some(word => words.includes(word))) {
-            if (!newAiTags.includes(tag)) newAiTags.push(tag);
+            if (!newAiTags.includes(tag) && !tags.includes(tag)) newAiTags.push(tag);
           }
         });
       }
@@ -368,7 +386,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
           const names = prediction.className.split(',')[0].split(' ');
           const mainTag = names[names.length - 1].toLowerCase();
           
-          if (!newAiTags.includes(mainTag)) {
+          if (!newAiTags.includes(mainTag) && !tags.includes(mainTag)) {
             newAiTags.push(mainTag);
           }
         });
@@ -407,7 +425,9 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       id: initialData?.id || Date.now().toString(),
       date: date, // Use the state date
       photo: photo || '', // Allow empty photo
+      media: media, // Save all media items
       caption,
+      content: initialData?.content, // Preserve content if it exists
       mood: selectedMood,
       location,
       tags: finalTags,
@@ -638,78 +658,114 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
       </div>
 
       {/* Photo Upload */}
-      <div>
-        <label className="block text-sm mb-2 text-gray-700">照片</label>
-        {compressing ? (
-          <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
-            <span className="text-sm text-gray-500">处理中...</span>
-          </div>
-        ) : previewUrl ? (
-          <div className="relative">
-            {previewUrl.startsWith('data:video/') || previewUrl.endsWith('.mp4') ? (
-              <video 
-                src={previewUrl} 
-                controls
-                className="w-full h-64 object-cover rounded-xl bg-black"
-              />
-            ) : (
-              <img 
-                ref={imgRef}
-                src={previewUrl} 
-                alt="Preview" 
-                className="w-full h-64 object-cover rounded-xl"
-                crossOrigin="anonymous" 
-              />
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setPhoto('');
-                setPreviewUrl('');
-                const fileInput = document.getElementById('photo-input') as HTMLInputElement;
-                if (fileInput) fileInput.value = '';
-              }}
-              className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {Capacitor.isNativePlatform() ? (
-              <div className="grid grid-cols-2 gap-3 h-32">
+      <div 
+        onDrop={handleDrop} 
+        onDragOver={handleDragOver}
+      >
+        <label className="block text-sm mb-2 text-gray-700">照片 / 视频</label>
+        
+        {/* Media Preview Grid */}
+        {media.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+            {media.map((item, index) => (
+              <div key={index} className="relative group aspect-square">
+                {item.type === 'video' ? (
+                  <video 
+                    src={item.url} 
+                    className="w-full h-full object-cover rounded-xl bg-black"
+                  />
+                ) : (
+                  <img 
+                    ref={index === 0 ? imgRef : null}
+                    src={item.url} 
+                    alt={`Preview ${index}`} 
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                )}
                 <button
                   type="button"
-                  onClick={() => handlePhotoSelect('camera')}
-                  className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                  onClick={() => {
+                    const newMedia = [...media];
+                    newMedia.splice(index, 1);
+                    setMedia(newMedia);
+                    if (index === 0 && newMedia.length > 0) {
+                      setPhoto(newMedia[0].url);
+                    } else if (newMedia.length === 0) {
+                      setPhoto('');
+                    }
+                  }}
+                  className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1.5 shadow-lg transition-colors opacity-0 group-hover:opacity-100"
                 >
-                  <Camera className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-500">拍照</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handlePhotoSelect('gallery')}
-                  className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
-                  <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-                  <span className="text-sm text-gray-500">相册</span>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
+            ))}
+            
+            {/* Add More Button */}
+            {compressing ? (
+              <div className="flex flex-col items-center justify-center w-full h-full aspect-square border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-500 mb-1" />
+                <span className="text-xs text-gray-500">处理中</span>
+              </div>
             ) : (
-              <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-          <Camera className="w-12 h-12 text-gray-400 mb-2" />
-          <span className="text-sm text-gray-500">{t('form.upload', '上传照片或视频')}</span>
-          <input
-            id="photo-input"
-            type="file"
-            accept="image/*,video/mp4,video/quicktime,video/webm"
-            onChange={handlePhotoChange}
-            className="hidden"
-          />
-        </label>
+              <label className="flex flex-col items-center justify-center w-full h-full aspect-square border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                <Plus className="w-8 h-8 text-gray-400 mb-1" />
+                <span className="text-xs text-gray-500">添加</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/mp4,video/quicktime,video/webm"
+                  onChange={handlePhotoChange}
+                  className="hidden"
+                />
+              </label>
             )}
           </div>
+        )}
+
+        {media.length === 0 && (
+          compressing ? (
+            <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
+              <span className="text-sm text-gray-500">处理中...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {Capacitor.isNativePlatform() ? (
+                <div className="grid grid-cols-2 gap-3 h-32">
+                  <button
+                    type="button"
+                    onClick={() => handlePhotoSelect('camera')}
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">拍照</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePhotoSelect('gallery')}
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                  >
+                    <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">相册</span>
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <Camera className="w-12 h-12 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-500">{t('form.upload', '点击或拖拽上传照片/视频')}</span>
+                  <input
+                    id="photo-input"
+                    type="file"
+                    multiple
+                    accept="image/*,video/mp4,video/quicktime,video/webm"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+          )
         )}
       </div>
 
@@ -718,7 +774,7 @@ export function DiaryEntryForm({ onAddEntry, onSave, saving = false, initialData
         description={caption} 
         onImageGenerated={(url) => {
             setPhoto(url);
-            setPreviewUrl(url);
+            setMedia([{ type: 'image', url }]);
         }}
       />
 

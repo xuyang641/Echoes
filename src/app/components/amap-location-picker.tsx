@@ -31,15 +31,13 @@ export function AmapLocationPicker({ initialLocation, onConfirm, onCancel }: Ama
 
     const initMap = async () => {
       try {
-        // === LOCAL BYPASS FOR MISSING API KEY ===
         const apiKey = import.meta.env.VITE_AMAP_KEY;
-        if (!apiKey && import.meta.env.DEV) {
-           console.warn('Map API Key is missing in local development. Bypassing map load to prevent crash.');
-           setError('本地开发未配置高德地图 API Key，地图功能已禁用。');
-           setLoading(false);
-           return;
-        }
+        // === LOCAL BYPASS FOR MISSING API KEY ===
+        // 移除这里的提前退出逻辑，让它使用提供的 API Key
         // ==========================================
+
+        // Reset AMapLoader in case of HMR or StrictMode re-renders
+        AMapLoader.reset();
 
         // Set security code if provided
         if (import.meta.env.VITE_AMAP_SECURITY_CODE) {
@@ -134,7 +132,9 @@ export function AmapLocationPicker({ initialLocation, onConfirm, onCancel }: Ama
         setLoading(false);
       } catch (e: any) {
         console.error('Failed to load AMap:', e);
-        setError('Failed to load map. Please check your API Key configuration.');
+        const apiKey = import.meta.env.VITE_AMAP_KEY;
+        const secCode = import.meta.env.VITE_AMAP_SECURITY_CODE;
+        setError(`加载地图失败 (${e?.message || '未知错误'})。当前加载配置 Key: ${apiKey ? apiKey.substring(0,6)+'...' : '未读取到'}。可能原因：API Key 限制了域名，或者未正确启动。`);
         setLoading(false);
       }
     };

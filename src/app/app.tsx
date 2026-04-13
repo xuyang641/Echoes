@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
-import { AIChatView } from './components/ai-chat-view';
+import { AIChatView } from './views/ai-chat-view';
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { GroupProvider } from './context/GroupContext';
@@ -150,8 +150,11 @@ function AppContent() {
 
   // Handle unauthenticated state
   if (!user) {
-    // Check if we are on the login page
-    if (location.pathname === '/login') {
+    // @ts-ignore - Check if running in Tauri desktop environment
+    const isDesktop = !!window.__TAURI__ || !!window.__TAURI_INTERNALS__;
+    
+    // Check if we are on the login page or desktop app
+    if (location.pathname === '/login' || isDesktop) {
       return <LoginForm />;
     }
     // Otherwise show landing page

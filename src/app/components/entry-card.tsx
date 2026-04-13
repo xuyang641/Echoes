@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { Smile, Frown, Heart, Zap, Coffee, Sparkles, CloudRain, Sun, Trash2, Edit2, Share2, Heart as HeartIcon, CloudOff } from 'lucide-react';
 import { MoodPlaylist } from './mood-playlist';
 import { useTranslation } from 'react-i18next';
-import type { DiaryEntry } from './diary-entry-form';
+import type { DiaryEntry } from '../types/diary';
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
 import { LazyImage } from './ui/lazy-image';

@@ -1,11 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Calendar, Map as MapIcon, Heart, Target, Sparkles, Printer, GitCommit, PlusCircle, UserCircle, WifiOff, CloudUpload } from 'lucide-react';
+import { BookOpen, Calendar, Map as MapIcon, Heart, Target, Sparkles, Printer, GitCommit, PlusCircle, UserCircle, CloudUpload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InstallButton } from '../install-button';
 import { ThemeSelector } from '../theme-selector';
 import { ExportMenu } from '../export-menu';
 import { Suspense } from 'react';
-import type { DiaryEntry } from '../diary-entry-form';
+import type { DiaryEntry } from '../../types/diary';
 
 interface DesktopHeaderProps {
   entries: DiaryEntry[];
@@ -14,7 +14,7 @@ interface DesktopHeaderProps {
   pendingSyncCount?: number;
 }
 
-export function DesktopHeader({ entries, isAddOrEdit, isOffline = false, pendingSyncCount = 0 }: DesktopHeaderProps) {
+export function DesktopHeader({ entries, isAddOrEdit, pendingSyncCount = 0 }: DesktopHeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -28,11 +28,11 @@ export function DesktopHeader({ entries, isAddOrEdit, isOffline = false, pending
                 <UserCircle className="w-6 h-6 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+                <span className="font-bold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 font-handwriting" style={{ fontFamily: 'var(--font-handwriting)' }}>
                   Echoes
                 </span>
-                <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase -mt-1 font-handwriting" style={{ fontFamily: 'var(--font-handwriting)' }}>
-                  Capture your daily moments
+                <span className="text-sm text-gray-500 font-medium tracking-wide -mt-1 font-handwriting" style={{ fontFamily: 'var(--font-handwriting)' }}>
+                  capture your life moments
                 </span>
               </div>
             </div>

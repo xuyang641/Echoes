@@ -2,24 +2,25 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DiaryEntryForm, type DiaryEntry } from '../components/diary-entry-form';
+import { DiaryEntryForm } from '../components/diary-entry-form';
+import type { DiaryEntry } from '../types/diary';
 
 // Lazy load views
-const TimelineView = lazy(() => import('../components/timeline-view').then(module => ({ default: module.TimelineView })));
-const CalendarView = lazy(() => import('../components/calendar-view').then(module => ({ default: module.CalendarView })));
-const MapView = lazy(() => import('../components/map-view').then(module => ({ default: module.MapView })));
-const InsightsView = lazy(() => import('../components/insights-view').then(module => ({ default: module.InsightsView })));
-const MilestonesView = lazy(() => import('../components/milestones-view').then(module => ({ default: module.MilestonesView })));
-const ChangelogView = lazy(() => import('../components/changelog-view').then(module => ({ default: module.ChangelogView })));
-const PrintShopView = lazy(() => import('../components/print-shop-view').then(module => ({ default: module.PrintShopView })));
-const AccountView = lazy(() => import('../components/account-view').then(module => ({ default: module.AccountView })));
-const CoupleSplitView = lazy(() => import('../components/couple-split-view').then(module => ({ default: module.CoupleSplitView })));
-const SharedBookView = lazy(() => import('../components/shared-book-view').then(module => ({ default: module.SharedBookView })));
+const TimelineView = lazy(() => import('../views/timeline-view').then(module => ({ default: module.TimelineView })));
+const CalendarView = lazy(() => import('../views/calendar-view').then(module => ({ default: module.CalendarView })));
+const MapView = lazy(() => import('../views/map-view').then(module => ({ default: module.MapView })));
+const InsightsView = lazy(() => import('../views/insights-view').then(module => ({ default: module.InsightsView })));
+const MilestonesView = lazy(() => import('../views/milestones-view').then(module => ({ default: module.MilestonesView })));
+const ChangelogView = lazy(() => import('../views/changelog-view').then(module => ({ default: module.ChangelogView })));
+const PrintShopView = lazy(() => import('../views/print-shop-view').then(module => ({ default: module.PrintShopView })));
+const AccountView = lazy(() => import('../views/account-view').then(module => ({ default: module.AccountView })));
+const CoupleSplitView = lazy(() => import('../views/couple-split-view').then(module => ({ default: module.CoupleSplitView })));
+const SharedBookView = lazy(() => import('../views/shared-book-view').then(module => ({ default: module.SharedBookView })));
 const AboutView = lazy(() => import('../components/legal-pages').then(module => ({ default: module.AboutView })));
 const PrivacyView = lazy(() => import('../components/legal-pages').then(module => ({ default: module.PrivacyView })));
 const TermsView = lazy(() => import('../components/legal-pages').then(module => ({ default: module.TermsView })));
-const SubscriptionView = lazy(() => import('../components/subscription-view').then(module => ({ default: module.SubscriptionView })));
-const NotificationsView = lazy(() => import('../components/notifications-view').then(module => ({ default: module.NotificationsView })));
+const SubscriptionView = lazy(() => import('../views/subscription-view').then(module => ({ default: module.SubscriptionView })));
+const NotificationsView = lazy(() => import('../views/notifications-view').then(module => ({ default: module.NotificationsView })));
 
 const PageTransition = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -135,7 +136,7 @@ export function AppRoutes({ entries, loading, saving, onDeleteEntry, onAddEntry,
           } />
           <Route path="/account" element={
             <PageTransition>
-              <AccountView />
+              <AccountView entries={entries} />
             </PageTransition>
           } />
           <Route path="/changelog" element={

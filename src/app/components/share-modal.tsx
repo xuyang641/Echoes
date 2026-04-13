@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react';
 import { X, Download, Share2, Sparkles, MapPin } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import type { DiaryEntry } from './diary-entry-form';
+import type { DiaryEntry } from '../types/diary';
 
 interface ShareModalProps {
   entry: DiaryEntry;
@@ -23,16 +23,31 @@ export function ShareModal({ entry, onClose }: ShareModalProps) {
       // Small delay to ensure any fonts/images are fully rendered
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const dataUrl = await toPng(cardRef.current, { 
-        cacheBust: true, 
-        pixelRatio: 3, // High quality for long images
+      const canvas = await html2canvas(cardRef.current, {
+        scale: 3, // High quality
+        useCORS: true,
+        allowTaint: true,
         backgroundColor: '#fcfbf9' // Match the card background
       });
       
-      const link = document.createElement('a');
-      link.download = `echoes-diary-${format(new Date(entry.date), 'yyyyMMdd')}.png`;
-      link.href = dataUrl;
-      link.click();
+      await new Promise<void>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Canvas is empty'));
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = `echoes-diary-${format(new Date(entry.date), 'yyyyMMdd')}.png`;
+          link.href = url;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          resolve();
+        }, 'image/png');
+      });
+
     } catch (err) {
       console.error('Failed to generate image', err);
       alert('生成长图失败，请重试。');

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { offlineStorage } from '../services/offline-storage';
-import { createEntry, deleteEntry, updateEntry } from '../utils/api';
+import { createEntry, deleteEntry, updateEntry } from '../services/diary-api';
 import { supabase } from '../utils/supabaseClient';
 
 interface SyncState {

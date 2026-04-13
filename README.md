@@ -10,12 +10,13 @@
 
 <div align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
-  <img src="https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Web-brightgreen.svg?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Web%20%7C%20Windows-brightgreen.svg?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/status-Active%20Development-orange.svg?style=flat-square" alt="Status">
   <img src="https://img.shields.io/badge/language-TypeScript-3178c6.svg?style=flat-square" alt="TypeScript">
   <img src="https://img.shields.io/badge/framework-React%2018-61dafb.svg?style=flat-square" alt="React">
-  <img src="https://img.shields.io/badge/runtime-Capacitor%208-119eff.svg?style=flat-square" alt="Capacitor">
+  <img src="https://img.shields.io/badge/runtime-Capacitor%208%20%7C%20Tauri%202.0-119eff.svg?style=flat-square" alt="Runtime">
   <img src="https://img.shields.io/badge/backend-Supabase-3ecf8e.svg?style=flat-square" alt="Supabase">
+  <img src="https://img.shields.io/badge/testing-Vitest-729B1B.svg?style=flat-square" alt="Vitest">
 </div>
 
 <br />
@@ -59,28 +60,29 @@
 
 ## ✨ 核心特性
 
-### 📸 极致的原生体验
-利用 Capacitor 8 的强大能力，Echoes 能够直接调用设备的**原生相机**和**相册**。无论是抓拍瞬间还是导入旧照，体验都如原生 App 般丝滑流畅，毫无 Web 应用的割裂感。
+### 📸 多端原生体验
+- **移动端 (Capacitor 8)**：直接调用设备的**原生相机**和**相册**，支持原生生物识别（FaceID/指纹）解锁。
+- **桌面端 (Tauri 2.0)**：极速启动的 Windows 桌面客户端，支持系统级消息推送与后台常驻。
 
 ### 🤖 AI 智能伴侣
 不仅仅是聊天机器人，Echoes 的 AI 深度融入了你的生活：
+- **智能标签 (Smart Tags)**：全面接入大模型，自动从日记文本中提取精准的专属标签。
 - **梦境画师 (Dream Painter)**：根据你的日记文字，为你生成独一无二的艺术配图。
-- **心情歌单 (Mood Playlist)**：分析你当下的心境，为你推荐最懂你的音乐。
 - **每日回顾 (Daily Summary)**：智能总结一天的经历，帮你发现生活中的美好模式。
 
 ### ☁️ 离线优先 & 云端同步
-Echoes 采用先进的 **Offline-First** 架构。无论在深山还是飞行模式，你都可以毫无阻碍地离线浏览和写作。网络恢复后，所有更改会自动在后台静默同步到 Supabase 云端。
+Echoes 采用先进的 **Offline-First** 架构，并配备了严密的离线操作队列测试保障。无论在深山还是飞行模式，你都可以毫无阻碍地离线浏览和写作。网络恢复后，所有更改会自动在后台静默同步到 Supabase 云端。
 
 ### 🗺️ 点亮你的足迹
-**地理标记 (Geotagging)** 功能会自动读取照片的 EXIF 信息（或手动选择位置），并在交互式地图上生成你的专属足迹。看着地图上的光点逐渐铺满世界，是旅行者最大的浪漫。
+**地理标记 (Geotagging)** 功能会自动读取照片的 EXIF 信息（或手动选择位置），支持精确的高德地图 POI 定位，并在交互式地图上生成你的专属足迹。
 
 ### 📅 多维度的回忆回顾
-- **时光轴 (Timeline)**：以瀑布流的形式，倒序展示你的生活点滴，适合快速浏览。
-- **日历视图 (Calendar)**：直观的月视图，哪天写了日记一目了然，方便补记和查找。
-- **洞察分析 (Insights)**：(Beta) AI 驱动的情感分析，帮你总结过去一个月的心情变化和高频词汇。
+- **时光轴 (Timeline)**：以瀑布流的形式，倒序展示你的生活点滴，支持高级富文本排版。
+- **色彩 DNA (Color DNA)**：创新的星云引力场 UI，将你的情绪色彩具象化为 3D 玻璃行星系统。
+- **洞察分析 (Insights)**：采用 Apple Journal 风格的 Bento（便当盒）布局，为你提供闪回轮播图与年度情绪像素格。
 
 ### 🔒 隐私与安全
-你的数据完全属于你。我们采用了企业级的 RLS (Row Level Security) 策略，确保只有你自己能访问你的日记。v4.0.0 版本已加入**原生生物识别锁**（FaceID / 指纹）和**后台隐私模糊**功能，为你的隐私再加一把锁。
+你的数据完全属于你。我们采用了企业级的 RLS (Row Level Security) 策略，API Key 通过云端 Edge Function 加密流转。最新版本已加入**原生生物识别锁**和**后台隐私模糊**功能，为你的隐私再加一把锁。
 
 ### ☕ 沉浸式体验
 - **视频背景 (Video Backgrounds)**：内置高质量雨窗、森林等动态视频背景，让你在书写时仿佛置身于自然之中。

@@ -1,11 +1,11 @@
 // Photo Diary Store - State Management (Refactored)
 import { create } from 'zustand';
-import { fetchEntries, createEntry, deleteEntry, updateEntry } from '../utils/api';
+import { fetchEntries, createEntry, deleteEntry, updateEntry } from '../services/diary-api';
 import { offlineStorage } from '../services/offline-storage';
 import { supabase } from '../utils/supabaseClient';
 import { savePicture, deletePicture } from '../services/filesystem-service';
 import { useSyncStore } from './sync-store';
-import type { DiaryEntry } from '../components/diary-entry-form';
+import type { DiaryEntry } from '../types/diary';
 import type { User } from '@supabase/supabase-js';
 
 interface DiaryState {
