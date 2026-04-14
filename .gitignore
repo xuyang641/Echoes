@@ -54,3 +54,25 @@ Thumbs.db
 # User Specific
 Adobe Photoshop 2023/
 .trae/
+
+# App Packages & Binaries
+*.exe
+*.apk
+*.aab
+*.ipa
+*.dmg
+*.AppImage
+*.msi
+*.zip
+*.tar.gz
+*.lnk
+app.exe
+Uninstall Echoes.lnk
+
+# Vercel CLI & Privacy
+.vercel_temp_home/
+.vercel/
+*.log
+
+# Scripts and temporary logs
+git-log.txt
