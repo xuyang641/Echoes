@@ -6,6 +6,11 @@
   <strong>记录你的日常点滴 · Capture Your Daily Moments</strong>
 </div>
 
+<div align="center">
+  <br />
+  🌐 <strong>线上体验 (Live Demo): <a href="https://photo-diary-rebirth.vercel.app/">https://photo-diary-rebirth.vercel.app/</a></strong>
+</div>
+
 <br />
 
 <div align="center">
@@ -150,6 +155,8 @@ Echoes 采用现代化的 **React Native Web** 架构思想，结合了 Web 的�
 
 - **Node.js**: v18 或更高版本
 - **包管理器**: npm 或 yarn
+- **桌面端环境** (可选):
+  - Rust & Cargo (用于构建 Windows/macOS/Linux 桌面端)
 - **移动端环境** (可选):
   - Android Studio (用于构建 Android 版本)
   - Xcode (用于构建 iOS 版本，仅限 macOS)
@@ -182,13 +189,19 @@ Echoes 采用现代化的 **React Native Web** 架构思想，结合了 Web 的�
    # 设置 Secret: npx supabase secrets set AFDIAN_WEBHOOK_SECRET=your_secret
    ```
 
-4. **启动开发服务器**
+4. **启动开发服务器 (Web)**
    ```bash
    npm run dev
    ```
    访问 `http://localhost:5173` 即可预览。
 
-5. **构建移动端应用** (以 Android 为例)
+5. **启动桌面端应用 (Windows/macOS/Linux)**
+   请确保已经安装了 [Rust 环境](https://www.rust-lang.org/tools/install) 以及 [Tauri 的依赖](https://tauri.app/v1/guides/getting-started/prerequisites)。
+   ```bash
+   npm run tauri:dev
+   ```
+
+6. **构建移动端应用** (以 Android 为例)
    ```bash
    # 同步代码到原生目录
    npx cap sync
